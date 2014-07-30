@@ -16,14 +16,7 @@ class Platform:
         self.queue = _module.Queue(experiment)
 
     def setup_str(self):
-        exp_setup = ""
-
-        if config.getboolean("%s.mpi" % self.experiment.longname):
-            exp_setup += "module load mpi\n"
-
-        exp_setup += self.tool.setup_str()
-
-        return exp_setup
+        return self.tool.setup_str()
 
     def setup(self):
         self.tool = self.experiment.tool
