@@ -35,7 +35,6 @@ ssh {hostname} kill -SIGUSR1 {pid}
         self.longname   = "PBS.%s.%s" % (experiment.platform_name, experiment.name)
         self.experiment = experiment
         self.done       = False
-        self.script     = tempfile.TemporaryFile()
 
         self.nodes    = config.get("%s.nodes"    % self.longname)
         self.ppn      = config.get("%s.ppn"      % self.longname)
@@ -65,14 +64,16 @@ ssh {hostname} kill -SIGUSR1 {pid}
         # print content
         # return
 
-        self.script.write(content)
-        self.script.seek(0)
+        script = open("pbs_job.sh", "w+")
+        script.write(content)
+        script.flush()
+        script.seek(0)
 
         print " *** Submitting batch task",
 
         # For Python 2.7+, we can use subprocess.check_output() instead
         process = subprocess.Popen("qsub",
-                                   stdin=self.script,
+                                   stdin=script,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()
@@ -89,4 +90,6 @@ ssh {hostname} kill -SIGUSR1 {pid}
             sys.stdout.flush()
 
         print "done"
+
+        script.close()
 
