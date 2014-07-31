@@ -5,9 +5,10 @@ import ConfigParser
 from .utils import config
 
 class Experiment:
-    platform = None
-    tool     = None
-    analyses = None
+    platform  = None
+    tool      = None
+    datastore = None
+    analyses  = None
 
     def __init__(self, name):
         experiments = config.get("Main.Experiments").split()
@@ -17,9 +18,10 @@ class Experiment:
             self.name     = name
             self.longname = "Experiments.%s" % name
 
-        self.platform_name = config.get("%s.Platform" % self.longname)
-        self.tool_name     = config.get("%s.Tool"     % self.longname)
-        self.analyses_name = config.get("%s.Analyses" % self.longname).split()
+        self.platform_name  = config.get("%s.Platform" % self.longname)
+        self.tool_name      = config.get("%s.Tool"     % self.longname)
+        self.datastore_name = config.get("%s.Datastore" % self.longname)
+        self.analyses_name  = config.get("%s.Analyses" % self.longname).split()
 
         _module = __import__("platforms.%s" % self.platform_name,
                              globals(),
@@ -32,6 +34,12 @@ class Experiment:
                              fromlist=["Tool"],
                              level=1)
         self.tool = _module.Tool(self)
+
+        _module = __import__("datastores.%s" % self.datastore_name,
+                             globals(),
+                             fromlist=["Datastore"],
+                             level=1)
+        self.datastore = _module.Datastore(self)
 
         self.analyses = dict()
         for analysis in self.analyses_name:
@@ -76,14 +84,21 @@ class Experiment:
 
         self.platform.setup()
         self.tool.setup()
+        self.datastore.setup()
 
-    def run(self):
+    def run(self, insname):
         execmd = config.get("%s.execmd" % self.longname)
         exeopt = config.get("%s.exeopt" % self.longname)
 
         execmd = os.path.expanduser(execmd)
 
+        # set the name of this experiment instance
+        self.insname = insname
+
+        # run the experiment
         self.platform.run(execmd, exeopt)
+
+        # collect generated data and do the post-processing
         self.platform.collect_data()
 
     def analyze(self):

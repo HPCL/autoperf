@@ -19,7 +19,8 @@ class Platform:
         return self.tool.setup_str()
 
     def setup(self):
-        self.tool = self.experiment.tool
+        self.tool      = self.experiment.tool
+        self.datastore = self.experiment.datastore
         self.queue.setup()
     
     def run(self, _execmd, _exeopt):
@@ -35,6 +36,7 @@ class Platform:
         
     def collect_data(self):
         self.tool.collect_data()
+        self.datastore.load()
 
     def analyze(self):
         self.tool.analyze()

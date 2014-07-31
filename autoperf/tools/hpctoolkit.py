@@ -1,5 +1,5 @@
 import os
-import subprocess, tempfile
+import subprocess
 import ConfigParser
 
 from ..utils import config
@@ -42,17 +42,22 @@ class Tool(AbstractTool):
         return [_execmd, exeopt]
 
     def collect_data(self):
-        pass
-
-    def analyze(self):
         execmd = config.get("%s.execmd" % self.experiment.longname)
         execmd = os.path.expanduser(execmd)
         exebin = os.path.basename(execmd)
         appsrc = config.get("%s.appsrc" % self.longname)
 
+        self.measurement = "hpctoolkit-%s-measurements-%s" % (exebin, self.platform.queue.job_name)
+
         subprocess.call(["hpcstruct", execmd])
+        subprocess.call(["hpcprof",
+                         "-S",
+                         "%s.hpcstruct" % exebin,
+                         "-I",
+                         "%s/'*'" % appsrc,
+                         self.measurement])
 
-        measurement = "hpctoolkit-%s-measurements-%s" % (exebin, self.platform.queue.job_name)
-
-        subprocess.call(["hpcprof", "-S", "%s.hpcstruct" % exebin, "-I", "%s/'*'" % appsrc, measurement])
+        self.database = "hpctoolkit-%s-database-%s" % (exebin, self.platform.queue.job_name)
             
+    def analyze(self):
+        pass
