@@ -8,7 +8,7 @@ Directory Structure
 
   autoperf/      -- the autoperf python package
   bin/           -- directory which holds the driver script
-  example/       -- a usage example
+  example/       -- an usage example
   README.rst     -- this file
 
 

@@ -44,6 +44,6 @@ else:
                 experiment = Experiment(exp)
                 experiment.setup()
                 experiment.run()
-                # experiment.analyze()
+                experiment.analyze()
                 experiment.cleanup()
 
