@@ -40,7 +40,23 @@ class Tool(AbstractTool):
         return tau_setup
 
     def wrap_command(self, execmd, exeopt):
-        return [execmd, exeopt]
+        mode = config.get("%s.mode" % self.longname)
+
+        if mode == "instrumentation":
+            return [execmd, exeopt]
+
+        if mode == "sampling":
+            try:
+                period = config.get("%s.period" % self.longname)
+            except ConfigParser.Error:
+                period = 10000
+
+            try:
+                source = config.get("%s.source" % self.longname)
+            except ConfigParser.Error:
+                source = TIME
+
+            return ["tau_exec -ebs -ebs_period=%s -ebs_source=%s %s " % (period, source, execmd), exeopt]
 
     def collect_data(self):
         process = subprocess.Popen(["paraprof", "--pack", self.ppk, self.profiledir],
