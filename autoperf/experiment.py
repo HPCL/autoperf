@@ -1,4 +1,5 @@
 import os
+import datetime
 import shutil, errno
 import ConfigParser
 
@@ -10,13 +11,21 @@ class Experiment:
     datastore = None
     analyses  = None
 
-    def __init__(self, name):
+    def __init__(self, name, insname=None):
         experiments = config.get("Main.Experiments").split()
         if name not in experiments:
             raise Exception("Experiment '%s' not defined" % name)
         else:
             self.name     = name
             self.longname = "Experiments.%s" % name
+
+        # set the name of this experiment instance
+        if insname is None:
+            self.insname = datetime.datetime.now().isoformat()
+        else:
+            self.insname = insname
+
+        print " *** Preparing to run %s %s" % (self.name, self.insname)
 
         self.platform_name  = config.get("%s.Platform" % self.longname)
         self.tool_name      = config.get("%s.Tool"     % self.longname)
@@ -86,14 +95,11 @@ class Experiment:
         self.tool.setup()
         self.datastore.setup()
 
-    def run(self, insname):
+    def run(self):
         execmd = config.get("%s.execmd" % self.longname)
         exeopt = config.get("%s.exeopt" % self.longname)
 
         execmd = os.path.expanduser(execmd)
-
-        # set the name of this experiment instance
-        self.insname = insname
 
         # run the experiment
         self.platform.run(execmd, exeopt)

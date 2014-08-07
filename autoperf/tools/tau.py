@@ -10,12 +10,8 @@ class Tool(AbstractTool):
         self.name       = "tau"
         self.longname   = "Tool.tau.%s" % experiment.name
         self.experiment = experiment
-        self.ppk        = "%s.ppk" % experiment.name
-
-        try:
-            self.profiledir = config.get("%s.PROFILEDIR" % self.longname)
-        except ConfigParser.Error:
-            self.profiledir = 'profiles'
+        self.ppk        = "%s.%s.ppk" % (experiment.name, experiment.insname)
+        self.profiledir = experiment.insname
 
     def build(self):
         print "Building TAU..."
@@ -35,9 +31,12 @@ class Tool(AbstractTool):
         tau_setup   = ""
         tau_options = config.get(self.longname)
         for option in tau_options:
-            tau_setup += "export %s=%s\n" % (option, tau_options[option])
+            # take all upper case options as TAU environment variables
+            if option.upper() == option:
+                tau_setup += "export %s=%s\n" % (option, tau_options[option])
 
         tau_setup += "export TAU_METRICS=%s\n" % ":".join(self.metrics)
+        tau_setup += "export PROFILEDIR=%s\n" % self.profiledir
         return tau_setup
 
     def wrap_command(self, execmd, exeopt):
