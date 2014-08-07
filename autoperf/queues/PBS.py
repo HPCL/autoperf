@@ -11,6 +11,7 @@ class Queue:
 #PBS -l nodes={pbs_nodes}:ppn={pbs_ppn}
 #PBS -l walltime={pbs_walltime}
 #PBS -l pmem={pbs_pmem}
+#PBS -q {pbs_qname}
 #PBS -j oe
 #
 
@@ -36,10 +37,11 @@ ssh {hostname} kill -SIGUSR1 {pid}
         self.experiment = experiment
         self.done       = False
 
-        self.nodes    = config.get("%s.nodes"    % self.longname)
-        self.ppn      = config.get("%s.ppn"      % self.longname)
-        self.walltime = config.get("%s.walltime" % self.longname)
-        self.pmem     = config.get("%s.pmem"     % self.longname)
+        self.nodes     = config.get("%s.nodes"     % self.longname)
+        self.ppn       = config.get("%s.ppn"       % self.longname)
+        self.walltime  = config.get("%s.walltime"  % self.longname)
+        self.pmem      = config.get("%s.pmem"      % self.longname)
+        self.queuename = config.get("%s.queuename" % self.longname)
 
         self.numprocs = int(self.nodes) * int(self.ppn)
 
@@ -57,6 +59,7 @@ ssh {hostname} kill -SIGUSR1 {pid}
             pbs_ppn      = self.ppn,
             pbs_walltime = self.walltime,
             pbs_pmem     = self.pmem,
+            pbs_qname    = self.queuename,
             exp_setup    = self.platform.setup_str(),
             exp_run      = cmd,
             pid          = os.getpid(),
