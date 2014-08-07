@@ -28,7 +28,11 @@ class Platform:
         cmd = "%s %s" % (execmd, exeopt)
         
         if config.getboolean("%s.mpi" % self.experiment.longname):
-            np = config.get("%s.mpi_np" % self.experiment.longname)
+            try:
+                np = config.get("%s.mpi_np" % self.experiment.longname)
+            except ConfigParser.Error:
+                np = self.queue.numprocs;
+
             # see http://aciss-computing.uoregon.edu/2013/09/05/how-to-mpi/
             cmd = "mpirun --mca btl_tcp_if_include torbr -np %s %s" % (np, cmd)
 

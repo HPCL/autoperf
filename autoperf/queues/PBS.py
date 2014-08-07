@@ -41,6 +41,8 @@ ssh {hostname} kill -SIGUSR1 {pid}
         self.walltime = config.get("%s.walltime" % self.longname)
         self.pmem     = config.get("%s.pmem"     % self.longname)
 
+        self.numprocs = int(self.nodes) * int(self.ppn)
+
         signal.signal(signal.SIGUSR1, self._wakeup)
 
     def _wakeup(self, signum, frame):
