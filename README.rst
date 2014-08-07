@@ -37,9 +37,9 @@ regular binary compiled with **mpicc**. A config file, *autoperf.cfg*,
 is provided, which defines two experiments, one for instrumentation,
 the other for sampling.
 
-Later we may provide some way so the user could designate a config
-file explicitly. But for now, the config file is searched in following
-sequence::
+The config file could be specified though command line option. If not
+specified, it will search for the first valid file in the order
+below::
 
   .autoperf.cfg : autoperf.cfg : ~/.autoperf.cfg
 
@@ -50,7 +50,7 @@ taudb config::
   $ module load tau
   $ perfdmf_configure
 
-Make sure the name of the config you choose is the same as what is
+Make sure the name of the config you choose is the same as what is in
 *autoperf.cfg*. *autoperf.cfg* is self documented and you may want to
 read it through.
 
@@ -62,6 +62,10 @@ collect the data::
   
   Options:
     -h, --help            show this help message and exit
+    -c CFGFILE, --config=CFGFILE
+                          Specify a config file. If not specified or file does not
+                          exist, search for .autoperf.cfg, autoperf.cfg,
+                          ~/.autoperf.cfg in order
     -a, --all             Run each experiment once. Default if no option is
                           given. Has no effect if '-e' is given
     -e EXP[@NUM], --exp=EXP[@NUM]

@@ -1,10 +1,13 @@
 import sys
 import ConfigParser
 
-def parse(config_files):
+done = False
+
+def parse(config_file):
     """
-    Parse the config_files. Option names are case sensitive.
+    Parse the config_file. Option names are case sensitive.
     """
+    global done
     global params
     global cfg_parser
 
@@ -13,8 +16,8 @@ def parse(config_files):
     # option name is case sensitive
     cfg_parser.optionxform = str
 
-    print " *** Parsing config files...",
-    parsed = cfg_parser.read(config_files)
+    print " *** Parsing config files (%s)..." % config_file,
+    parsed = cfg_parser.read(config_file)
     if len(parsed) == 0:
         raise ConfigParser.Error('Can not find config file')
     
@@ -26,6 +29,8 @@ def parse(config_files):
 
     print "done"
     sys.stdout.flush()
+
+    done = True
 
 def _find(section, option):
     """

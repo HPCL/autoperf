@@ -6,6 +6,11 @@ from optparse import OptionParser
 # command line parsing
 
 parser = OptionParser()
+parser.add_option("-c", "--config",
+                  action="store", dest="cfgfile",
+                  help="Specify a config file. If not specified or file "
+                  "does not exist, search for .autoperf.cfg, autoperf.cfg, "
+                  "~/.autoperf.cfg in order")
 parser.add_option("-a", "--all",
                   action="store_true", dest="runall", default=True,
                   help="Run each experiment once. Default if no option is "
@@ -22,6 +27,25 @@ parser.add_option("-e", "--exp",
 
 from autoperf.utils      import config
 from autoperf.experiment import *
+
+cfgfiles = ['.autoperf.cfg',
+            'autoperf.cfg',
+            os.path.expanduser('~/.autoperf.cfg')]
+
+if options.cfgfile is not None:
+    cfgfiles.insert(0, options.cfgfile)
+
+for cfgfile in cfgfiles:
+    try:
+        config.parse(cfgfile)
+    except:
+        print "invalid, trying next option..."
+    else:
+        break
+
+if not config.done:
+    print " *** Can not find any valid config file. Abort"
+    exit(1)
 
 if options.exps is None:
     # run each experiment once
