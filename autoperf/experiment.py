@@ -62,10 +62,11 @@ class Experiment:
         pass
 
     def setup(self):
-        cwd = os.path.expanduser(config.get("%s.rootdir" % self.longname))
-        if not os.path.isdir(cwd):
-            os.makedirs(cwd)
-        os.chdir(cwd)
+        self.cwd = os.getcwd()
+        rootdir = os.path.expanduser(config.get("%s.rootdir" % self.longname))
+        if not os.path.isdir(rootdir):
+            os.makedirs(rootdir)
+        os.chdir(rootdir)
 
         # copy necessary files, if they are specified in config file
         try:
@@ -94,6 +95,9 @@ class Experiment:
         self.platform.setup()
         self.tool.setup()
         self.datastore.setup()
+
+    def cleanup(self):
+        os.chdir(self.cwd)
 
     def run(self):
         execmd = config.get("%s.execmd" % self.longname)
