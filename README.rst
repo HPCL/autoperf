@@ -5,6 +5,7 @@ Autoperf
 Directory Structure
 ===================
 ::
+
   autoperf/      -- the autoperf python package
   bin/           -- directory which holds the driver script
   example/       -- a usage example
@@ -78,4 +79,4 @@ or::
 
 After the driver script returns, you can find collected data under
 *output/*. The data is also loaded into taudb. You can run *paraperf*
-to have a check
+to have a check.
