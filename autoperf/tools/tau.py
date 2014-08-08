@@ -20,7 +20,7 @@ class Tool(AbstractTool):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses
 
-        if not os.path.isdir(self.profiledir):
+        if not self.experiment.dummy and not os.path.isdir(self.profiledir):
             os.makedirs(self.profiledir)
 
         self.metrics = [ ]

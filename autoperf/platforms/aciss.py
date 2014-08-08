@@ -23,7 +23,7 @@ class Platform:
         self.datastore = self.experiment.datastore
         self.queue.setup()
     
-    def run(self, _execmd, _exeopt):
+    def run(self, _execmd, _exeopt, block=False):
         execmd, exeopt = self.tool.wrap_command(_execmd, _exeopt)
         cmd = "%s %s" % (execmd, exeopt)
         
@@ -36,7 +36,10 @@ class Platform:
             # see http://aciss-computing.uoregon.edu/2013/09/05/how-to-mpi/
             cmd = "mpirun --mca btl_tcp_if_include torbr -np %s %s" % (np, cmd)
 
-        self.queue.submit(cmd)
+        self.queue.submit(cmd, block)
+
+    def check(self):
+        return self.queue.check()
         
     def collect_data(self):
         self.tool.collect_data()

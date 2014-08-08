@@ -16,7 +16,7 @@ def parse(config_file):
     # option name is case sensitive
     cfg_parser.optionxform = str
 
-    print " *** Parsing config files (%s)..." % config_file,
+    print "*** Parsing config files (%s)..." % config_file,
     parsed = cfg_parser.read(config_file)
     if len(parsed) == 0:
         raise ConfigParser.Error('Can not find config file')

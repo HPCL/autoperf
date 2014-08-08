@@ -59,12 +59,12 @@ collect the data::
 
   $ ../bin/perf.py -h
   Usage: perf.py [options]
-  
+
   Options:
     -h, --help            show this help message and exit
-    -c CFGFILE, --config=CFGFILE
-                          Specify a config file. If not specified or file does not
-                          exist, search for .autoperf.cfg, autoperf.cfg,
+    -C CFGFILE, --Config=CFGFILE
+                          Specify a config file. If not specified or file does
+                          not exist, search for .autoperf.cfg, autoperf.cfg,
                           ~/.autoperf.cfg in order
     -a, --all             Run each experiment once. Default if no option is
                           given. Has no effect if '-e' is given
@@ -72,15 +72,44 @@ collect the data::
                           Run experiment EXP NUM times. This option can be used
                           several times and experiments will be executed in the
                           order they appear. [default: NUM=1]
+    -b, --block           Instead of exit immediately after submit the
+                          experiment to the batch system, now block until the
+                          job is finished [default: False]
+    -c, --check           When used with '-a' or '-e', show the status (Unknown,
+                          Running or Finished) of those experiments instead of
+                          running them
+    -y, --analyze         When used with '-a' or '-e', analyze those experiments
+                          data instead of running them. The experiment must be
+                          in 'Finished' state
+    -i INSTANCE, --insname=INSTANCE
+                          Use with '-c' or '-y' to specify the instance name of
+                          the experiment. Check or analyze all instances if not
+                          specified
+
 
 Thus, you could try::
 
-  $ ../bin/perf
+  $ ../bin/perf.py
 
 or::
 
-  $ ../bin/perf -e pi_tau_inst -e pi_tau_samp@5
+  $ ../bin/perf.py -e pi_tau_inst -e pi_tau_samp@5
 
-After the driver script returns, you can find collected data under
-*output/*. The data is also loaded into taudb. You can run *paraperf*
-to have a check.
+Note that this will just submit the job to batch system (maybe
+PBS). You can come back later to check whether the job has been
+finished with::
+
+  $ ../bin/perf.py -c
+
+If the job is finished, you can analyze collected data with::
+
+  $ ../bin/perf.py -y
+
+Or, you can do the job submision and data analyze in one step::
+
+  $ ../bin/perf.py -b
+
+In this case, the script will not return until the job is finished and
+the analyze is done. After the driver script returns, you can find
+collected data under *output/*. The data is also loaded into
+taudb. You can run *paraperf* to have a check.

@@ -11,7 +11,7 @@ class Experiment:
     datastore = None
     analyses  = None
 
-    def __init__(self, name, insname=None):
+    def __init__(self, name, insname=None, dummy=False):
         experiments = config.get("Main.Experiments").split()
         if name not in experiments:
             raise Exception("Experiment '%s' not defined" % name)
@@ -20,12 +20,15 @@ class Experiment:
             self.longname = "Experiments.%s" % name
 
         # set the name of this experiment instance
-        if insname is None:
+        if not dummy and insname is None:
             self.insname = datetime.datetime.now().isoformat()
         else:
             self.insname = insname
 
-        print " *** Preparing to run %s %s" % (self.name, self.insname)
+        self.dummy = dummy
+
+        if not dummy:
+            print "*** Preparing to run %s %s" % (self.name, self.insname)
 
         self.platform_name  = config.get("%s.Platform" % self.longname)
         self.tool_name      = config.get("%s.Tool"     % self.longname)
@@ -68,48 +71,52 @@ class Experiment:
             os.makedirs(rootdir)
         os.chdir(rootdir)
 
-        # copy necessary files, if they are specified in config file
-        try:
-            for item in config.get("%s.copy" % self.longname).split():
-                print "Copying %s ..." % item
-                item = os.path.expanduser(item)
-                try:
-                    shutil.copytree(item, os.path.basename(item), True)
-                except OSError as e:
-                    if e.errno == errno.ENOTDIR:
-                        shutil.copy(item, os.path.basename(item))
-                    else:
-                        raise
-        except ConfigParser.Error:
-            pass
+        if not self.dummy:
+            # copy necessary files, if they are specified in config file
+            try:
+                for item in config.get("%s.copy" % self.longname).split():
+                    print "Copying %s ..." % item
+                    item = os.path.expanduser(item)
+                    try:
+                        shutil.copytree(item, os.path.basename(item), True)
+                    except OSError as e:
+                        if e.errno == errno.ENOTDIR:
+                            shutil.copy(item, os.path.basename(item))
+                        else:
+                            raise
+            except ConfigParser.Error:
+                pass
 
-        # link necessary files, if they are specified in config file
-        try:
-            for item in config.get("%s.link" % self.longname).split():
-                print "Linking %s ..." % item
-                item = os.path.expanduser(item)
-                os.symlink(item, os.path.basename(item))
-        except ConfigParser.Error:
-            pass
+            # link necessary files, if they are specified in config file
+            try:
+                for item in config.get("%s.link" % self.longname).split():
+                    print "Linking %s ..." % item
+                    item = os.path.expanduser(item)
+                    os.symlink(item, os.path.basename(item))
+            except ConfigParser.Error:
+                pass
 
         self.platform.setup()
         self.tool.setup()
         self.datastore.setup()
 
-    def cleanup(self):
-        os.chdir(self.cwd)
-
-    def run(self):
+    def run(self, block=False):
         execmd = config.get("%s.execmd" % self.longname)
         exeopt = config.get("%s.exeopt" % self.longname)
 
         execmd = os.path.expanduser(execmd)
 
         # run the experiment
-        self.platform.run(execmd, exeopt)
+        self.platform.run(execmd, exeopt, block)
 
+    def check(self):
+        return self.platform.check()
+
+    def analyze(self):
         # collect generated data and do the post-processing
         self.platform.collect_data()
 
-    def analyze(self):
         self.platform.analyze()
+
+    def cleanup(self):
+        os.chdir(self.cwd)

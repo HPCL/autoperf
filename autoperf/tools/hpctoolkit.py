@@ -47,7 +47,7 @@ class Tool(AbstractTool):
         exebin = os.path.basename(execmd)
         appsrc = config.get("%s.appsrc" % self.longname)
 
-        self.measurement = "hpctoolkit-%s-measurements-%s" % (exebin, self.platform.queue.job_name)
+        self.measurement = "hpctoolkit-%s-measurements-%s" % (exebin, self.platform.queue.job_id)
 
         subprocess.call(["hpcstruct", execmd])
         subprocess.call(["hpcprof",
@@ -57,7 +57,7 @@ class Tool(AbstractTool):
                          "%s/'*'" % appsrc,
                          self.measurement])
 
-        self.database = "hpctoolkit-%s-database-%s" % (exebin, self.platform.queue.job_name)
+        self.database = "hpctoolkit-%s-database-%s" % (exebin, self.platform.queue.job_id)
             
     def analyze(self):
         pass
