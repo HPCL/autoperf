@@ -3,6 +3,8 @@ import datetime
 import shutil, errno
 import ConfigParser
 
+from partitioner import partitioner
+
 from .utils import config
 
 class Experiment:
@@ -11,7 +13,7 @@ class Experiment:
     datastore = None
     analyses  = None
 
-    def __init__(self, name, insname=None, dummy=False):
+    def __init__(self, name, insname=None, mode="run"):
         experiments = config.get("Main.Experiments").split()
         if name not in experiments:
             raise Exception("Experiment '%s' not defined" % name)
@@ -19,16 +21,14 @@ class Experiment:
             self.name     = name
             self.longname = "Experiments.%s" % name
 
-        # set the name of this experiment instance
-        if not dummy and insname is None:
-            self.insname = datetime.datetime.now().isoformat()
+        self.mode = mode
+
+        if mode == "run":
+            self.insname_fmt = datetime.datetime.now().isoformat() + "T%03d"
+            print "*** Preparing to run %s" % self.name
         else:
-            self.insname = insname
-
-        self.dummy = dummy
-
-        if not dummy:
-            print "*** Preparing to run %s %s" % (self.name, self.insname)
+            self.insname     = insname
+            self.insname_fmt = None
 
         self.platform_name  = config.get("%s.Platform" % self.longname)
         self.tool_name      = config.get("%s.Tool"     % self.longname)
@@ -71,7 +71,7 @@ class Experiment:
             os.makedirs(rootdir)
         os.chdir(rootdir)
 
-        if not self.dummy:
+        if self.mode == "run":
             # copy necessary files, if they are specified in config file
             try:
                 for item in config.get("%s.copy" % self.longname).split():
@@ -100,6 +100,27 @@ class Experiment:
         self.tool.setup()
         self.datastore.setup()
 
+        # get all metrics we need to measure
+        self.metrics = [ ]
+        for analysis in self.analyses.values():
+            self.metrics += analysis.metrics
+        self.metrics = list(set(self.metrics))
+
+        # partition the metrics
+        try:
+            dbfile = config.get("Partitioner.%s.dbfile" % self.name)
+        except ConfigParser.Error:
+            dbfile = self.platform_name + ".db"
+
+        try:
+            algo = config.get("Partitioner.%s.algo" % self.name)
+        except ConfigParser.Error:
+            algo = "greedy"
+
+        self.parted_metrics = partitioner(dbfile, self.metrics, algo, False)
+        if len(self.parted_metrics) == 0:
+            raise Exception("Metrics partition failed!")
+
     def run(self, block=False):
         execmd = config.get("%s.execmd" % self.longname)
         exeopt = config.get("%s.exeopt" % self.longname)
@@ -107,16 +128,23 @@ class Experiment:
         execmd = os.path.expanduser(execmd)
 
         # run the experiment
-        self.platform.run(execmd, exeopt, block)
+        for i in range(len(self.parted_metrics)):
+            self.insname = self.insname_fmt % i
+            self.platform.run(execmd, exeopt, block)
 
     def check(self):
         return self.platform.check()
 
     def analyze(self):
         # collect generated data and do the post-processing
-        self.platform.collect_data()
-
-        self.platform.analyze()
+        if self.insname_fmt is None:
+            self.platform.collect_data()
+            self.platform.analyze()
+        else:
+            for i in range(len(self.parted_metrics)):
+                self.insname = self.insname_fmt % i
+                self.platform.collect_data()
+                self.platform.analyze()
 
     def cleanup(self):
         os.chdir(self.cwd)

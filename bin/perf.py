@@ -100,7 +100,7 @@ def run_experiments():
         experiment.cleanup()
 
 def check_an_experiment(name, insname=None):
-    experiment = Experiment(name, insname, dummy=True)
+    experiment = Experiment(name, insname, mode="check")
     experiment.setup()
 
     stats = experiment.check()
@@ -127,7 +127,7 @@ def analyze_an_experiment(name, insname=None):
             print "*** Experiment %s %s is not finished yet, ignore" % (name, insname)
         else:
             print "*** Analyzing %s %s ..." % (name, stat['insname'])
-            experiment = Experiment(name, stat['insname'], dummy=True)
+            experiment = Experiment(name, stat['insname'], mode="analyze")
             experiment.setup()
             experiment.analyze()
             experiment.cleanup()

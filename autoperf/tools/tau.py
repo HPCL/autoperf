@@ -10,8 +10,6 @@ class Tool(AbstractTool):
         self.name       = "tau"
         self.longname   = "Tool.tau.%s" % experiment.name
         self.experiment = experiment
-        self.ppk        = "%s.%s.ppk" % (experiment.name, experiment.insname)
-        self.profiledir = experiment.insname
 
     def build(self):
         print "Building TAU..."
@@ -20,23 +18,18 @@ class Tool(AbstractTool):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses
 
-        if not self.experiment.dummy and not os.path.isdir(self.profiledir):
-            os.makedirs(self.profiledir)
-
-        self.metrics = [ ]
-        for analysis in self.analyses.values():
-            self.metrics += analysis.metrics
-
     def setup_str(self):
-        tau_setup   = ""
+        tau_setup   = "mkdir -p %s\n" % self.experiment.insname
         tau_options = config.get(self.longname)
         for option in tau_options:
             # take all upper case options as TAU environment variables
             if option.upper() == option:
                 tau_setup += "export %s=%s\n" % (option, tau_options[option])
 
-        tau_setup += "export TAU_METRICS=%s\n" % ":".join(self.metrics)
-        tau_setup += "export PROFILEDIR=%s\n" % self.profiledir
+        part = int(self.experiment.insname[27:])
+
+        tau_setup += "export TAU_METRICS=%s\n" % self.experiment.parted_metrics[part]
+        tau_setup += "export PROFILEDIR=%s\n" % self.experiment.insname
         return tau_setup
 
     def wrap_command(self, execmd, exeopt):
@@ -64,7 +57,10 @@ class Tool(AbstractTool):
         raise Exception("TAU: invalid mode: %s. (Available: instrumentation, sampling)" % mode)
 
     def collect_data(self):
-        process = subprocess.Popen(["paraprof", "--pack", self.ppk, self.profiledir],
+        process = subprocess.Popen(["paraprof",
+                                    "--pack",
+                                    "%s.ppk" % self.experiment.insname,
+                                    self.experiment.insname],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()
@@ -75,7 +71,7 @@ class Tool(AbstractTool):
             f = open("%s/perfexplorer/%s.py" % (this_dir, analysis.name), "r")
             script = f.read().format(
                 TAULIB          = config.get("%s.TAULIB" % self.longname),
-                ppk             = self.ppk,
+                ppk             = "%s.ppk" % self.experiment.insname,
                 derived_metrics = repr(analysis.derived_metrics)
                 )
 

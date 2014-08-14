@@ -43,7 +43,7 @@ class Datastore:
                          self.experiment.name,
                          "-n",
                          self.experiment.insname,
-                         self.tool.profiledir])
+                         self.experiment.insname])
 
     def load_hpctoolkit(self):
         subprocess.call(["perfdmf_loadtrial",

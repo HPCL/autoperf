@@ -90,7 +90,7 @@ mv running.{insname} finished.{insname}
 
         self.job_id = out.rstrip()
 
-        print self.job_id + "... done"
+        print self.job_id + " " + self.experiment.insname + " ... done"
 
         script.close()
 
@@ -103,7 +103,10 @@ mv running.{insname} finished.{insname}
                 sys.stdout.write('.')
                 sys.stdout.flush()
 
-            print "done"
+            print " done"
+
+            # reset the flag
+            self.done = False
 
         return self.job_id
 
