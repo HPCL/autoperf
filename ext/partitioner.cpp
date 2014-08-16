@@ -171,6 +171,7 @@ string2chooser(const char *str, mpz_t chooser)
 	}
 
 	if (i == avail_counters.size()) {
+	    report_error("Counter doesn't exist", str, XSTR(__LINE__));
 	    return -1;
 	} else {
 	    str = ptr + 1;
@@ -568,7 +569,10 @@ partitioner(const char *dbfile, const char *events,
 	goto bail;
     }
 
-    string2chooser(events, chooser);
+    rv = string2chooser(events, chooser);
+    if (rv < 0) {
+	goto bail;
+    }
 
     /* partition the events using the given algo */
     for (i=0; i<sizeof(algos)/sizeof(algos[0]); i++) {
