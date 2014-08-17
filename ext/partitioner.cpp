@@ -36,6 +36,71 @@ static vector<PAPI_event_info_t> avail_counters;
 static PyObject *PartError;
 #endif
 
+static inline bool
+is_builtin(char *metric)
+{
+    // those are TAU builtin metrics
+    char *builtins[] = {
+	"TIME",			// UNIX gettimeofday()
+	"LINUXTIMERS",		// Linux and CrayCNL
+	"BGLTIMERS",		// BGL
+	"BGPTIMERS",		// BGP
+    };
+
+    unsigned int i;
+    for(i=0; i<sizeof(builtins)/sizeof(builtins[0]); i++) {
+	if (strcasecmp(metric, builtins[i]) == 0) {
+	    return true;
+	}
+    }
+
+    return false;
+}
+
+static void
+strip_builtins(const char *events,
+	       string &builtins, string &papi)
+{
+    char *_events;
+    char *ptr, *colon;
+    bool done = false;
+
+    _events = strdup(events);
+    ptr     = _events;
+
+    builtins = "";
+    papi     = "";
+
+    while (!done) {
+	colon = strchr(ptr, ':');
+	if (colon == NULL) {
+	    done = true;
+	} else {
+	    *colon = '\0';
+	}
+
+	if (is_builtin(ptr)) {
+	    builtins += ptr;
+	    builtins += ":";
+	} else {
+	    papi += ptr;
+	    papi += ":";
+	}
+
+	ptr = colon + 1;
+    }
+
+    /* remove the tailing colon */
+    if (builtins.length() > 0) {
+	builtins.erase(builtins.length() - 1);
+    }
+    if (papi.length() > 0) {
+	papi.erase(papi.length() - 1);
+    }
+
+    free(_events);
+}
+
 static void
 report_error(const char *msg, const char *extra, const char *lineno)
 {
@@ -141,6 +206,33 @@ chooser2string(char *chooser)
     return str;
 }
 
+// static int
+// string2chooser(vector<char*> &str, mpz_t chooser)
+// {
+//     unsigned int i;
+//     char *name;
+//     vector<char*>::iterator iter;
+
+//     mpz_set_ui(chooser, 0);
+
+//     for (iter=str.begin(); iter!=str.end(); iter++) {
+// 	for (i=0; i<avail_counters.size(); i++) {
+// 	    name = avail_counters[i].symbol;
+// 	    if (strcmp(name, *iter) == 0) {
+// 		mpz_setbit(chooser, i);
+// 		break;
+// 	    }
+// 	}
+
+// 	if (i == avail_counters.size()) {
+// 	    report_error("Counter doesn't exist", *iter, XSTR(__LINE__));
+// 	    return -1;
+// 	}
+//     }
+
+//     return 0;
+// }
+
 static int
 string2chooser(const char *str, mpz_t chooser)
 {
@@ -151,6 +243,14 @@ string2chooser(const char *str, mpz_t chooser)
     bool done = false;
 
     mpz_set_ui(chooser, 0);
+
+    if (str == NULL) {
+	return 0;
+    }
+
+    if (str[0] == '\0') {
+	return 0;
+    }
 
     while (!done) {
 	ptr = strchr(str, ':');
@@ -239,27 +339,33 @@ get_avail_counters(vector<PAPI_event_info_t> &counters)
 static void
 free_parts(vector<char*> *parts)
 {
-    vector<char*>::iterator iter;
-
     if (parts == NULL) {
 	return;
     }
 
-    for (iter=parts->begin(); iter!=parts->end(); iter++) {
-	free(*iter);
-    }
+    for_each(parts->begin(), parts->end(), free);
 
     delete parts;
 }
 
 #ifndef EXT_PYTHON
 static void
-dump_parts(vector<char*> *parts)
+dump_parts(vector<char*> *parts, string builtins="")
 {
     unsigned int i;
 
+    if ((parts->size() == 0) && (builtins.length() > 0)) {
+	printf("%2d: %s\n", 1, builtins.c_str());
+    }
+
     for (i=0; i<parts->size(); i++) {
-	printf("%2d: %s\n", i+1, chooser2string((*parts)[i]).c_str());
+	printf("%2d: %s", i+1, chooser2string((*parts)[i]).c_str());
+
+	if ((i == 0) && (builtins.length() > 0)) {
+	    printf(":%s\n", builtins.c_str());
+	} else {
+	    printf("\n");
+	}
     }
 }
 #endif
@@ -569,12 +675,13 @@ partitioner(const char *dbfile, const char *events,
 	goto bail;
     }
 
+    /* setup PAPI event chooser */
     rv = string2chooser(events, chooser);
     if (rv < 0) {
 	goto bail;
     }
 
-    /* partition the events using the given algo */
+    /* partition PAPI events using the given algo */
     for (i=0; i<sizeof(algos)/sizeof(algos[0]); i++) {
 	if (strcasecmp(algo, algos[i].name) == 0) {
 	    parts = algos[i].partition(chooser);
@@ -632,6 +739,7 @@ main(int argc, char **argv)
     bool fashion = false;
 
     vector<char*> *parts;
+    string builtins, papi;
 
     if ((argc < 3) || (argc > 5)) {
 	printf("Usage: "
@@ -669,10 +777,11 @@ main(int argc, char **argv)
 
     get_avail_counters(avail_counters);
 
-    parts = partitioner(dbfile, events, algo, fashion);
+    strip_builtins(events, builtins, papi);
+    parts = partitioner(dbfile, papi.c_str(), algo, fashion);
 
     if (parts != NULL) {
-	dump_parts(parts);
+	dump_parts(parts, builtins);
 	free_parts(parts);
     }
 
@@ -701,6 +810,8 @@ py_partitioner(PyObject *self, PyObject *args)
 
     int nparts;
     vector<char*> *parts;
+
+    string builtins, papi;
 
     rv = PyArg_ParseTuple(args, "sO|sO",
 			  &dbfile, &_events, &algo, &_fashion);
@@ -756,7 +867,8 @@ py_partitioner(PyObject *self, PyObject *args)
 	return NULL;
     }
 
-    parts = partitioner(dbfile, events.c_str(), algo, fashion);
+    strip_builtins(events.c_str(), builtins, papi);
+    parts = partitioner(dbfile, papi.c_str(), algo, fashion);
     if (parts == NULL) {
 	return NULL;
     }
@@ -765,10 +877,17 @@ py_partitioner(PyObject *self, PyObject *args)
     list  = PyList_New(nparts);
     for (i=0; i<nparts; i++) {
 	string str = chooser2string((*parts)[i]);
+
+	/* always attach builtin metrics to the first group */
+	if ((i == 0) && (builtins.length() > 0)) {
+	    str += ":";
+	    str += builtins;
+	}
+
 	PyList_SetItem(list, i, PyString_FromString(str.c_str()));
     }
 
-    //free_parts(parts);
+    free_parts(parts);
 
     return list;
 }
