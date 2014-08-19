@@ -1,5 +1,5 @@
 import os
-import subprocess, tempfile
+import subprocess
 import ConfigParser
 
 from ..utils import config
@@ -11,12 +11,31 @@ class Tool(AbstractTool):
         self.longname   = "Tool.tau.%s" % experiment.name
         self.experiment = experiment
 
-    def build(self):
-        print "Building TAU..."
-
     def setup(self):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses
+
+    def build_env(self):
+        try:
+            tau_makefile = config.get("%s.TAU_MAKEFILE" % self.longname)
+        except ConfigParser.Error:
+            tau_makefile = 'Makefile.tau-papi-mpi-pdt'
+
+        try:
+            selfile = config.get("%s.selfile" % self.longname)
+        except ConfigParser.Error:
+            tau_options = os.getenv("TAU_OPTIONS", "")
+        else:
+            selfile = os.path.abspath(selfile)
+            tau_options = "%s -optTauSelectFile=%s" % (os.getenv("TAU_OPTIONS", ""), selfile)
+
+        env = {
+            'TAULIB'      : self.experiment.taulib,
+            'TAU_MAKEFILE': '%s/%s' % (self.experiment.taulib, tau_makefile),
+            'TAU_OPTIONS' : tau_options
+            }
+
+        return env
 
     def setup_str(self):
         tau_setup   = "mkdir -p %s\n" % self.experiment.insname
@@ -65,19 +84,3 @@ class Tool(AbstractTool):
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()
 
-    def analyze(self):
-        this_dir, this_file = os.path.split(__file__)
-        for analysis in self.analyses.values():
-            f = open("%s/perfexplorer/%s.py" % (this_dir, analysis.name), "r")
-            script = f.read().format(
-                TAULIB          = config.get("%s.TAULIB" % self.longname),
-                ppk             = "%s.ppk" % self.experiment.insname,
-                derived_metrics = repr(analysis.derived_metrics)
-                )
-
-            analyzer = open("%s.py" % analysis.name, 'w')
-            analyzer.write(script)
-            analyzer.close()
-            os.chmod("%s.py" % analysis.name, 0755)
-            subprocess.call("./%s.py" % analysis.name)
-            

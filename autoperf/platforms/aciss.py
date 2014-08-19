@@ -22,6 +22,13 @@ class Platform:
         self.tool      = self.experiment.tool
         self.datastore = self.experiment.datastore
         self.queue.setup()
+
+    def build_env(self):
+        env = { }
+
+        env = dict(env.items() + self.tool.build_env().items())
+
+        return env
     
     def run(self, _execmd, _exeopt, block=False):
         execmd, exeopt = self.tool.wrap_command(_execmd, _exeopt)
@@ -44,6 +51,3 @@ class Platform:
     def collect_data(self):
         self.tool.collect_data()
         self.datastore.load()
-
-    def analyze(self):
-        self.tool.analyze()

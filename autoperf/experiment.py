@@ -1,6 +1,7 @@
 import os
 import datetime
-import shutil, errno
+import subprocess
+import shutil, shlex, errno
 import ConfigParser
 
 from partitioner import partitioner
@@ -35,6 +36,9 @@ class Experiment:
         self.datastore_name = config.get("%s.Datastore" % self.longname)
         self.analyses_name  = config.get("%s.Analyses" % self.longname).split()
 
+        self.taulib         = config.get("%s.taulib" % self.longname)
+        self.taulib         = os.path.expanduser(self.taulib)
+
         _module = __import__("platforms.%s" % self.platform_name,
                              globals(),
                              fromlist=["Platform"],
@@ -62,14 +66,33 @@ class Experiment:
             self.analyses[analysis] = _module.Analysis(self)
 
     def build(self):
-        pass
+        try:
+            builder = config.get("%s.builder" % self.longname)
+            builder = os.path.expanduser(builder)
+        except ConfigParser.Error:
+            return
+
+        env = {
+            'AP_ROOTDIR': self.rootdir,
+            'AP_PLATFORM': self.platform_name,
+            'AP_TOOL': self.tool_name,
+            }
+
+        env = dict(os.environ.items() + env.items())
+        env = dict(env.items() + self.platform.build_env().items())
+
+        process = subprocess.Popen(shlex.split(builder), env=env)
+
+        returncode = process.wait()
+        if returncode != 0:
+            raise Exception("Builder failed")
 
     def setup(self):
         self.cwd = os.getcwd()
-        rootdir = os.path.expanduser(config.get("%s.rootdir" % self.longname))
-        if not os.path.isdir(rootdir):
-            os.makedirs(rootdir)
-        os.chdir(rootdir)
+        self.rootdir = os.path.expanduser(config.get("%s.rootdir" % self.longname))
+        if not os.path.isdir(self.rootdir):
+            os.makedirs(self.rootdir)
+        os.chdir(self.rootdir)
 
         if self.mode == "run":
             # copy necessary files, if they are specified in config file
@@ -127,6 +150,8 @@ class Experiment:
 
         execmd = os.path.expanduser(execmd)
 
+        self.build()
+
         # run the experiment
         for i in range(len(self.parted_metrics)):
             self.insname = self.insname_fmt % i
@@ -135,16 +160,20 @@ class Experiment:
     def check(self):
         return self.platform.check()
 
+    def _analyze(self):
+        for analysis in self.analyses.values():
+            analysis.run()
+
     def analyze(self):
         # collect generated data and do the post-processing
         if self.insname_fmt is None:
             self.platform.collect_data()
-            self.platform.analyze()
+            self._analyze()
         else:
             for i in range(len(self.parted_metrics)):
                 self.insname = self.insname_fmt % i
                 self.platform.collect_data()
-                self.platform.analyze()
+                self._analyze()
 
     def cleanup(self):
         os.chdir(self.cwd)

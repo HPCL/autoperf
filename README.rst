@@ -29,13 +29,18 @@ An example is included under *example/*. On ACISS::
 
   $ module load tau
   $ cd example
+  $ export TAU_MAKEFILE=...
   $ make
 
-The example is a naive MPI program which calculates Pi. Two binaries
-are built: one with TAU PDT based instrumentation, the other is just a
-regular binary compiled with **mpicc**. A config file, *autoperf.cfg*,
-is provided, which defines two experiments, one for instrumentation,
-the other for sampling.
+The example is a naive MPI program which calculates Pi. Three targes
+are defined in the makefile::
+
+  mpi_pi: regular binary compiled with mpicc
+  mpi_pi_pdt: binary build with TAU PDT based instrumentation
+  mpi_pi_sel: same as mpi_pi_pdt, but with selective instrumentation
+
+A config file, *autoperf.cfg*, is provided, which defines two
+experiments, one for instrumentation, the other for sampling.
 
 The config file could be specified though command line option. If not
 specified, it will search for the first valid file in the order
@@ -105,7 +110,7 @@ If the job is finished, you can analyze collected data with::
 
   $ ../bin/perf.py -y
 
-Or, you can do the job submision and data analyze in one step::
+Or, you can do the job submission and data analyze in one step::
 
   $ ../bin/perf.py -b
 
@@ -113,3 +118,33 @@ In this case, the script will not return until the job is finished and
 the analyze is done. After the driver script returns, you can find
 collected data under *output/*. The data is also loaded into
 taudb. You can run *paraperf* to have a check.
+
+The *autoperf.cfg* comes with this example defines three experiments::
+
+  pi_tau_inst: this will use mpi_pi_pdt for instrumentation based
+  profiling
+  pi_tau_samp: this will use mpi_pi for sampling based profiling, a
+  selective file is also generated
+  pi_tau_sel: this is another instrumentation based profiling. It
+  will use mpi_pi_sel which is built with the selective file generated
+  with pi_tau_samp
+
+In order to run *pi_tau_sel*, you should first run *pi_tau_samp* and
+finish the analysis step, thus the selective file could be
+generated. After that, *pi_tau_sel* will build *mpi_pi_sel* and run
+the experiment::
+
+  $ ../bin/perf -e pi_tau_samp
+  $ ../bin/perf -e pi_tau_samp -c
+  $ ../bin/perf -e pi_tau_samp -y
+
+  (or, above three step in one line:
+  $ ../bin/perf -e pi_tau_samp -b)
+
+  $ ../bin/perf -e pi_tau_sel
+  $ ../bin/perf -e pi_tau_sel -c
+  $ ../bin/perf -e pi_tau_sel -y
+
+  (or, above three step in one line:
+  $ ../bin/perf -e pi_tau_sel -b)
+  

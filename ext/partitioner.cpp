@@ -875,6 +875,12 @@ py_partitioner(PyObject *self, PyObject *args)
 
     nparts = parts->size();
     list  = PyList_New(nparts);
+
+    /* always attach builtin metrics to the first group */
+    if ((nparts == 0) && (builtins.length() > 0)) {
+	PyList_Append(list, PyString_FromString(builtins.c_str()));
+    }
+
     for (i=0; i<nparts; i++) {
 	string str = chooser2string((*parts)[i]);
 

@@ -1,6 +1,8 @@
 import string
 from ..utils import config
 
+from .interface import AbstractAnalysis
+
 class Parser:
     """
     Lexing and parsing an arithmetic expression.
@@ -14,7 +16,7 @@ class Parser:
     def lex(self, expression):
         pass
 
-class Analysis:
+class Analysis(AbstractAnalysis):
 
     def __init__(self, experiment):
         self.name       = "metrics"
@@ -39,3 +41,10 @@ class Analysis:
                             self.metrics.append(m)
         except Exception:
             pass
+
+    def run(self):
+        self.run_script("%s.py" % self.name,
+                        TAULIB          = self.experiment.taulib,
+                        ppk             = "%s.ppk" % self.experiment.insname,
+                        derived_metrics = repr(self.derived_metrics)
+                        )
