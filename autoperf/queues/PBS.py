@@ -2,8 +2,9 @@ import os, sys
 import signal, time, socket, tempfile, subprocess
 
 from ..utils import config
+from .interface import AbstractQueue
 
-class Queue:
+class Queue(AbstractQueue):
 
     pbs_script = """#!/bin/bash
 #
@@ -22,7 +23,7 @@ echo cwd: `pwd`
 echo NP : $NP
 
 # mark the job as running
-echo -n $PBS_JOBID >running.{insname}
+echo -n PBS:$PBS_JOBID >running.{insname}
 
 # setup the environment for the experiment
 {exp_setup}
@@ -109,39 +110,4 @@ mv running.{insname} finished.{insname}
             self.done = False
 
         return self.job_id
-
-    def _check(self, file):
-        if file.startswith("running."):
-            fp = open(file, 'r')
-            job_id = fp.read()
-            fp.close()
-            return {'job_id': job_id,
-                    'insname': file[8:],
-                    'stat': 'Running'}
-
-        if file.startswith("finished."):
-            fp = open(file, 'r')
-            job_id = fp.read()
-            fp.close()
-            return {'job_id': job_id,
-                    'insname': file[9:],
-                    'stat': 'Finished'}
-        return None
-
-    def check(self):
-        stats = [ ]
-        files = [f for f in os.listdir('.') if os.path.isfile(f)]
-
-        for file in files:
-            stat = self._check(file)
-            if stat is not None:
-                stats.append(stat)
-                # print "%s ==? %s" % (stat['insname'], self.experiment.insname)
-                if stat['insname'] == self.experiment.insname:
-                    return [stat]
-
-        if self.experiment.insname is None:
-            return stats
-        else:
-            return [ ]
 

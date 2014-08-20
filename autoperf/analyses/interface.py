@@ -1,7 +1,11 @@
 import os, subprocess
 
 class AbstractAnalysis:
-    metrics = [ ]
+    name       = "Abstract"
+    longname   = "Abstract"
+    experiment = None
+
+    metrics    = [ ]
 
     def __init__(self, experiment):
         raise NotImplementedError

@@ -3,19 +3,6 @@ from ..utils import config
 
 from .interface import AbstractAnalysis
 
-class Parser:
-    """
-    Lexing and parsing an arithmetic expression.
-    """
-
-    tokens = [ ]
-
-    def __init__(self, expression):
-        self.lex(expression)
-
-    def lex(self, expression):
-        pass
-
 class Analysis(AbstractAnalysis):
 
     def __init__(self, experiment):

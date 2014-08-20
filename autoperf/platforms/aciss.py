@@ -1,5 +1,6 @@
 import os, sys
 import signal, time, socket, tempfile, subprocess
+import ConfigParser
 
 from ..utils import config
 
@@ -8,7 +9,7 @@ class Platform:
     def __init__(self, experiment):
         self.done       = False
         self.name       = "aciss"
-        self.longname   = "Platform.%s" % self.name
+        self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
         _queue  = config.get("%s.Queue" % self.longname)
@@ -40,8 +41,14 @@ class Platform:
             except ConfigParser.Error:
                 np = self.queue.numprocs;
 
+            try:
+                hostfile = config.get("%s.mpi_hostfile" % self.experiment.longname)
+                hostfile = "--hostfile %s" % hostfile
+            except ConfigParser.Error:
+                hostfile = ""
+
             # see http://aciss-computing.uoregon.edu/2013/09/05/how-to-mpi/
-            cmd = "mpirun --mca btl_tcp_if_include torbr -np %s %s" % (np, cmd)
+            cmd = "mpirun --mca btl_tcp_if_include torbr -np %s %s %s" % (np, hostfile, cmd)
 
         self.queue.submit(cmd, block)
 
