@@ -69,7 +69,7 @@ class Tool(AbstractTool):
             try:
                 source = config.get("%s.source" % self.longname)
             except ConfigParser.Error:
-                source = TIME
+                source = "TIME"
 
             return ["tau_exec -ebs -ebs_period=%s -ebs_source=%s %s " % (period, source, execmd), exeopt]
 
