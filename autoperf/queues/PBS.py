@@ -29,7 +29,7 @@ echo -n PBS:$PBS_JOBID >running.{insname}
 {exp_setup}
 
 # run the experiment
-{exp_run}
+{exp_run} 2>&1 | tee {insname}.log
 
 # mark the job as finished
 mv running.{insname} finished.{insname}
