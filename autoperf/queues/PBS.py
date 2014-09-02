@@ -1,5 +1,6 @@
 import os, sys
 import signal, time, socket, tempfile, subprocess
+import ConfigParser
 
 from ..utils import config
 from .interface import AbstractQueue
@@ -9,10 +10,10 @@ class Queue(AbstractQueue):
     pbs_script = """#!/bin/bash
 #
 #PBS -N autoperf.{hostname}.{pid}
-#PBS -l nodes={pbs_nodes}:ppn={pbs_ppn}
-#PBS -l walltime={pbs_walltime}
-#PBS -l pmem={pbs_pmem}
-#PBS -q {pbs_qname}
+#{pbs_nodes}
+#{pbs_walltime}
+#{pbs_pmem}
+#{pbs_qname}
 #PBS -j oe
 #
 
@@ -21,6 +22,7 @@ NP=$(wc -l $PBS_NODEFILE | awk '{{print $1}}')
 
 echo cwd: `pwd`
 echo NP : $NP
+echo PBS_NP: $PBS_NP
 
 # mark the job as running
 echo -n PBS:$PBS_JOBID >running.{insname}
@@ -44,13 +46,35 @@ mv running.{insname} finished.{insname}
         self.experiment = experiment
         self.done       = False
 
-        self.nodes     = config.get("%s.nodes"     % self.longname)
-        self.ppn       = config.get("%s.ppn"       % self.longname)
-        self.walltime  = config.get("%s.walltime"  % self.longname)
-        self.pmem      = config.get("%s.pmem"      % self.longname)
-        self.queuename = config.get("%s.queuename" % self.longname)
+        try:
+            nodes = config.get("%s.nodes" % self.longname)
+            try:
+                ppn = config.get("%s.ppn" % self.longname)
+                self.nodes = "PBS -l nodes=%s:ppn=%s" % (nodes, ppn)
+            except ConfigParser.Error:
+                self.nodes = "PBS -l nodes=%s" % nodes
+        except ConfigParser.Error:
+            self.nodes = ""
 
-        self.numprocs = int(self.nodes) * int(self.ppn)
+        try:
+            walltime  = config.get("%s.walltime" % self.longname)
+            self.walltime = "PBS -l walltime=%s" % walltime
+        except ConfigParser.Error:
+            self.walltime = ""
+
+        try:
+            pmem = config.get("%s.pmem" % self.longname)
+            self.pmem = "PBS -l pmem=%s" % pmem
+        except ConfigParser.Error:
+            self.pmem = ""
+
+        try:
+            queuename = config.get("%s.queuename" % self.longname)
+            self.queuename = "PBS -q %s" % queuename
+        except:
+            self.queuename = ""
+
+        self.numprocs = "$PBS_NP"
 
         signal.signal(signal.SIGUSR1, self._wakeup)
 
@@ -63,7 +87,6 @@ mv running.{insname} finished.{insname}
     def submit(self, cmd, block=False):
         content = self.pbs_script.format(
             pbs_nodes    = self.nodes,
-            pbs_ppn      = self.ppn,
             pbs_walltime = self.walltime,
             pbs_pmem     = self.pmem,
             pbs_qname    = self.queuename,
