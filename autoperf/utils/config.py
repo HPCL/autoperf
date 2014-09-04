@@ -67,7 +67,7 @@ def _unpack_spec(spec):
     else:
         return _find(section, option)
 
-def _get_section(section):
+def get_section(section):
     global cfg_parser
 
     if cfg_parser.has_section(section):
@@ -79,13 +79,13 @@ def _get_section(section):
     if super_section is '':
         return items
     else:
-        return _get_section(super_section) + items
+        return get_section(super_section) + items
 
 def get(spec):
     """
     Get an option or a whole section from config file.
 
-    spec: "section"        - return all the options in "section" as a dict
+    spec: "section"        - return all the options in "section" as a list
           "section.option" - return the string value of "option" in "section"
     """
     global params
@@ -94,7 +94,7 @@ def get(spec):
     section, option = _unpack_spec(spec)
 
     if option is None:
-        return dict(_get_section(section))
+        return get_section(section)
     else:
         return cfg_parser.get(section, option)
 

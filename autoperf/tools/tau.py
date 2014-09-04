@@ -39,11 +39,11 @@ class Tool(AbstractTool):
 
     def setup_str(self):
         tau_setup   = "mkdir -p %s\n" % self.experiment.insname
-        tau_options = config.get(self.longname)
-        for option in tau_options:
+        tau_options = config.get_section(self.longname)
+        for name, value in tau_options:
             # take all upper case options as TAU environment variables
-            if option.upper() == option:
-                tau_setup += "export %s=%s\n" % (option, tau_options[option])
+            if name.upper() == name:
+                tau_setup += "export %s=%s\n" % (name, value)
 
         part = int(self.experiment.insname[27:])
 
