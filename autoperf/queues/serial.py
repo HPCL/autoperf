@@ -7,7 +7,7 @@ from .interface import AbstractQueue
 class Queue(AbstractQueue):
     serial_script = """#!/bin/sh
 # mark the job as running
-echo -n serial >running.{insname}
+echo -n {exp_name}:serial >running.{insname}
 
 # setup the environment for the experiment
 {exp_setup}
@@ -29,6 +29,7 @@ mv running.{insname} finished.{insname}
     def submit(self, cmd, block=False):
         content = self.serial_script.format(
             insname   = self.experiment.insname,
+            exp_name  = self.experiment.name,
             exp_setup = self.platform.setup_str(),
             exp_run   = cmd,
             )

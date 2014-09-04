@@ -19,17 +19,23 @@ class AbstractQueue:
             fp = open(file, 'r')
             job_id = fp.read()
             fp.close()
-            return {'job_id': job_id,
-                    'insname': file[8:],
-                    'stat': 'Running'}
+
+            exp, colon, job = job_id.partition(':')
+            if exp == self.experiment.name:
+                return {'job_id': job,
+                        'insname': file[8:],
+                        'stat': 'Running'}
 
         if file.startswith("finished."):
             fp = open(file, 'r')
             job_id = fp.read()
             fp.close()
-            return {'job_id': job_id,
-                    'insname': file[9:],
-                    'stat': 'Finished'}
+
+            exp, colon, job = job_id.partition(':')
+            if exp == self.experiment.name:
+                return {'job_id': job,
+                        'insname': file[9:],
+                        'stat': 'Finished'}
         return None
 
     def check(self, path='.'):

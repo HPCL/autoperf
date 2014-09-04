@@ -25,7 +25,7 @@ echo NP : $NP
 echo PBS_NP: $PBS_NP
 
 # mark the job as running
-echo -n PBS:$PBS_JOBID >running.{insname}
+echo -n {exp_name}:PBS:$PBS_JOBID >running.{insname}
 
 # setup the environment for the experiment
 {exp_setup}
@@ -88,6 +88,7 @@ mv running.{insname} finished.{insname}
             pbs_walltime = self.walltime,
             pbs_pmem     = self.pmem,
             pbs_qname    = self.queuename,
+            exp_name     = self.experiment.name,
             exp_setup    = self.platform.setup_str(),
             exp_run      = cmd,
             pid          = os.getpid(),
