@@ -34,11 +34,12 @@ mv running.{insname} finished.{insname}
             exp_run   = cmd,
             )
 
-        script = open("serial_job.sh", "w+")
+        script_name = "%s.serial_job.sh" % self.experiment.insname
+        script = open(script_name, "w+")
         script.write(content)
         script.close()
-        os.chmod("serial_job.sh", 0755)
+        os.chmod(script_name, 0755)
 
         print "*** Submitting serial task ..."
 
-        subprocess.call("./serial_job.sh")
+        subprocess.call("./%s" % script_name)

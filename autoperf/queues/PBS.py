@@ -97,7 +97,7 @@ mv running.{insname} finished.{insname}
             notify       = "" if block else "# "
             )
 
-        script = open("pbs_job.sh", "w+")
+        script = open("%s.pbs_job.sh" % self.experiment.insname, "w+")
         script.write(content)
         script.flush()
         script.seek(0)
