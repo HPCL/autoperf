@@ -42,7 +42,7 @@ mv running.{insname} finished.{insname}
 
     def __init__(self, experiment):
         self.name       = "PBS"
-        self.longname   = "PBS.%s.%s" % (experiment.platform_name, experiment.name)
+        self.longname   = "Queue.%s.%s.%s" % (self.name, experiment.platform_name, experiment.name)
         self.experiment = experiment
         self.done       = False
 
