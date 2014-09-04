@@ -11,9 +11,11 @@ class Analysis(AbstractAnalysis):
         self.experiment = experiment
 
         try:
-            self.metrics = config.get("%s.metrics" % self.longname).split()
+            self.longmetrics = config.get("%s.metrics" % self.longname).split()
         except Exception:
-            self.metrics = [ ]
+            self.longmetrics = [ ]
+
+        self.metrics = [m.partition('@')[0] for m in self.longmetrics]
 
         self.derived_metrics = dict()
         try:
