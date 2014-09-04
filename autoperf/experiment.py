@@ -31,9 +31,21 @@ class Experiment:
             self.insname     = insname
             self.insname_fmt = None
 
-        self.platform_name  = config.get("%s.Platform" % self.longname)
-        self.tool_name      = config.get("%s.Tool"     % self.longname)
-        self.datastore_name = config.get("%s.Datastore" % self.longname)
+        try:
+            self.platform_name  = config.get("%s.Platform" % self.longname)
+        except ConfigParser.Error:
+            self.platform_name  = "generic"
+
+        try:
+            self.tool_name      = config.get("%s.Tool"     % self.longname)
+        except ConfigParser.Error:
+            self.platform_name  = "tau"
+
+        try:
+            self.datastore_name = config.get("%s.Datastore" % self.longname)
+        except ConfigParser.Error:
+            self.datastore_name = "taudb"
+
         self.analyses_name  = config.get("%s.Analyses" % self.longname).split()
 
         self.taulib         = config.get("%s.taulib" % self.longname)
@@ -146,7 +158,11 @@ class Experiment:
 
     def run(self, block=False):
         execmd = config.get("%s.execmd" % self.longname)
-        exeopt = config.get("%s.exeopt" % self.longname)
+
+        try:
+            exeopt = config.get("%s.exeopt" % self.longname)
+        except ConfigParser.Error:
+            exeopt = ""
 
         execmd = os.path.expanduser(execmd)
 

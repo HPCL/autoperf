@@ -74,8 +74,6 @@ mv running.{insname} finished.{insname}
         except:
             self.queuename = ""
 
-        self.numprocs = "$PBS_NP"
-
         signal.signal(signal.SIGUSR1, self._wakeup)
 
     def _wakeup(self, signum, frame):
