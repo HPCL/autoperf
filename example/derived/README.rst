@@ -21,7 +21,7 @@ Attach the experiment name to "Experiment" with a single dot ".", we
 get two derived sections, each one includes experiment specific
 options. Notice that both sections defined "Tool" option, but for "pi"
 experiment, the tool is "hpctoolkit", while for "pi_inst" experiment,
-the tool is "tau". The "builder" for them are also different.
+the tool is "tau". The "builder" for them are also different.::
 
   [Experiments.pi]
   Tool      = hpctoolkit
@@ -48,7 +48,7 @@ bit like "supper class" and "sub class".
 --------------------------------
 Those two sections are derived from [Tool] using "hpctoolkit" and
 "tau". They are used to specify the options for "hpctoolkit" and "tau"
-respectively.
+respectively.::
 
   [Tool.hpctoolkit]
   appsrc    = ../
