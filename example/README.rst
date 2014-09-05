@@ -109,7 +109,9 @@ Options
     meaning: a path name, used as cwd of *autoperf*, base directory of
     all relative path used in config file
 
-    mandatory: yes
+    mandatory: no
+
+    default: current working directory
 
   taulib
 
@@ -154,7 +156,7 @@ Options
     value: a list of string
 
     meaning: a list of files/directories that will be copied to
-     *rootdir* before the experiment get running
+    *rootdir* before the experiment get running
 
     mandatory: no
 

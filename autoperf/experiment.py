@@ -101,9 +101,15 @@ class Experiment:
 
     def setup(self):
         self.cwd = os.getcwd()
-        self.rootdir = os.path.expanduser(config.get("%s.rootdir" % self.longname))
+
+        try:
+            self.rootdir = os.path.expanduser(config.get("%s.rootdir" % self.longname))
+        except ConfigParser.Error:
+            self.rootdir = self.cwd
+
         if not os.path.isdir(self.rootdir):
             os.makedirs(self.rootdir)
+
         os.chdir(self.rootdir)
 
         if self.mode == "run":
