@@ -34,7 +34,9 @@ class Tool(AbstractTool):
         self.measurement = "%s-measurement" % self.experiment.insname
         _execmd = "hpcrun -o %s" % self.measurement
 
-        for metric in self.metrics:
+        part = int(self.experiment.insname[27:])
+
+        for metric in self.experiment.parted_metrics[part].split(':'):
             _execmd += " -e %s" % metric
 
         _execmd += " %s" % execmd
