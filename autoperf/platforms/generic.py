@@ -56,9 +56,7 @@ class Platform(AbstractPlatform):
             except ConfigParser.Error:
                 hostfile = ""
 
-            self.mpi_opts = "%s %s %s" % (np, hostfile, self.mpi_opts)
-
-            cmd = "mpirun %s %s" % (self.mpi_opts, cmd)
+            cmd = "mpirun %s %s %s %s" % (np, hostfile, self.mpi_opts, cmd)
 
         self.queue.submit(cmd, block)
 
