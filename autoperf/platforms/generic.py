@@ -38,12 +38,7 @@ class Platform(AbstractPlatform):
         execmd, exeopt = self.tool.wrap_command(_execmd, _exeopt)
         cmd = "%s %s" % (execmd, exeopt)
 
-        try:
-            is_mpi = config.getboolean("%s.mpi" % self.experiment.longname)
-        except ConfigParser.Error:
-            is_mpi = False
-
-        if is_mpi:
+        if self.experiment.is_mpi:
             try:
                 np = config.get("%s.mpi_np" % self.experiment.longname)
                 np = "-np %s" % np

@@ -51,6 +51,11 @@ class Experiment:
         self.taulib         = config.get("%s.taulib" % self.longname)
         self.taulib         = os.path.expanduser(self.taulib)
 
+        try:
+            self.is_mpi = config.getboolean("%s.mpi" % self.longname)
+        except ConfigParser.Error:
+            self.is_mpi = False
+
         _module = __import__("platforms.%s" % self.platform_name,
                              globals(),
                              fromlist=["Platform"],

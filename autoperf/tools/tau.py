@@ -71,7 +71,12 @@ class Tool(AbstractTool):
             except ConfigParser.Error:
                 source = "TIME"
 
-            return ["tau_exec -ebs -ebs_period=%s -ebs_source=%s %s " % (period, source, execmd), exeopt]
+            if self.experiment.is_mpi:
+                mpi = "-T MPI"
+            else:
+                mpi = "-T SERIAL"
+
+            return ["tau_exec %s -ebs -ebs_period=%s -ebs_source=%s %s " % (mpi, period, source, execmd), exeopt]
 
         raise Exception("TAU: invalid mode: %s. (Available: instrumentation, sampling)" % mode)
 
