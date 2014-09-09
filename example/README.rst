@@ -113,11 +113,12 @@ Options
 
     default: current working directory
 
-  taulib
+  tauroot
 
     value: a string
 
-    meaning: a path to find TAU libraries
+    meaning: <tauroot>/lib and <tauroot>/bin will be searched for TAU
+    librires and binaries
 
     mandatory: yes
 

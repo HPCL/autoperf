@@ -31,10 +31,12 @@ the path you set here.::
 
   rootdir = output
 
-2. You need to tell *autoperf* where to find TAU libraries. They are
-needed to run the analysis. Use [Experiments].taulib for this.::
+2. You need to tell *autoperf* where to find TAU libraries and
+binaries. They are needed to run the analysis. Use
+[Experiments].tauroot for this. <tauroot>/lib and <tauroot>/bin will
+be searched.::
 
-  taulib = /usr/local/packages/tau-2.23.2b1/x86_64/lib
+  tauroot = ~bnorris2/soft/tau2/x86_64/
 
 3. You need to choose a tool that *autoperf* will used to collect
 performance data. Right now, "tau" and "hpctoolkit" are

@@ -30,8 +30,8 @@ class Tool(AbstractTool):
             tau_options = "%s -optTauSelectFile=%s" % (os.getenv("TAU_OPTIONS", ""), selfile)
 
         env = {
-            'TAULIB'      : self.experiment.taulib,
-            'TAU_MAKEFILE': '%s/%s' % (self.experiment.taulib, tau_makefile),
+            'TAULIB'      : "%s/lib"    %  self.experiment.tauroot,
+            'TAU_MAKEFILE': '%s/lib/%s' % (self.experiment.tauroot, tau_makefile),
             'TAU_OPTIONS' : tau_options
             }
 

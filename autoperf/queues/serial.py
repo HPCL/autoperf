@@ -6,6 +6,8 @@ from .interface import AbstractQueue
 
 class Queue(AbstractQueue):
     serial_script = """#!/bin/sh
+export PATH={tau_root}/bin:$PATH
+
 # mark the job as running
 echo -n {exp_name}:serial >running.{insname}
 
@@ -28,6 +30,7 @@ mv running.{insname} finished.{insname}
 
     def submit(self, cmd, block=False):
         content = self.serial_script.format(
+            tau_root  = self.experiment.tauroot,
             insname   = self.experiment.insname,
             exp_name  = self.experiment.name,
             exp_setup = self.platform.setup_str(),

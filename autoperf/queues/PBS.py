@@ -17,6 +17,8 @@ class Queue(AbstractQueue):
 #PBS -j oe
 #
 
+export PATH={tau_root}/bin:$PATH
+
 cd $PBS_O_WORKDIR
 NP=$(wc -l $PBS_NODEFILE | awk '{{print $1}}')
 
@@ -84,6 +86,7 @@ mv running.{insname} finished.{insname}
         
     def submit(self, cmd, block=False):
         content = self.pbs_script.format(
+            tau_root     = self.experiment.tauroot,
             pbs_nodes    = self.nodes,
             pbs_walltime = self.walltime,
             pbs_pmem     = self.pmem,
