@@ -341,7 +341,7 @@ Options for Tool.tau
     value: a string
 
     meaning: use when *Experiments.builder* is specified; a relative path to
-    *Experiments.taulib*
+    *<Experiments.tauroot>*/lib
 
     mandatory: no
 

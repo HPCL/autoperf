@@ -48,8 +48,8 @@ class Experiment:
 
         self.analyses_name  = config.get("%s.Analyses" % self.longname).split()
 
-        self.taulib         = config.get("%s.taulib" % self.longname)
-        self.taulib         = os.path.expanduser(self.taulib)
+        self.tauroot         = config.get("%s.tauroot" % self.longname)
+        self.tauroot         = os.path.expanduser(self.tauroot)
 
         try:
             self.is_mpi = config.getboolean("%s.mpi" % self.longname)
