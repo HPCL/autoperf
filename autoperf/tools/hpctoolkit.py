@@ -11,11 +11,6 @@ class Tool(AbstractTool):
         self.longname    = "Tool.hpctoolkit.%s" % experiment.name
         self.experiment  = experiment
 
-        try:
-            self.profiledir = config.get("%s.PROFILEDIR" % self.longname)
-        except ConfigParser.Error:
-            self.profiledir = 'profiles'
-
     def setup(self):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses

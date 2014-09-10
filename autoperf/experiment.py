@@ -31,30 +31,14 @@ class Experiment:
             self.insname     = insname
             self.insname_fmt = None
 
-        try:
-            self.platform_name  = config.get("%s.Platform" % self.longname)
-        except ConfigParser.Error:
-            self.platform_name  = "generic"
+        self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
+        self.tool_name      = config.get("%s.Tool"       % self.longname, "tau")
+        self.datastore_name = config.get("%s.Datastore"  % self.longname, "taudb")
 
-        try:
-            self.tool_name      = config.get("%s.Tool"     % self.longname)
-        except ConfigParser.Error:
-            self.platform_name  = "tau"
-
-        try:
-            self.datastore_name = config.get("%s.Datastore" % self.longname)
-        except ConfigParser.Error:
-            self.datastore_name = "taudb"
-
-        self.analyses_name  = config.get("%s.Analyses" % self.longname).split()
-
-        self.tauroot         = config.get("%s.tauroot" % self.longname)
-        self.tauroot         = os.path.expanduser(self.tauroot)
-
-        try:
-            self.is_mpi = config.getboolean("%s.mpi" % self.longname)
-        except ConfigParser.Error:
-            self.is_mpi = False
+        self.analyses_name  = config.get("%s.Analyses"   % self.longname).split()
+        self.is_mpi         = config.getboolean("%s.mpi" % self.longname, False)
+        self.tauroot        = config.get("%s.tauroot"    % self.longname)
+        self.tauroot        = os.path.expanduser(self.tauroot)
 
         _module = __import__("platforms.%s" % self.platform_name,
                              globals(),
@@ -105,12 +89,9 @@ class Experiment:
             raise Exception("Builder failed")
 
     def setup(self):
-        self.cwd = os.getcwd()
-
-        try:
-            self.rootdir = os.path.expanduser(config.get("%s.rootdir" % self.longname))
-        except ConfigParser.Error:
-            self.rootdir = self.cwd
+        self.cwd     = os.getcwd()
+        self.rootdir = config.get("%s.rootdir" % self.longname, self.cwd)
+        self.rootdir = os.path.expanduser(self.rootdir)
 
         if not os.path.isdir(self.rootdir):
             os.makedirs(self.rootdir)
@@ -153,15 +134,8 @@ class Experiment:
         self.metrics = list(set(self.metrics))
 
         # partition the metrics
-        try:
-            dbfile = config.get("Partitioner.%s.dbfile" % self.name)
-        except ConfigParser.Error:
-            dbfile = self.platform_name + ".db"
-
-        try:
-            algo = config.get("Partitioner.%s.algo" % self.name)
-        except ConfigParser.Error:
-            algo = "greedy"
+        dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
+        algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
 
         self.parted_metrics = partitioner(dbfile, self.metrics, algo, False)
         if len(self.parted_metrics) == 0:
@@ -169,13 +143,8 @@ class Experiment:
 
     def run(self, block=False):
         execmd = config.get("%s.execmd" % self.longname)
-
-        try:
-            exeopt = config.get("%s.exeopt" % self.longname)
-        except ConfigParser.Error:
-            exeopt = ""
-
         execmd = os.path.expanduser(execmd)
+        exeopt = config.get("%s.exeopt" % self.longname, "")
 
         self.build()
 

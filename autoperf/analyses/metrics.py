@@ -10,12 +10,8 @@ class Analysis(AbstractAnalysis):
         self.longname   = "Analyses.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
-        try:
-            self.longmetrics = config.get("%s.metrics" % self.longname).split()
-        except Exception:
-            self.longmetrics = [ ]
-
-        self.metrics = [m.partition('@')[0] for m in self.longmetrics]
+        self.longmetrics = config.get("%s.metrics" % self.longname, "").split()
+        self.metrics     = [m.partition('@')[0] for m in self.longmetrics]
 
         self.derived_metrics = dict()
         try:

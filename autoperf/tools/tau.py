@@ -16,10 +16,8 @@ class Tool(AbstractTool):
         self.analyses = self.experiment.analyses
 
     def build_env(self):
-        try:
-            tau_makefile = config.get("%s.TAU_MAKEFILE" % self.longname)
-        except ConfigParser.Error:
-            tau_makefile = 'Makefile.tau-papi-mpi-pdt'
+        tau_makefile = config.get("%s.TAU_MAKEFILE" % self.longname,
+                                  "%s/lib/Makefile.tau-papi-mpi-pdt" % self.experiment.tauroot)
 
         try:
             selfile = config.get("%s.selfile" % self.longname)
@@ -30,8 +28,8 @@ class Tool(AbstractTool):
             tau_options = "%s -optTauSelectFile=%s" % (os.getenv("TAU_OPTIONS", ""), selfile)
 
         env = {
-            'TAULIB'      : "%s/lib"    %  self.experiment.tauroot,
-            'TAU_MAKEFILE': '%s/lib/%s' % (self.experiment.tauroot, tau_makefile),
+            'TAU_ROOT'    : self.experiment.tauroot,
+            'TAU_MAKEFILE': tau_makefile,
             'TAU_OPTIONS' : tau_options
             }
 
@@ -52,24 +50,14 @@ class Tool(AbstractTool):
         return tau_setup
 
     def wrap_command(self, execmd, exeopt):
-        try:
-            mode = config.get("%s.mode" % self.longname)
-        except ConfigParser.Error:
-            mode = "sampling"
+        mode = config.get("%s.mode" % self.longname, "sampling")
 
         if mode == "instrumentation":
             return [execmd, exeopt]
 
         if mode == "sampling":
-            try:
-                period = config.get("%s.period" % self.longname)
-            except ConfigParser.Error:
-                period = 10000
-
-            try:
-                source = config.get("%s.source" % self.longname)
-            except ConfigParser.Error:
-                source = "TIME"
+            period = config.get("%s.period" % self.longname, 10000)
+            source = config.get("%s.source" % self.longname, "TIME")
 
             if self.experiment.is_mpi:
                 mpi = "-T MPI"

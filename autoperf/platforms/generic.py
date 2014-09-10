@@ -11,11 +11,7 @@ class Platform(AbstractPlatform):
         self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
-        try:
-            _queue = config.get("%s.Queue" % self.longname)
-        except ConfigParser.Error:
-            _queue = "serial"
-
+        _queue  = config.get("%s.Queue" % self.longname, "serial")
         _module = __import__("queues.%s" % _queue, globals(), fromlist=["Queue"], level=2)
         self.queue = _module.Queue(self.experiment)
 
