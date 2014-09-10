@@ -118,8 +118,13 @@ class Experiment:
             try:
                 for item in config.get("%s.link" % self.longname).split():
                     print "Linking %s ..." % item
-                    item = os.path.expanduser(item)
-                    os.symlink(item, os.path.basename(item))
+                    item      = os.path.expanduser(item)
+                    link_name = os.path.basename(item)
+                    if os.path.islink(link_name)  and os.readlink(link_name) == item:
+                        # do nothing if the link is already there
+                        pass
+                    else:
+                        os.symlink(item, link_name)
             except ConfigParser.Error:
                 pass
 
