@@ -9,19 +9,34 @@ Directory Structure
   autoperf/      -- the autoperf python package
   bin/           -- directory which holds the driver script
   example/       -- an usage example
+  ext/           -- c/c++ extension for python
   README.rst     -- this file
 
 
 Install
 ===================
-Under this directory, run::
 
-  $ python setup.py develop --user
+You can insall this package following distutils convention. For
+example, in order to install in your home directory::
 
-This will install autoperf in developer mode under your home
-directory, which essentially setup some symbol link points to this
-directory, so you can modify python code under this directory directly
-and don't need to reinstall them, or worry about the PYTHONPATH.
+  $ python setup.py install --user
+
+Or, install to a specific directory::
+
+  $ python setup.py install --preifx=<some_directory>
+
+Read this if you want to know more about distutils:
+
+  https://docs.python.org/2/install/index.html
+
+If you don't want to reinstall the package after each "git pull", you
+can simply do this::
+
+  $ python setup build_ext -i
+
+Now you can use autoperf in-place without installation. However, if
+ext/ is updated in "git pull", you must rebuild it using the command
+above.
 
 Usage
 ===================
@@ -62,8 +77,8 @@ read it through.
 Now you can run the driver script to execute the experiments and
 collect the data::
 
-  $ ../bin/perf.py -h
-  Usage: perf.py [options]
+  $ ../bin/autoperf -h
+  Usage: autoperf [options]
 
   Options:
     -h, --help            show this help message and exit
@@ -94,25 +109,25 @@ collect the data::
 
 Thus, you could try::
 
-  $ ../bin/perf.py
+  $ ../bin/autoperf
 
 or::
 
-  $ ../bin/perf.py -e pi_tau_inst -e pi_tau_samp@5
+  $ ../bin/autoperf -e pi_tau_inst -e pi_tau_samp@5
 
 Note that this will just submit the job to batch system (maybe
 PBS). You can come back later to check whether the job has been
 finished with::
 
-  $ ../bin/perf.py -c
+  $ ../bin/autoperf -c
 
 If the job is finished, you can analyze collected data with::
 
-  $ ../bin/perf.py -y
+  $ ../bin/autoperf -y
 
 Or, you can do the job submission and data analyze in one step::
 
-  $ ../bin/perf.py -b
+  $ ../bin/autoperf -b
 
 In this case, the script will not return until the job is finished and
 the analyze is done. After the driver script returns, you can find

@@ -1,11 +1,22 @@
 import os
-from setuptools import setup, find_packages, Extension
+from distutils.core import setup, Extension
 
 PAPI    = os.getenv('PAPI', '/usr/local/packages/papi/5.0.1')
 GMP     = os.getenv('GMP', '/usr/local/packages/gmp/5.0.5')
 SQLITE3 = os.getenv('SQLITE3', os.environ['HOME']+'/prefix/sqlite-3.8.5')
 
-partitioner = Extension(name                 = 'partitioner',
+# get the name of all python packages
+py_packages = []
+cur_dir = os.getcwd()
+src_dir = os.path.join(cur_dir, 'autoperf')
+for root, dirs, files in os.walk(src_dir, topdown=True):
+    if '__init__.py' in files:
+        rel_dir = root[len(cur_dir)+1:]
+        dir_names = rel_dir.split(os.sep)
+        py_packages.append('.'.join(dir_names))
+
+# partitioner is a python extension written in c++
+partitioner = Extension(name                 = 'autoperf.partitioner',
                         sources              = ['ext/partitioner.cpp'],
                         language             = 'c++',
                         include_dirs         = [PAPI    + '/include',
@@ -26,8 +37,9 @@ setup(
     version          = "0.1.0",
     author           = "Ender Dai",
     author_email     = "xdai@uoregon.edu",
-    packages         = find_packages(),
-    scripts          = ["bin/perf.py"],
+    packages         = py_packages,
+    package_data     = {"autoperf.analyses": ["scripts/*.sh", "scripts/*.py"]},
+    scripts          = ["bin/autoperf"],
     ext_modules      = [partitioner],
     license          = "BSD",
     description      = "Automation for experiment, perf and analysis",

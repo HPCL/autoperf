@@ -4,6 +4,9 @@
 # backup files
 *~
 
+# libraries
+*.so
+
 # Setuptools distribution folder.
 /dist/
 /build/

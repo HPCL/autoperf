@@ -81,6 +81,6 @@ At last, what metrics do we want to collect? Use
   [Analyses.metrics]
   metrics = PAPI_TOT_INS PAPI_TOT_CYC
 
-That's it. We are done. Now you can use perf.py to run the helloworld
+That's it. We are done. Now you can use autoperf to run the helloworld
 experiment.
 
