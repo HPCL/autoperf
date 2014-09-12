@@ -122,6 +122,16 @@ Options
 
     mandatory: yes
 
+  cupti
+
+    value: "yes" or "no"
+
+    meaning: use CUPTI or not
+
+    mandatory: no
+
+    default: "no"
+
   mpi
 
     value: "yes" or "no"
