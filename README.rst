@@ -16,20 +16,20 @@ Directory Structure
 Install
 ===================
 
-You can insall this package following distutils convention. For
+You can install this package following distutils convention. For
 example, in order to install in your home directory::
 
   $ python setup.py install --user
 
 Or, install to a specific directory::
 
-  $ python setup.py install --preifx=<some_directory>
+  $ python setup.py install --prefix=<some_directory>
 
 Read this if you want to know more about distutils:
 
   https://docs.python.org/2/install/index.html
 
-If you don't want to reinstall the package after each "git pull", you
+If you don't want to re-install the package after each "git pull", you
 can simply do this::
 
   $ python setup build_ext -i
@@ -47,7 +47,7 @@ An example is included under *example/*. On ACISS::
   $ export TAU_MAKEFILE=...
   $ make
 
-The example is a naive MPI program which calculates Pi. Three targes
+The example is a naive MPI program which calculates Pi. Three targets
 are defined in the makefile::
 
   mpi_pi: regular binary compiled with mpicc
@@ -149,17 +149,19 @@ finish the analysis step, thus the selective file could be
 generated. After that, *pi_tau_sel* will build *mpi_pi_sel* and run
 the experiment::
 
-  $ ../bin/perf -e pi_tau_samp
-  $ ../bin/perf -e pi_tau_samp -c
-  $ ../bin/perf -e pi_tau_samp -y
+  $ ../bin/autoperf -e pi_tau_samp
+  $ ../bin/autoperf -e pi_tau_samp -c
+  $ ../bin/autoperf -e pi_tau_samp -y
 
   (or, above three step in one line:
-  $ ../bin/perf -e pi_tau_samp -b)
+  $ ../bin/autoperf -e pi_tau_samp -b)
 
-  $ ../bin/perf -e pi_tau_sel
-  $ ../bin/perf -e pi_tau_sel -c
-  $ ../bin/perf -e pi_tau_sel -y
+  $ ../bin/autoperf -e pi_tau_sel
+  $ ../bin/autoperf -e pi_tau_sel -c
+  $ ../bin/autoperf -e pi_tau_sel -y
 
   (or, above three step in one line:
-  $ ../bin/perf -e pi_tau_sel -b)
+  $ ../bin/autoperf -e pi_tau_sel -b)
   
+Several other examples are put in the sub-directories. Check the
+README.rst files there for more details.
