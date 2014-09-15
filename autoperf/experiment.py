@@ -146,7 +146,7 @@ class Experiment:
 
         for metric in self.metrics:
             if metric.startswith("PAPI_"):
-                papi_petrics.append(metric)
+                papi_metrics.append(metric)
             else:
                 non_papi_metrics.append(metric)
 
