@@ -16,90 +16,20 @@
 #include <gmp.h>
 #include <sqlite3.h>
 
+#ifdef WITH_CUPTI
+#include <cupti.h>
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif // WITH_CUPTI
+
 using namespace std;
 
 #define  XSTR(s) _XSTR(s)
 #define _XSTR(s) #s
 
-#define GREEDY_RETRY 100
-#define MAX_LEN_62   128	// max length of 62 based number we
-				// are going to use
-
-extern int _papi_hwi_errno;
-
-#define PAPI_STRERROR() (PAPI_strerror(_papi_hwi_errno))
-
-static sqlite3 *db;
-static vector<PAPI_event_info_t> avail_counters;
-
 #ifdef EXT_PYTHON
 static PyObject *PartError;
 #endif
-
-static inline bool
-is_builtin(char *metric)
-{
-    // those are TAU builtin metrics
-    char *builtins[] = {
-	"TIME",			// UNIX gettimeofday()
-	"LINUXTIMERS",		// Linux and CrayCNL
-	"BGLTIMERS",		// BGL
-	"BGPTIMERS",		// BGP
-    };
-
-    unsigned int i;
-    for(i=0; i<sizeof(builtins)/sizeof(builtins[0]); i++) {
-	if (strcasecmp(metric, builtins[i]) == 0) {
-	    return true;
-	}
-    }
-
-    return false;
-}
-
-static void
-strip_builtins(const char *events,
-	       string &builtins, string &papi)
-{
-    char *_events;
-    char *ptr, *colon;
-    bool done = false;
-
-    _events = strdup(events);
-    ptr     = _events;
-
-    builtins = "";
-    papi     = "";
-
-    while (!done) {
-	colon = strchr(ptr, ':');
-	if (colon == NULL) {
-	    done = true;
-	} else {
-	    *colon = '\0';
-	}
-
-	if (is_builtin(ptr)) {
-	    builtins += ptr;
-	    builtins += ":";
-	} else {
-	    papi += ptr;
-	    papi += ":";
-	}
-
-	ptr = colon + 1;
-    }
-
-    /* remove the tailing colon */
-    if (builtins.length() > 0) {
-	builtins.erase(builtins.length() - 1);
-    }
-    if (papi.length() > 0) {
-	papi.erase(papi.length() - 1);
-    }
-
-    free(_events);
-}
 
 static void
 report_error(const char *msg, const char *extra, const char *lineno)
@@ -126,6 +56,391 @@ report_error(const char *msg, const char *extra, const char *lineno)
     fprintf(stderr, "%s\n", str.c_str());
 #endif
 }
+
+static void
+split_events(const char *events, vector<string> &splited_events)
+{
+    // char *ptr = strdup(PyString_AS_STRING(_events));
+    char *str;
+    char *ptr;
+    char *colon;
+
+    str = ptr = strdup(events);
+
+    while (1) {
+	colon = strchr(ptr, ':');
+	if (colon == NULL) {
+	    splited_events.push_back(string(ptr));
+	    break;
+	} else {
+	    *colon = '\0';
+	    splited_events.push_back(string(ptr));
+	    ptr = colon + 1;
+	}
+    }
+
+    free(str);
+}
+
+static void
+merge_parts(vector<string> *dst, vector<string> *src)
+{
+    size_t i;
+    size_t dstSize;
+    size_t srcSize;
+
+    if (src == NULL) {
+	return;
+    }
+
+    dstSize = dst->size();
+    srcSize = src->size();
+
+    for (i=0; i<srcSize; i++) {
+	if (i < dstSize) {
+	    dst->at(i) += ":";
+	    dst->at(i) += src->at(i);
+	} else {
+	    dst->push_back(src->at(i));
+	}
+    }
+}
+
+/********************* CUDA Counter Partitioner *******************/
+#ifdef WITH_CUPTI
+
+typedef struct {
+    CUdevice device;
+    string   deviceName;
+
+    CUpti_EventDomainID domainID;
+    string              domainName;
+
+    CUpti_EventID eventID;
+    string        eventName;
+} event_t;
+
+// all available events
+static vector<event_t> cuda_avail_events;
+
+static int
+cuda_get_avail_events(vector<event_t> &events)
+{
+    int i;
+    unsigned int j, k;
+    size_t size;
+
+    int numDevices;
+    CUdevice device;
+
+    uint32_t numDomains;
+    CUpti_EventDomainID *domainID;
+
+    uint32_t numEvents;
+    CUpti_EventID *eventID;
+
+    cuDeviceGetCount(&numDevices);
+
+    // iterate over all devices
+    for (i=0; i<numDevices; i++) {
+	char *ptr;
+	char deviceName[64];
+
+	cuDeviceGet(&device, i);
+	cuDeviceGetName(deviceName, sizeof(deviceName), device);
+
+	// convert space to underscore
+	while ((ptr = strchr(deviceName, ' ')) != NULL) {
+	    *ptr = '_';
+	}
+
+	cuptiDeviceGetNumEventDomains(device, &numDomains);
+
+	size     = sizeof(CUpti_EventDomainID) * numDomains;
+	domainID = (CUpti_EventDomainID*)malloc(size);
+
+	cuptiDeviceEnumEventDomains(device, &size, domainID);
+
+	// iterate over all domains
+	for (j=0; j<numDomains; j++) {
+	    char domainName[64];
+
+	    size = sizeof(domainName);
+	    cuptiDeviceGetEventDomainAttribute(device, domainID[j],
+					       CUPTI_EVENT_DOMAIN_ATTR_NAME,
+					       &size, domainName);
+
+	    cuptiEventDomainGetNumEvents(domainID[j], &numEvents);
+
+	    size    = sizeof(CUpti_EventID) * numEvents;
+	    eventID = (CUpti_EventID*)malloc(size);
+
+	    cuptiEventDomainEnumEvents(domainID[j], &size, eventID);
+
+	    // iterate over all events
+	    for (k=0; k<numEvents; k++) {
+		char eventName[64];
+		event_t event;
+
+		size = sizeof(eventName);
+		cuptiEventGetAttribute(eventID[k],
+				       CUPTI_EVENT_ATTR_NAME,
+				       &size, eventName);
+
+		event.device     = device;
+		event.deviceName = deviceName;
+
+		event.domainID   = domainID[j];
+		event.domainName = domainName;
+
+		event.eventID    = eventID[k];
+		event.eventName  = eventName;
+
+		events.push_back(event);
+	    }
+
+	    free(eventID);
+	}
+
+	free(domainID);
+    }
+
+    return 0;
+}
+
+// Event should be in the form of "CUDA.<Device>.<Domain>.<Event>"
+// See also "tau_cupti_avail"
+static int
+cuda_get_event_index(const char *event)
+{
+    int i = -1;
+    char *cuda;
+    char *deviceName;
+    char *domainName;
+    char *eventName;
+    char *spec = strdup(event);
+
+    cuda = spec;
+
+    deviceName = strchr(cuda, '.');
+    if (deviceName == NULL) {
+	goto bail;
+    } else {
+	*deviceName = '\0';
+	deviceName++;
+    }
+
+    domainName = strchr(deviceName, '.');
+    if (domainName == NULL) {
+	goto bail;
+    } else {
+	*domainName = '\0';
+	domainName++;
+    }
+
+    eventName = strchr(domainName, '.');
+    if (eventName == NULL) {
+	goto bail;
+    } else {
+	*eventName = '\0';
+	eventName++;
+    }
+
+    if (strcmp(cuda, "CUDA") != 0) {
+	goto bail;
+    }
+
+    for (i=0; i<(int)cuda_avail_events.size(); i++) {
+	if ((cuda_avail_events[i].deviceName == deviceName) &&
+	    (cuda_avail_events[i].domainName == domainName) &&
+	    (cuda_avail_events[i].eventName  == eventName)) {
+	    free(spec);
+	    return i;
+	}
+    }
+
+    i = -1;
+
+bail:
+    free(spec);
+    return i;
+}
+
+// add the event into a specific group based on device it belongs to
+static int
+cuda_add_event(vector< vector<int> > &groups, const char *event)
+{
+    unsigned int i;
+    int idx;
+
+    idx = cuda_get_event_index(event);
+    if (idx < 0) {
+	printf("Error: %s: no such event\n", event);
+	return -1;
+    }
+
+    // iterate over exist groups to find one that fits
+    for (i=0; i<groups.size(); i++) {
+	if (cuda_avail_events[idx].device == cuda_avail_events[groups[i][0]].device) {
+	    groups[i].push_back(idx);
+	    return 0;
+	}
+    }
+
+    // no fits, creat a new group
+    groups.push_back(vector<int>(1, idx));
+    return 0;
+}
+
+static int
+set2parts(CUdevice device, CUpti_EventGroupSet *set, vector<string> *parts)
+{
+    string   events;
+    size_t   size;
+    uint32_t numEvents;
+    unsigned int i, j;
+
+    CUpti_EventID *eventID;
+    CUpti_EventDomainID domainID;
+    CUpti_EventGroup eventGroup;
+
+    char *ptr;
+    char deviceName[64];
+    char domainName[64];
+    char eventName[64];
+
+    size = sizeof(deviceName);
+    cuDeviceGetName(deviceName, size, device);
+
+    // convert space to underscore
+    while ((ptr = strchr(deviceName, ' ')) != NULL) {
+	*ptr = '_';
+    }
+
+    for (i=0; i<set->numEventGroups; i++) {
+	eventGroup = set->eventGroups[i];
+
+	size = sizeof(domainID);
+	cuptiEventGroupGetAttribute(eventGroup,
+				    CUPTI_EVENT_GROUP_ATTR_EVENT_DOMAIN_ID,
+				    &size, &domainID);
+
+	size = sizeof(domainName);
+	cuptiDeviceGetEventDomainAttribute(device, domainID,
+					   CUPTI_EVENT_DOMAIN_ATTR_NAME,
+					   &size, domainName);
+
+	size = sizeof(numEvents);
+	cuptiEventGroupGetAttribute(eventGroup,
+				    CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS,
+				    &size, &numEvents);
+
+	size    = sizeof(CUpti_EventID) * numEvents;
+	eventID = (CUpti_EventID*)malloc(size);
+
+	cuptiEventGroupGetAttribute(eventGroup,
+				    CUPTI_EVENT_GROUP_ATTR_EVENTS,
+				    &size, eventID);
+
+	// it seems TAU can only measure cupti events in the same
+	// domain in each pass
+	events = "";
+	for (j=0; j<numEvents; j++) {
+	    size = sizeof(eventName);
+	    cuptiEventGetAttribute(eventID[j],
+				   CUPTI_EVENT_ATTR_NAME,
+				   &size, eventName);
+
+	    events += "CUDA.";
+	    events += deviceName;
+	    events += ".";
+	    events += domainName;
+	    events += ".";
+	    events += eventName;
+	    events += ":";
+	}
+	events.erase(events.length() - 1);
+
+	parts->push_back(events);
+
+	free(eventID);
+    }
+
+    return 0;
+}
+
+static vector<string>*
+cuda_partition_groups(vector< vector<int> > &groups)
+{
+    unsigned int i, j;
+
+    vector<string> *parts;
+
+    parts = new vector<string>;
+
+    // partition events on each device separately
+    for (i=0; i<groups.size(); i++) {
+	int size;
+	CUpti_EventID *idArray;
+	CUdevice device;
+	CUcontext ctx;
+	CUpti_EventGroupSets *passes;
+
+	// put all eventID in the group into an array
+	size = sizeof(CUpti_EventID) * groups[i].size();
+	idArray = (CUpti_EventID*)malloc(size);
+	for (j=0; j<groups[i].size(); j++) {
+	    idArray[j] = cuda_avail_events[groups[i][j]].eventID;
+	}
+
+	// partition the events in the array
+	device = cuda_avail_events[groups[i][0]].device;
+	cuCtxCreate(&ctx, 0, device);
+	cuptiEventGroupSetsCreate(ctx, size, idArray, &passes);
+	cuCtxDestroy(ctx);
+
+	for (j=0; j<passes->numSets; j++) {
+	    set2parts(device, passes->sets+j, parts);
+	}
+    }
+
+    return parts;
+}
+
+static vector<string>*
+cuda_partitioner(const char *dbfile, vector<string> &events,
+		 char *algo="greedy", bool fashion=false)
+{
+    // events grouped by device
+    vector< vector<int> > groups;
+
+    vector<string>::iterator iter;
+
+    if (events.size() == 0) {
+	return NULL;
+    }
+
+    for (iter=events.begin(); iter!=events.end(); iter++) {
+	cuda_add_event(groups, iter->c_str());
+    }
+
+    return cuda_partition_groups(groups);
+}
+
+#endif // WITH_CUPTI
+
+/********************* PAPI Counter Partitioner ******************/
+
+#define GREEDY_RETRY 100
+#define MAX_LEN_62   128	// max length of 62 based number we
+				// are going to use
+
+extern int _papi_hwi_errno;
+
+#define PAPI_STRERROR() (PAPI_strerror(_papi_hwi_errno))
+
+static sqlite3 *db;
+static vector<PAPI_event_info_t> papi_avail_counters;
 
 static int
 my_rand(int i)
@@ -165,7 +480,7 @@ chooser2string(mpz_t chooser)
 
 	start = found + 1;
 
-	str += avail_counters[found].symbol;
+	str += papi_avail_counters[found].symbol;
 	str += ":";
     }
 
@@ -233,54 +548,6 @@ chooser2string(char *chooser)
 //     return 0;
 // }
 
-static int
-string2chooser(const char *str, mpz_t chooser)
-{
-    unsigned int i;
-    int len;
-    const char *ptr;
-    char *name;
-    bool done = false;
-
-    mpz_set_ui(chooser, 0);
-
-    if (str == NULL) {
-	return 0;
-    }
-
-    if (str[0] == '\0') {
-	return 0;
-    }
-
-    while (!done) {
-	ptr = strchr(str, ':');
-
-	if (ptr == NULL) {
-	    len = strlen(str);
-	    done = true;
-	} else {
-	    len = ptr - str;
-	}
-
-	for (i=0; i<avail_counters.size(); i++) {
-	    name = avail_counters[i].symbol;
-	    if (strncmp(name, str, len) == 0) {
-		mpz_setbit(chooser, i);
-		break;
-	    }
-	}
-
-	if (i == avail_counters.size()) {
-	    report_error("Counter doesn't exist", str, XSTR(__LINE__));
-	    return -1;
-	} else {
-	    str = ptr + 1;
-	}
-    }
-
-    return 0;
-}
-
 // static int
 // _dump_counter(PAPI_event_info_t &info)
 // {
@@ -307,7 +574,7 @@ string2chooser(const char *str, mpz_t chooser)
 // }
 
 static int
-get_avail_counters(vector<PAPI_event_info_t> &counters)
+papi_get_avail_counters(vector<PAPI_event_info_t> &counters)
 {
     int rv;
     int event_code;
@@ -337,7 +604,7 @@ get_avail_counters(vector<PAPI_event_info_t> &counters)
 }
 
 static void
-free_parts(vector<char*> *parts)
+papi_free_parts(vector<char*> *parts)
 {
     if (parts == NULL) {
 	return;
@@ -348,30 +615,8 @@ free_parts(vector<char*> *parts)
     delete parts;
 }
 
-#ifndef EXT_PYTHON
-static void
-dump_parts(vector<char*> *parts, string builtins="")
-{
-    unsigned int i;
-
-    if ((parts->size() == 0) && (builtins.length() > 0)) {
-	printf("%2d: %s\n", 1, builtins.c_str());
-    }
-
-    for (i=0; i<parts->size(); i++) {
-	printf("%2d: %s", i+1, chooser2string((*parts)[i]).c_str());
-
-	if ((i == 0) && (builtins.length() > 0)) {
-	    printf(":%s\n", builtins.c_str());
-	} else {
-	    printf("\n");
-	}
-    }
-}
-#endif
-
 static vector<char*>*
-_greedy_partition(vector<mp_bitcnt_t> &group)
+_papi_greedy_partition(vector<mp_bitcnt_t> &group)
 {
     int rv;
     vector<int> event_sets;
@@ -382,7 +627,7 @@ _greedy_partition(vector<mp_bitcnt_t> &group)
 
     for (i=0; i<group.size(); i++) {
 	mp_bitcnt_t index = group[i];
-	int event_code    = avail_counters[index].event_code;
+	int event_code    = papi_avail_counters[index].event_code;
 
 	for (j=0; j<event_sets.size(); j++) {
 	    rv = PAPI_add_event(event_sets[j], event_code);
@@ -461,7 +706,7 @@ _greedy_partition(vector<mp_bitcnt_t> &group)
 }
 
 static vector<char*>*
-greedy_partition(mpz_t chooser)
+papi_greedy_partition(mpz_t chooser)
 {
     vector<mp_bitcnt_t> group;
     mp_bitcnt_t start = 0, found;
@@ -486,15 +731,15 @@ greedy_partition(mpz_t chooser)
 	vector <char*> *_parts;
 	random_shuffle(group.begin(), group.end(), my_rand);
 
-	_parts = _greedy_partition(group);
+	_parts = _papi_greedy_partition(group);
 	if (_parts->size() < nparts) {
 	    /* get a better result */
-	    free_parts(parts);
+	    papi_free_parts(parts);
 	    parts  = _parts;
 	    nparts = parts->size();
 	} else {
 	    /* drop the result */
-	    free_parts(_parts);
+	    papi_free_parts(_parts);
 	}
     }
 
@@ -502,7 +747,7 @@ greedy_partition(mpz_t chooser)
 }
 
 static int
-get_one_part(void *data, int ncol, char **text, char **name)
+_get_one_part(void *data, int ncol, char **text, char **name)
 {
     vector<char*> *parts;
 
@@ -514,7 +759,7 @@ get_one_part(void *data, int ncol, char **text, char **name)
 }
 
 static vector<char*>*
-cached_partition(mpz_t chooser)
+papi_cached_partition(mpz_t chooser)
 {
     string sql;
     vector<char*> *parts;
@@ -530,7 +775,7 @@ cached_partition(mpz_t chooser)
 
     free(events);
 
-    sqlite3_exec(db, sql.c_str(), get_one_part, parts, &err);
+    sqlite3_exec(db, sql.c_str(), _get_one_part, parts, &err);
     if (err != NULL) {
 	report_error("SQLite3", err, XSTR(__LINE__));
 	sqlite3_free(err);
@@ -542,7 +787,7 @@ cached_partition(mpz_t chooser)
 }
 
 static int
-_save_result(char *events, char *part)
+_papi_save_result(char *events, char *part)
 {
     char *err;
     string sql;
@@ -565,19 +810,19 @@ _save_result(char *events, char *part)
 }
 
 static int
-save_result(char *events, vector<char*> *parts)
+papi_save_result(char *events, vector<char*> *parts)
 {
     vector<char*>::iterator iter;
 
     for (iter=parts->begin(); iter!=parts->end(); iter++) {
-	_save_result(events, *iter);
+	_papi_save_result(events, *iter);
     }
 
     return 0;
 }
 
 static int
-delete_result(char *chooser)
+papi_delete_result(char *chooser)
 {
     char *err;
     string sql;
@@ -597,19 +842,19 @@ delete_result(char *chooser)
 }
 
 static int
-update_result(mpz_t chooser, vector<char*> *parts)
+papi_update_result(mpz_t chooser, vector<char*> *parts)
 {
     int rv;
     char *events;
 
     events = mpz_get_str(NULL, 62, chooser);
 
-    rv = delete_result(events);
+    rv = papi_delete_result(events);
     if (rv != 0) {
 	goto bail;
     }
 
-    rv = save_result(events, parts);
+    rv = papi_save_result(events, parts);
     if (rv != 0) {
 	goto bail;
     }
@@ -620,7 +865,7 @@ bail:
 }
 
 static int
-setup_schema(void)
+papi_setup_schema(void)
 {
     char *err;
     char *schema =
@@ -640,11 +885,11 @@ setup_schema(void)
     return 0;
 }
 
-typedef vector<char*>* (*partitioner_t)(mpz_t);
+typedef vector<char*>* (*papi_partitioner_t)(mpz_t);
 
-static vector<char*>*
-partitioner(const char *dbfile, const char *events,
-	    char *algo="greedy", bool fashion=false)
+static vector<string>*
+papi_partitioner(const char *dbfile, vector<string> &events,
+		 char *algo="greedy", bool fashion=false)
 {
     int rv;
     unsigned int i;
@@ -652,13 +897,15 @@ partitioner(const char *dbfile, const char *events,
     vector<char*>* parts = NULL;
     vector<char*>* cached_parts;
 
+    vector<string>::iterator iter;
+
     /* partitioner algo table */
     struct {
 	char *name;
-	partitioner_t partition;
+	papi_partitioner_t partition;
     } algos[] = {
-	{"cached", cached_partition},
-	{"greedy", greedy_partition},
+	{"cached", papi_cached_partition},
+	{"greedy", papi_greedy_partition},
     };
 
     mpz_init(chooser);
@@ -670,15 +917,24 @@ partitioner(const char *dbfile, const char *events,
 	goto bail;
     }
 
-    rv = setup_schema();
+    rv = papi_setup_schema();
     if (rv != 0) {
 	goto bail;
     }
 
     /* setup PAPI event chooser */
-    rv = string2chooser(events, chooser);
-    if (rv < 0) {
-	goto bail;
+    for (iter=events.begin(); iter!=events.end(); iter++) {
+	for (i=0; i<papi_avail_counters.size(); i++) {
+	    if (iter->compare(papi_avail_counters[i].symbol) == 0) {
+		mpz_setbit(chooser, i);
+		break;
+	    }
+	}
+
+	if (i == papi_avail_counters.size()) {
+	    report_error("Counter doesn't exist", iter->c_str(), XSTR(__LINE__));
+	    goto bail;
+	}
     }
 
     /* partition PAPI events using the given algo */
@@ -694,15 +950,16 @@ partitioner(const char *dbfile, const char *events,
 	goto bail;
     }
 
-    cached_parts = cached_partition(chooser);
+    cached_parts = papi_cached_partition(chooser);
     if (cached_parts == NULL) {
-	free_parts(parts);
+	papi_free_parts(parts);
+	parts = NULL;
 	goto bail;
     }
 
     if ((cached_parts->size() == 0) ||
 	(parts->size() < cached_parts->size())) {
-	update_result(chooser, parts);
+	papi_update_result(chooser, parts);
     }
 
     if (fashion) {
@@ -711,9 +968,9 @@ partitioner(const char *dbfile, const char *events,
 	/* use the best partition result */
 	if ((cached_parts->size() == 0) ||
 	    (parts->size() < cached_parts->size())) {
-	    free_parts(cached_parts);
+	    papi_free_parts(cached_parts);
 	} else {
-	    free_parts(parts);
+	    papi_free_parts(parts);
 	    parts = cached_parts;
 	}
     }
@@ -722,6 +979,87 @@ bail:
     /* clean up */
     mpz_clear(chooser);
     sqlite3_close(db);
+
+    if (parts == NULL) {
+	return NULL;
+    } else {
+	vector<string> *_parts = new vector<string>;
+	for (i=0; i<parts->size(); i++) {
+	    _parts->push_back(chooser2string(parts->at(i)));
+	}
+	papi_free_parts(parts);
+	return _parts;
+    }
+}
+
+
+static vector<string>*
+misc_partitioner(const char *dbfile, vector<string> &events,
+		 char *algo="greedy", bool fashion=false)
+{
+    size_t i;
+    string part;
+    vector<string> *parts;
+
+    if (events.size() == 0) {
+	return NULL;
+    }
+
+    for (i=0; i<events.size(); i++) {
+	part += events[i];
+	part += ':';
+    }
+
+    part.erase(part.length() - 1);
+
+    parts = new vector<string>;
+    parts->push_back(part);
+
+    return parts;
+}
+
+static vector<string>*
+partitioner(const char *dbfile, vector<string> &events,
+	    char *algo="greedy", bool fashion=false)
+{
+    size_t i;
+    vector<string> *parts, *_parts;
+    vector<string> papi_events;
+#if WITH_CUPTI
+    vector<string> cuda_events;
+#endif // WITH_CUPTI
+    vector<string> misc_events;
+    vector<string>::iterator iter;
+
+    parts = new vector<string>;
+
+    for (i=0; i<events.size(); i++) {
+	if (events[i].compare(0, 5, "PAPI_") == 0) {
+	    papi_events.push_back(events[i]);
+	}
+#if WITH_CUPTI
+	else if (events[i].compare(0, 5, "CUDA.") == 0) {
+	    cuda_events.push_back(events[i]);
+	}
+#endif // WITH_CUPTI
+	else {
+	    misc_events.push_back(events[i]);
+	}
+    }
+
+    _parts = papi_partitioner(dbfile, papi_events, algo, fashion);
+    merge_parts(parts, _parts);
+    delete _parts;
+
+#if WITH_CUPTI
+    _parts = cuda_partitioner(dbfile, cuda_events, algo, fashion);
+    merge_parts(parts, _parts);
+    delete _parts;
+#endif // WITH_CUPTI
+
+    _parts = misc_partitioner(dbfile, misc_events, algo, fashion);
+    merge_parts(parts, _parts);
+    delete _parts;
 
     return parts;
 }
@@ -732,14 +1070,13 @@ int
 main(int argc, char **argv)
 {
     int  rv;
-
+    unsigned int i;
     char *dbfile; 
-    char *events;
+    vector<string> events;
     char *algo   = "greedy";
     bool fashion = false;
 
-    vector<char*> *parts;
-    string builtins, papi;
+    vector<string> *parts;
 
     if ((argc < 3) || (argc > 5)) {
 	printf("Usage: "
@@ -750,7 +1087,8 @@ main(int argc, char **argv)
     }
 
     dbfile = argv[1];
-    events = argv[2];
+
+    split_events(argv[2], events);
 
     if (argc >= 4) {
 	algo = argv[3];
@@ -775,14 +1113,21 @@ main(int argc, char **argv)
 	return -1;
     }
 
-    get_avail_counters(avail_counters);
+    papi_get_avail_counters(papi_avail_counters);
 
-    strip_builtins(events, builtins, papi);
-    parts = partitioner(dbfile, papi.c_str(), algo, fashion);
+#ifdef WITH_CUPTI
+    /* CUDA init */
+    cuInit(0);
+    cuda_get_avail_events(cuda_avail_events);
+#endif // WITH_CUPTI
+
+    parts = partitioner(dbfile, events, algo, fashion);
 
     if (parts != NULL) {
-	dump_parts(parts, builtins);
-	free_parts(parts);
+	for (i=0; i<parts->size(); i++) {
+	    printf("%2d: %s\n", i, parts->at(i).c_str());
+	}
+	delete parts;
     }
 
     return 0;
@@ -792,6 +1137,14 @@ main(int argc, char **argv)
 
 /********** Python Extension **************/
 
+/*
+ * Args:
+ *   dbfile  (string)     : cache database filename
+ *   events  (string)     : colon separated event names
+ *           (string list): list of event names
+ *   algo    (string)     : partition algorithm
+ *   fashion (bool)       : ignore cached results or not
+ */
 static PyObject*
 py_partitioner(PyObject *self, PyObject *args)
 {
@@ -805,11 +1158,11 @@ py_partitioner(PyObject *self, PyObject *args)
     char *algo = "greedy";
     PyObject *_fashion = Py_False;
 
-    string events;
+    vector<string> events;
     bool fashion;
 
     int nparts;
-    vector<char*> *parts;
+    vector<string> *parts;
 
     string builtins, papi;
 
@@ -844,13 +1197,10 @@ py_partitioner(PyObject *self, PyObject *args)
 		return NULL;
 	    }
 
-	    events += PyString_AS_STRING(_event);
-	    events += ":";
+	    events.push_back(string(PyString_AS_STRING(_event)));
 	}
-
-	events.erase(events.length() - 1);
     } else if (PyString_Check(_events)) {
-	events = PyString_AS_STRING(_events);
+	split_events(PyString_AS_STRING(_events), events);
     } else {
 	PyErr_SetString(PyExc_TypeError, "String or String List needed");
 	return NULL;
@@ -867,8 +1217,7 @@ py_partitioner(PyObject *self, PyObject *args)
 	return NULL;
     }
 
-    strip_builtins(events.c_str(), builtins, papi);
-    parts = partitioner(dbfile, papi.c_str(), algo, fashion);
+    parts = partitioner(dbfile, events, algo, fashion);
     if (parts == NULL) {
 	return NULL;
     }
@@ -876,24 +1225,11 @@ py_partitioner(PyObject *self, PyObject *args)
     nparts = parts->size();
     list  = PyList_New(nparts);
 
-    /* always attach builtin metrics to the first group */
-    if ((nparts == 0) && (builtins.length() > 0)) {
-	PyList_Append(list, PyString_FromString(builtins.c_str()));
-    }
-
     for (i=0; i<nparts; i++) {
-	string str = chooser2string((*parts)[i]);
-
-	/* always attach builtin metrics to the first group */
-	if ((i == 0) && (builtins.length() > 0)) {
-	    str += ":";
-	    str += builtins;
-	}
-
-	PyList_SetItem(list, i, PyString_FromString(str.c_str()));
+	PyList_SetItem(list, i, PyString_FromString(parts->at(i).c_str()));
     }
 
-    free_parts(parts);
+    delete parts;
 
     return list;
 }
@@ -905,6 +1241,8 @@ static PyMethodDef PartMethods[] = {
 	METH_VARARGS,
 	"Partition the given events.",
     },
+
+    {NULL, NULL, 0, NULL}
 };
 
 PyMODINIT_FUNC
@@ -916,7 +1254,13 @@ initpartitioner(void)
 
     /* PAPI init */
     PAPI_library_init(PAPI_VER_CURRENT);
-    get_avail_counters(avail_counters);
+    papi_get_avail_counters(papi_avail_counters);
+
+#ifdef WITH_CUPTI
+    /* CUDA init */
+    cuInit(0);
+    cuda_get_avail_events(cuda_avail_events);
+#endif // WITH_CUPTI
 
     m = Py_InitModule("partitioner", PartMethods);
     if (m == NULL) {

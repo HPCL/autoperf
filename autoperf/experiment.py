@@ -139,25 +139,12 @@ class Experiment:
         self.metrics = list(set(self.metrics))
 
         # partition the metrics
-        papi_metrics     = [ ]
-        non_papi_metrics = [ ]
         dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
         algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
 
-        for metric in self.metrics:
-            if metric.startswith("PAPI_"):
-                papi_metrics.append(metric)
-            else:
-                non_papi_metrics.append(metric)
-
-        if len(papi_metrics) == 0:
-            self.parted_metrics = [':'.join(non_papi_metrics)]
-        else:
-            self.parted_metrics = partitioner(dbfile, papi_metrics, algo, False)
-            if len(self.parted_metrics) == 0:
-                raise Exception("Metrics partition failed!")
-            else:
-                self.parted_metrics[0] += ":%s" % ':'.join(non_papi_metrics)
+        self.parted_metrics = partitioner(dbfile, self.metrics, algo, False)
+        if len(self.parted_metrics) == 0:
+            raise Exception("Metrics partition failed!")
 
     def run(self, block=False):
         execmd = config.get("%s.execmd" % self.longname)

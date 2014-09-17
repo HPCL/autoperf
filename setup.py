@@ -1,9 +1,28 @@
 import os
 from distutils.core import setup, Extension
 
+# where to find headers/libraries to compile the extension
+CUDA    = os.getenv('CUDA')
 PAPI    = os.getenv('PAPI', '/usr/local/packages/papi/5.0.1')
 GMP     = os.getenv('GMP', '/usr/local/packages/gmp/5.0.5')
 SQLITE3 = os.getenv('SQLITE3', os.environ['HOME']+'/prefix/sqlite-3.8.5')
+
+INCLUDE_DIRS  = [PAPI    + '/include',
+                 GMP     + '/include',
+                 SQLITE3 + '/include']
+LIBRARY_DIRS  = [PAPI    + '/lib',
+                 GMP     + '/lib',
+                 SQLITE3 + '/lib']
+LIBRARIES     = ['papi', 'gmp', 'sqlite3']
+DEFINE_MACROS = [('EXT_PYTHON', None)]
+
+if CUDA is not None:
+    INCLUDE_DIRS.extend([CUDA + '/include',
+                         CUDA + '/extras/CUPTI/include'])
+    LIBRARY_DIRS.extend([CUDA + '/lib64',
+                         CUDA + '/extras/CUPTI/lib64'])
+    LIBRARIES.extend(['cuda', 'cudart', 'cupti'])
+    DEFINE_MACROS.append(('WITH_CUPTI', None))
 
 # get the name of all python packages
 py_packages = []
@@ -19,17 +38,11 @@ for root, dirs, files in os.walk(src_dir, topdown=True):
 partitioner = Extension(name                 = 'autoperf.partitioner',
                         sources              = ['ext/partitioner.cpp'],
                         language             = 'c++',
-                        include_dirs         = [PAPI    + '/include',
-                                                GMP     + '/include',
-                                                SQLITE3 + '/include'],
-                        library_dirs         = [PAPI    + '/lib',
-                                                GMP     + '/lib',
-                                                SQLITE3 + '/lib'],
-                        libraries            = ['papi', 'gmp', 'sqlite3'],
-                        runtime_library_dirs = [PAPI    + '/lib',
-                                                GMP     + '/lib',
-                                                SQLITE3 + '/lib'],
-                        define_macros        = [('EXT_PYTHON', None)],
+                        include_dirs         = INCLUDE_DIRS,
+                        library_dirs         = LIBRARY_DIRS,
+                        libraries            = LIBRARIES,
+                        runtime_library_dirs = LIBRARY_DIRS,
+                        define_macros        = DEFINE_MACROS,
                         extra_compile_args   = ['-Wall', '-Wno-write-strings'])
 
 setup(
