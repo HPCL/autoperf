@@ -42,7 +42,7 @@ If it is not clear how to set those variables, read **setup.py**.
 If you don't want to re-install the package after each "git pull", you
 can simply do this::
 
-  $ python setup build_ext -i
+  $ python setup.py build_ext -i
 
 Now you can use autoperf in-place without installation. However, if
 ext/ is updated in "git pull", you must rebuild it using the command
