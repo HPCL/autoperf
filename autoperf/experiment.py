@@ -4,8 +4,6 @@ import subprocess
 import shutil, shlex, errno
 import ConfigParser
 
-from partitioner import partitioner
-
 from .utils import config
 
 class Experiment:
@@ -98,39 +96,51 @@ class Experiment:
 
         os.chdir(self.rootdir)
 
-        if self.mode == "run":
-            # copy necessary files, if they are specified in config file
-            try:
-                for item in config.get("%s.copy" % self.longname).split():
-                    print "Copying %s ..." % item
-                    item = os.path.expanduser(item)
-                    try:
-                        shutil.copytree(item, os.path.basename(item), True)
-                    except OSError as e:
-                        if e.errno == errno.ENOTDIR:
-                            shutil.copy(item, os.path.basename(item))
-                        else:
-                            raise
-            except ConfigParser.Error:
-                pass
-
-            # link necessary files, if they are specified in config file
-            try:
-                for item in config.get("%s.link" % self.longname).split():
-                    print "Linking %s ..." % item
-                    item      = os.path.expanduser(item)
-                    link_name = os.path.basename(item)
-                    if os.path.islink(link_name)  and os.readlink(link_name) == item:
-                        # do nothing if the link is already there
-                        pass
-                    else:
-                        os.symlink(item, link_name)
-            except ConfigParser.Error:
-                pass
-
         self.platform.setup()
         self.tool.setup()
         self.datastore.setup()
+
+    def link_items(self):
+        # link necessary files, if they are specified in config file
+        try:
+            for item in config.get("%s.link" % self.longname).split():
+                print "Linking %s ..." % item
+                item      = os.path.normpath(item)
+                item      = os.path.expanduser(item)
+                link_name = os.path.basename(item)
+                if os.path.islink(link_name) and os.readlink(link_name) == item:
+                    # do nothing if the link is already there
+                    pass
+                else:
+                    os.symlink(item, link_name)
+        except ConfigParser.Error:
+            pass
+
+    def copy_items(self):
+        # copy necessary files, if they are specified in config file
+        try:
+            for item in config.get("%s.copy" % self.longname).split():
+                print "Copying %s ..." % item
+                item = os.path.expanduser(item)
+                try:
+                    shutil.copytree(item, os.path.basename(item), True)
+                except OSError as e:
+                    if e.errno == errno.ENOTDIR:
+                        shutil.copy(item, os.path.basename(item))
+                    else:
+                        raise
+        except ConfigParser.Error:
+            pass
+
+
+    def run(self, block=False):
+        execmd = config.get("%s.execmd" % self.longname)
+        execmd = os.path.expanduser(execmd)
+        exeopt = config.get("%s.exeopt" % self.longname, "")
+
+        self.link_items()
+        self.copy_items()
+        self.build()
 
         # get all metrics we need to measure
         self.metrics = [ ]
@@ -142,16 +152,10 @@ class Experiment:
         dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
         algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
 
+        from partitioner import partitioner
         self.parted_metrics = partitioner(dbfile, self.metrics, algo, False)
         if len(self.parted_metrics) == 0:
             raise Exception("Metrics partition failed!")
-
-    def run(self, block=False):
-        execmd = config.get("%s.execmd" % self.longname)
-        execmd = os.path.expanduser(execmd)
-        exeopt = config.get("%s.exeopt" % self.longname, "")
-
-        self.build()
 
         # run the experiment
         for i in range(len(self.parted_metrics)):
