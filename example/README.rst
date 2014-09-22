@@ -350,8 +350,8 @@ Options for Tool.tau
 
     value: a string
 
-    meaning: use when *[Experiments].builder* is specified; an absolute
-    path or a relative path to *<[Experiments].tauroot>*/lib
+    meaning: use when *[Experiments].builder* is specified; a relative
+    path to *<[Experiments].tauroot>*/lib
 
     mandatory: no
 

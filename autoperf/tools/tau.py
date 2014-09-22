@@ -20,13 +20,17 @@ class Tool(AbstractTool):
         else:
             self.binding = "serial"
 
-        self.use_cupti = config.getboolean("%s.cupti" % self.experiment.longname, False)
-        if self.use_cupti:
+        if self.experiment.is_cupti:
             self.binding += ",cupti"
 
     def build_env(self):
+        """
+        Returns:
+          map: A map of environment variables needed to build
+               application with TAU
+        """
         tau_makefile = config.get("%s.TAU_MAKEFILE" % self.longname,
-                                  "%s/lib/Makefile.tau-papi-mpi-pdt" % self.experiment.tauroot)
+                                  "Makefile.tau-papi-mpi-pdt")
 
         try:
             selfile = config.get("%s.selfile" % self.longname)
@@ -38,39 +42,54 @@ class Tool(AbstractTool):
 
         env = {
             'TAU_ROOT'    : self.experiment.tauroot,
-            'TAU_MAKEFILE': tau_makefile,
+            'TAU_MAKEFILE': "%s/lib/%s" % (self.experiment.tauroot, tau_makefile),
             'TAU_OPTIONS' : tau_options
             }
 
         return env
 
     def setup_str(self):
-        tau_setup   = "mkdir -p %s\n" % self.experiment.insname
+        """
+        Returns:
+          string: A string of commands needed to be executed before
+                  running TAU experiment
+        """
+        tau_setup   = "mkdir -p %s/profiles\n" % self.experiment.insname
         tau_options = config.get_section(self.longname)
         for name, value in tau_options:
             # take all upper case options as TAU environment variables
             if name.upper() == name:
                 tau_setup += "export %s=%s\n" % (name, value)
 
+        # index of metric sets created by partitioner is encoded in
+        # experiment instance name
         part = int(self.experiment.insname[27:])
 
         tau_setup += "export TAU_METRICS=%s\n" % self.experiment.parted_metrics[part]
-        tau_setup += "export PROFILEDIR=%s\n" % self.experiment.insname
+        tau_setup += "export PROFILEDIR=%s/profiles\n" % self.experiment.insname
         return tau_setup
 
     def wrap_command(self, execmd, exeopt):
+        """
+        Transmute application command line when necessary
+
+        Returns:
+          list: Transmuted application command
+        """
         mode = config.get("%s.mode" % self.longname, "sampling")
 
+        # do nothing for instrumented application
         if mode == "instrumentation":
             return [execmd, exeopt]
 
+        # wrap the command with "tau_exec" for sampling
         if mode == "sampling":
             period = config.get("%s.period" % self.longname, 10000)
             source = config.get("%s.source" % self.longname, "TIME")
 
             tau_exec_opt  = "-T %s" % self.binding
             tau_exec_opt += " -ebs -ebs_period=%s -ebs_source=%s" % (period, source)
-            if self.use_cupti:
+            if self.experiment.is_cupti:
                 tau_exec_opt += " -cupti"
             tau_exec_opt += " %s" % execmd
 
@@ -81,8 +100,8 @@ class Tool(AbstractTool):
     def collect_data(self):
         process = subprocess.Popen(["paraprof",
                                     "--pack",
-                                    "%s.ppk" % self.experiment.insname,
-                                    self.experiment.insname],
+                                    "%s/data.ppk" % self.experiment.insname,
+                                    "%s/profiles" % self.experiment.insname],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()

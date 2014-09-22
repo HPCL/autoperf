@@ -10,11 +10,13 @@ class Queue(AbstractQueue):
     pbs_script = """#!/bin/bash
 #
 #PBS -N autoperf.{hostname}.{pid}
+#PBS -o {insname}/pbs.log
+#PBS -e {insname}/pbs.log
+#PBS -j oe
 #{pbs_nodes}
 #{pbs_walltime}
 #{pbs_pmem}
 #{pbs_qname}
-#PBS -j oe
 #
 
 export PATH={tau_root}/bin:$PATH
@@ -27,16 +29,16 @@ echo NP : $NP
 echo PBS_NP: $PBS_NP
 
 # mark the job as running
-echo -n {exp_name}:PBS:$PBS_JOBID >running.{insname}
+echo -n "{exp_name} {insname} PBS:$PBS_JOBID Running" >{insname}/job.stat
 
 # setup the environment for the experiment
 {exp_setup}
 
 # run the experiment
-{exp_run} 2>&1 | tee {insname}.log
+{exp_run} 2>&1 | tee {insname}/job.log
 
 # mark the job as finished
-mv running.{insname} finished.{insname}
+echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
 
 # notify autoperf that we are done
 {notify}ssh {hostname} kill -SIGUSR1 {pid}
@@ -100,12 +102,12 @@ mv running.{insname} finished.{insname}
             notify       = "" if block else "# "
             )
 
-        script = open("%s.pbs_job.sh" % self.experiment.insname, "w+")
+        script = open("%s/job.sh" % self.experiment.insname, "w+")
         script.write(content)
         script.flush()
         script.seek(0)
 
-        print "*** Submitting batch task",
+        print "*** Submitting PBS job",
 
         # For Python 2.7+, we can use subprocess.check_output() instead
         process = subprocess.Popen("qsub",
@@ -116,9 +118,15 @@ mv running.{insname} finished.{insname}
 
         self.job_id = out.rstrip()
 
-        print self.job_id + " " + self.experiment.insname + " ... done"
+        print "%s %s ... done" % (self.experiment.insname, self.job_id)
 
         script.close()
+
+        f = open("%s/job.stat" % self.experiment.insname, "w+")
+        f.write("%s %s PBS:%s Queueing" % (self.experiment.name,
+                                           self.experiment.insname,
+                                           self.job_id))
+        f.close()
 
         if block:
             print "*** Waiting for the task to be finished...",

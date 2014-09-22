@@ -9,16 +9,16 @@ class Queue(AbstractQueue):
 export PATH={tau_root}/bin:$PATH
 
 # mark the job as running
-echo -n {exp_name}:serial >running.{insname}
+echo -n "{exp_name} {insname} serial Running" >{insname}/job.stat
 
 # setup the environment for the experiment
 {exp_setup}
 
 # run the experiment
-{exp_run} 2>&1 | tee {insname}.log
+{exp_run} 2>&1 | tee {insname}/job.log
 
 # mark the job as finished
-mv running.{insname} finished.{insname}
+echo -n "{exp_name} {insname} serial Finished" >{insname}/job.stat
 """
 
     def __init__(self, experiment):
@@ -29,6 +29,11 @@ mv running.{insname} finished.{insname}
         self.platform = self.experiment.platform
 
     def submit(self, cmd, block=False):
+        f = open("%s/job.stat" % self.experiment.insname, "w+")
+        f.write("%s %s serial Queueing" % (self.experiment.name,
+                                           self.experiment.insname))
+        f.close()
+
         content = self.serial_script.format(
             tau_root  = self.experiment.tauroot,
             insname   = self.experiment.insname,
@@ -37,12 +42,12 @@ mv running.{insname} finished.{insname}
             exp_run   = cmd,
             )
 
-        script_name = "%s.serial_job.sh" % self.experiment.insname
+        script_name = "%s/job.sh" % self.experiment.insname
         script = open(script_name, "w+")
         script.write(content)
         script.close()
         os.chmod(script_name, 0755)
 
-        print "*** Submitting serial task ..."
+        print "*** Submitting serial job ..."
 
         subprocess.call("./%s" % script_name)

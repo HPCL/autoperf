@@ -1,8 +1,8 @@
 import os
-import subprocess
 import ConfigParser
 
 from ..utils import config
+from ..utils import script
 
 class Datastore:
     def __init__(self, experiment):
@@ -34,27 +34,21 @@ class Datastore:
             raise Exception("Invalid data source: %s" % e.args[0])
 
     def load_tau(self):
-        subprocess.call(["perfdmf_loadtrial",
-                         "-c",
-                         self.config,
-                         "-a",
-                         self.appname,
-                         "-x",
-                         self.experiment.name,
-                         "-n",
-                         self.experiment.insname,
-                         self.experiment.insname])
+        script.run("taudb_loadtrial.py", None,
+                   tauroot  = self.experiment.tauroot,
+                   taudb    = self.config,
+                   filetype = "profiles",
+                   appname  = self.appname,
+                   expname  = self.experiment.name,
+                   trial    = self.experiment.insname,
+                   source   = "profiles")
 
     def load_hpctoolkit(self):
-        subprocess.call(["perfdmf_loadtrial",
-                         "-c",
-                         self.config,
-                         "-f",
-                         "hpc",
-                         "-a",
-                         self.appname,
-                         "-x",
-                         self.experiment.name,
-                         "-n",
-                         self.experiment.insname,
-                         "%s/experiment.xml" % self.tool.database])
+        script.run("taudb_loadtrial.py", None,
+                   tauroot  = self.experiment.tauroot,
+                   taudb    = self.config,
+                   filetype = "hpc",
+                   appname  = self.appname,
+                   expname  = self.experiment.name,
+                   trial    = self.experiment.insname,
+                   source   = "database/experiment.xml")

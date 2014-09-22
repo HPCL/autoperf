@@ -51,7 +51,7 @@ setup(
     author           = "Ender Dai",
     author_email     = "xdai@uoregon.edu",
     packages         = py_packages,
-    package_data     = {"autoperf.analyses": ["scripts/*.sh", "scripts/*.py"]},
+    package_data     = {"autoperf.utils": ["scripts/*.sh", "scripts/*.py"]},
     scripts          = ["bin/autoperf"],
     ext_modules      = [partitioner],
     license          = "BSD",

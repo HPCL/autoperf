@@ -1,4 +1,5 @@
 import os
+import re
 
 class AbstractQueue:
     name       = "Abstract"
@@ -14,43 +15,39 @@ class AbstractQueue:
     def submit(self, cmd, block=False):
         raise NotImplementedError
 
-    def _check(self, file):
-        if file.startswith("running."):
-            fp = open(file, 'r')
-            job_id = fp.read()
-            fp.close()
+    def _check(self, instance):
+        if not re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}T\d{3}",
+                        instance):
+            return None
 
-            exp, colon, job = job_id.partition(':')
-            if exp == self.experiment.name:
-                return {'job_id': job,
-                        'insname': file[8:],
-                        'stat': 'Running'}
+        status = "%s/job.stat" % instance
+        if not os.path.isfile(status):
+            return None
 
-        if file.startswith("finished."):
-            fp = open(file, 'r')
-            job_id = fp.read()
-            fp.close()
+        fp = open(status, 'r')
+        stat = fp.read().split()
+        fp.close()
 
-            exp, colon, job = job_id.partition(':')
-            if exp == self.experiment.name:
-                return {'job_id': job,
-                        'insname': file[9:],
-                        'stat': 'Finished'}
-        return None
+        if stat[0] == self.experiment.name:
+            return stat
+        else:
+            return None
 
     def check(self, path='.'):
         stats = [ ]
-        files = [f for f in os.listdir(path) if os.path.isfile(f)]
+        dirs  = [f for f in os.listdir(path) if os.path.isdir(f)]
 
-        for file in files:
-            stat = self._check(file)
-            if stat is not None:
-                stats.append(stat)
-                # print "%s ==? %s" % (stat['insname'], self.experiment.insname)
-                if stat['insname'] == self.experiment.insname:
-                    return [stat]
+        for dirname in dirs:
+            stat = self._check(dirname)
+            if stat is None:
+                continue
+
+            stats.append(stat)
+            if stat[1] == self.experiment.insname:
+                return [stat]
 
         if self.experiment.insname is None:
+            stats.sort(key=lambda stat: stat[1])
             return stats
         else:
             return [ ]

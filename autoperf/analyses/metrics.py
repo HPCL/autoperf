@@ -29,7 +29,7 @@ class Analysis(AbstractAnalysis):
 
     def run(self):
         self.run_script("%s.py" % self.name,
-                        TAULIB          = "%s/lib" % self.experiment.tauroot,
-                        ppk             = "%s.ppk" % self.experiment.insname,
+                        TAULIB          = "%s/lib"      % self.experiment.tauroot,
+                        ppk             = "%s/data.ppk" % self.experiment.insname,
                         derived_metrics = repr(self.derived_metrics)
                         )

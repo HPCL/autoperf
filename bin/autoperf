@@ -138,15 +138,15 @@ def check_experiments(insname=None):
     exps = get_experiment_list(False)
     for exp in exps:
         for stat in check_an_experiment(exp, insname):
-            print fmtstr.format(exp, stat['insname'], stat['job_id'], stat['stat'])
+            print fmtstr.format(stat[0], stat[1], stat[2], stat[3])
 
 def analyze_an_experiment(name, insname=None):
     for stat in check_an_experiment(name, insname):
-        if stat['stat'] != 'Finished':
+        if stat[3] != 'Finished':
             print "*** Experiment %s %s is not finished yet, ignore" % (name, insname)
         else:
-            print "*** Analyzing %s %s ..." % (name, stat['insname'])
-            experiment = Experiment(name, stat['insname'], mode="analyze")
+            print "*** Analyzing %s %s ..." % (name, stat[1])
+            experiment = Experiment(name, stat[1], mode="analyze")
             experiment.setup()
             experiment.analyze()
             experiment.cleanup()

@@ -32,10 +32,12 @@ class Experiment:
         self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
         self.tool_name      = config.get("%s.Tool"       % self.longname, "tau")
         self.datastore_name = config.get("%s.Datastore"  % self.longname, "taudb")
-
         self.analyses_name  = config.get("%s.Analyses"   % self.longname).split()
-        self.is_mpi         = config.getboolean("%s.mpi" % self.longname, False)
-        self.tauroot        = config.get("%s.tauroot"    % self.longname)
+
+        self.debug          = config.getboolean("%s.debug" % self.longname, True)
+        self.is_mpi         = config.getboolean("%s.mpi"   % self.longname, False)
+        self.is_cupti       = config.getboolean("%s.cupti" % self.longname, False)
+        self.tauroot        = config.get("%s.tauroot"      % self.longname)
         self.tauroot        = os.path.expanduser(self.tauroot)
 
         _module = __import__("platforms.%s" % self.platform_name,
@@ -65,6 +67,9 @@ class Experiment:
             self.analyses[analysis] = _module.Analysis(self)
 
     def build(self):
+        """
+        Run the builder command if it exist
+        """
         try:
             builder = config.get("%s.builder" % self.longname)
             builder = os.path.expanduser(builder)
@@ -134,6 +139,15 @@ class Experiment:
 
 
     def run(self, block=False):
+        """
+        Run the experiment.
+
+        Args:
+          block (bool): whether block until the experiment is finished
+
+        Returns:
+          None
+        """
         execmd = config.get("%s.execmd" % self.longname)
         execmd = os.path.expanduser(execmd)
         exeopt = config.get("%s.exeopt" % self.longname, "")
@@ -160,6 +174,7 @@ class Experiment:
         # run the experiment
         for i in range(len(self.parted_metrics)):
             self.insname = self.insname_fmt % i
+            os.makedirs(self.insname)
             self.platform.run(execmd, exeopt, block)
 
     def check(self):

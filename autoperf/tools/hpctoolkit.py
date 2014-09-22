@@ -26,7 +26,7 @@ class Tool(AbstractTool):
         return ""
 
     def wrap_command(self, execmd, exeopt):
-        self.measurement = "%s-measurement" % self.experiment.insname
+        self.measurement = "%s/measurement" % self.experiment.insname
         _execmd = "hpcrun -o %s" % self.measurement
 
         part = int(self.experiment.insname[27:])
@@ -44,15 +44,23 @@ class Tool(AbstractTool):
         exebin = os.path.basename(execmd)
         appsrc = config.get("%s.appsrc" % self.longname)
 
-        self.measurement = "%s-measurement" % self.experiment.insname
-        self.database    = "%s-database"    % self.experiment.insname
+        self.measurement = "%s/measurement" % self.experiment.insname
+        self.database    = "%s/database"    % self.experiment.insname
+        self.hpcstruct   = "%s/%s.hpcstruct" % (self.experiment.insname, exebin)
 
-        subprocess.call(["hpcstruct", execmd])
+        # do nothing if data.ppk is already there
+        if os.path.isfile("%s/data.ppk" % self.experiment.insname):
+            return
+
+        subprocess.call(["hpcstruct",
+                         "-o",
+                         self.hpcstruct,
+                         execmd])
         subprocess.call(["hpcprof",
                          "-o",
                          self.database,
                          "-S",
-                         "%s.hpcstruct" % exebin,
+                         self.hpcstruct,
                          "-I",
                          "%s/'*'" % appsrc,
                          self.measurement])
@@ -61,7 +69,7 @@ class Tool(AbstractTool):
                                     "-f",
                                     "hpc",
                                     "--pack",
-                                    "%s.ppk" % self.experiment.insname,
+                                    "%s/data.ppk" % self.experiment.insname,
                                     "%s/experiment.xml" % self.database],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
