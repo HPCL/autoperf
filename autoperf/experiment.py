@@ -99,6 +99,9 @@ class Experiment:
         self.tool.setup()
         self.datastore.setup()
 
+        for a in self.analyses:
+            self.analyses[a].setup()
+
     def link_items(self):
         # link necessary files, if they are specified in config file
         try:

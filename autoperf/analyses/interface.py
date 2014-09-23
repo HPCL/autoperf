@@ -16,6 +16,9 @@ class AbstractAnalysis:
     def __init__(self, experiment):
         raise NotImplementedError
 
+    def setup(self):
+        pass
+
     def run(self):
         """
         Run this analysis
