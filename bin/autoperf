@@ -118,8 +118,8 @@ def run_experiments():
 
         experiment.cleanup()
 
-def check_an_experiment(name, insname=None):
-    experiment = Experiment(name, insname, mode="check")
+def check_an_experiment(name, insname):
+    experiment = Experiment(name, insname)
     experiment.setup()
 
     stats = experiment.check()
@@ -128,7 +128,7 @@ def check_an_experiment(name, insname=None):
 
     return stats;
 
-def check_experiments(insname=None):
+def check_experiments(insname):
     fmtstr = "{0:20} {1:30} {2:15} {3:10}"
 
     print "*** Experiment status:"
@@ -140,18 +140,18 @@ def check_experiments(insname=None):
         for stat in check_an_experiment(exp, insname):
             print fmtstr.format(stat[0], stat[1], stat[2], stat[3])
 
-def analyze_an_experiment(name, insname=None):
+def analyze_an_experiment(name, insname):
     for stat in check_an_experiment(name, insname):
         if stat[3] != 'Finished':
             print "*** Experiment %s %s is not finished yet, ignore" % (name, insname)
         else:
             print "*** Analyzing %s %s ..." % (name, stat[1])
-            experiment = Experiment(name, stat[1], mode="analyze")
+            experiment = Experiment(name, stat[1])
             experiment.setup()
             experiment.analyze()
             experiment.cleanup()
 
-def analyze_experiments(insname=None):
+def analyze_experiments(insname):
     exps = get_experiment_list()
     for exp in exps:
         analyze_an_experiment(exp, insname)

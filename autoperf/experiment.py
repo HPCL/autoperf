@@ -12,7 +12,7 @@ class Experiment:
     datastore = None
     analyses  = None
 
-    def __init__(self, name, insname=None, mode="run"):
+    def __init__(self, name, insname=None):
         experiments = config.get("Main.Experiments").split()
         if name not in experiments:
             raise Exception("Experiment '%s' not defined" % name)
@@ -20,14 +20,8 @@ class Experiment:
             self.name     = name
             self.longname = "Experiments.%s" % name
 
-        self.mode = mode
-
-        if mode == "run":
-            self.insname_fmt = datetime.datetime.now().isoformat() + "T%03d"
-            print "*** Preparing to run %s" % self.name
-        else:
-            self.insname     = insname
-            self.insname_fmt = None
+        self.timestamp = datetime.datetime.now().isoformat()
+        self.insname   = insname
 
         self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
         self.tool_name      = config.get("%s.Tool"       % self.longname, "tau")
@@ -148,6 +142,8 @@ class Experiment:
         Returns:
           None
         """
+        print "*** Preparing to run %s" % self.name
+
         execmd = config.get("%s.execmd" % self.longname)
         execmd = os.path.expanduser(execmd)
         exeopt = config.get("%s.exeopt" % self.longname, "")
@@ -173,9 +169,11 @@ class Experiment:
 
         # run the experiment
         for i in range(len(self.parted_metrics)):
-            self.insname = self.insname_fmt % i
+            self.insname = self.timestamp + "T%03d" % i
             os.makedirs(self.insname)
             self.platform.run(execmd, exeopt, block)
+
+        self.insname = None
 
     def check(self):
         return self.platform.check()
@@ -186,14 +184,14 @@ class Experiment:
 
     def analyze(self):
         # collect generated data and do the post-processing
-        if self.insname_fmt is None:
-            self.platform.collect_data()
-            self._analyze()
-        else:
+        if self.insname is None:
             for i in range(len(self.parted_metrics)):
-                self.insname = self.insname_fmt % i
+                self.insname = self.timestamp + "T%03d" % i
                 self.platform.collect_data()
                 self._analyze()
+        else:
+            self.platform.collect_data()
+            self._analyze()
 
     def cleanup(self):
         os.chdir(self.cwd)
