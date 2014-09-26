@@ -16,7 +16,7 @@ class AbstractQueue:
         raise NotImplementedError
 
     def _check(self, instance):
-        if not re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}T\d{3}",
+        if not re.match(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{6}T\d{3}",
                         instance):
             return None
 

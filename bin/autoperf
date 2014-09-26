@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys
+import logging
 import distutils.sysconfig
 
 # ACISS is still using Python 2.6.6
@@ -119,12 +120,16 @@ def run_experiments():
         experiment.cleanup()
 
 def check_an_experiment(name, insname):
+    logging.disable(logging.WARNING)
+
     experiment = Experiment(name, insname)
     experiment.setup()
 
     stats = experiment.check()
 
     experiment.cleanup()
+
+    logging.disable(logging.NOTSET)
 
     return stats;
 

@@ -1,6 +1,7 @@
 import os, sys
 import signal, time, socket, tempfile, subprocess
 import ConfigParser
+import logging
 
 from ..utils import config
 from .interface import AbstractQueue
@@ -49,6 +50,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
         self.longname   = "Queue.%s.%s.%s" % (self.name, experiment.platform_name, experiment.name)
         self.experiment = experiment
         self.done       = False
+        self.logger     = logging.getLogger(__name__)
 
         try:
             nodes = config.get("%s.nodes" % self.longname)
@@ -102,12 +104,17 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
             notify       = "" if block else "# "
             )
 
+        self.logger.info("Populating the PBS job script")
+
         script = open("%s/job.sh" % self.experiment.insname, "w+")
         script.write(content)
         script.flush()
         script.seek(0)
 
         print "*** Submitting PBS job",
+
+        self.logger.info("Submitting the PBS job script")
+        self.logger.cmd("qsub %s/job.sh\n", self.experiment.insname)
 
         # For Python 2.7+, we can use subprocess.check_output() instead
         process = subprocess.Popen("qsub",
@@ -122,7 +129,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
 
         script.close()
 
-        f = open("%s/job.stat" % self.experiment.insname, "w+")
+        f = open("%s/job.stat" % self.experiment.insname, "w")
         f.write("%s %s PBS:%s Queueing" % (self.experiment.name,
                                            self.experiment.insname,
                                            self.job_id))

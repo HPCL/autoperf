@@ -1,10 +1,9 @@
 class AbstractPlatform:
     name       = "Abstract"
-    longname   = "Abstract"
-    experiment = None
 
     def __init__(self, experiment):
-        raise NotImplementedError
+        self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
+        self.experiment = experiment
 
     def setup(self):
         raise NotImplementedError

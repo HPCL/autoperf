@@ -1,4 +1,5 @@
 import os
+import logging
 import subprocess
 
 from ..utils import config
@@ -22,17 +23,17 @@ echo -n "{exp_name} {insname} serial Finished" >{insname}/job.stat
 """
 
     def __init__(self, experiment):
-        self.name = "serial"
+        self.name       = "serial"
         self.experiment = experiment
+        self.logger     = logging.getLogger(__name__)
 
     def setup(self):
         self.platform = self.experiment.platform
 
     def submit(self, cmd, block=False):
-        f = open("%s/job.stat" % self.experiment.insname, "w+")
-        f.write("%s %s serial Queueing" % (self.experiment.name,
-                                           self.experiment.insname))
-        f.close()
+        with open("%s/job.stat" % self.experiment.insname, "w") as f:
+            f.write("%s %s serial Queueing" % (self.experiment.name,
+                                               self.experiment.insname))
 
         content = self.serial_script.format(
             tau_root  = self.experiment.tauroot,
@@ -43,11 +44,15 @@ echo -n "{exp_name} {insname} serial Finished" >{insname}/job.stat
             )
 
         script_name = "%s/job.sh" % self.experiment.insname
-        script = open(script_name, "w+")
-        script.write(content)
-        script.close()
+
+        self.logger.info("Populating the serial job script")
+        with open(script_name, "w") as script:
+            script.write(content)
+
         os.chmod(script_name, 0755)
 
         print "*** Submitting serial job ..."
 
+        self.logger.info("Running the serial job script")
+        self.logger.cmd("./%s\n", script_name)
         subprocess.call("./%s" % script_name)

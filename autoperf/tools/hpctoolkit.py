@@ -1,4 +1,5 @@
 import os
+import logging
 import subprocess
 import ConfigParser
 
@@ -10,6 +11,7 @@ class Tool(AbstractTool):
         self.name        = "hpctoolkit"
         self.longname    = "Tool.hpctoolkit.%s" % experiment.name
         self.experiment  = experiment
+        self.logger      = logging.getLogger(__name__)
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -48,29 +50,35 @@ class Tool(AbstractTool):
         self.database    = "%s/database"    % self.experiment.insname
         self.hpcstruct   = "%s/%s.hpcstruct" % (self.experiment.insname, exebin)
 
-        # do nothing if data.ppk is already there
-        if os.path.isfile("%s/data.ppk" % self.experiment.insname):
-            return
+        cmd = ["hpcstruct",
+               "-o",
+               self.hpcstruct,
+               execmd]
+        self.logger.info("HPCToolkit: run hpcstruct")
+        self.logger.cmd(' '.join(cmd))
+        subprocess.call(cmd)
 
-        subprocess.call(["hpcstruct",
-                         "-o",
-                         self.hpcstruct,
-                         execmd])
-        subprocess.call(["hpcprof",
-                         "-o",
-                         self.database,
-                         "-S",
-                         self.hpcstruct,
-                         "-I",
-                         "%s/'*'" % appsrc,
-                         self.measurement])
+        cmd =["hpcprof",
+              "-o",
+              self.database,
+              "-S",
+              self.hpcstruct,
+              "-I",
+              "%s/'*'" % appsrc,
+              self.measurement]
+        self.logger.info("HPCToolkit: run hpcprof")
+        self.logger.cmd(' '.join(cmd))
+        subprocess.call(cmd)
 
-        process = subprocess.Popen(["paraprof",
-                                    "-f",
-                                    "hpc",
-                                    "--pack",
-                                    "%s/data.ppk" % self.experiment.insname,
-                                    "%s/experiment.xml" % self.database],
+        cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
+               "-f",
+               "hpc",
+               "--pack",
+               "%s/data.ppk" % self.experiment.insname,
+               "%s/experiment.xml" % self.database]
+        self.logger.info("Pack collected data to TAU .ppk package")
+        self.logger.cmd(' '.join(cmd))
+        process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()

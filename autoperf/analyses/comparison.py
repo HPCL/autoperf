@@ -53,7 +53,7 @@ class Analysis(AbstractAnalysis):
         dirs = [os.path.join(rootdir, f) for f in os.listdir(rootdir)]
         dirs = [d for d in dirs if os.path.isdir(d)]
         for dirname in dirs:
-            if not re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}T\d{3}",
+            if not re.match(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{6}T\d{3}",
                             os.path.basename(dirname)):
                 continue
 

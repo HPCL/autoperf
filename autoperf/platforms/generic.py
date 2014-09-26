@@ -1,3 +1,5 @@
+import os
+import logging
 import ConfigParser
 
 from .interface import AbstractPlatform
@@ -12,6 +14,10 @@ class Platform(AbstractPlatform):
         self.experiment = experiment
 
         _queue  = config.get("%s.Queue" % self.longname, "serial")
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("Queue    : %s", _queue)
+
         _module = __import__("queues.%s" % _queue, globals(), fromlist=["Queue"], level=2)
         self.queue = _module.Queue(self.experiment)
 
@@ -49,11 +55,21 @@ class Platform(AbstractPlatform):
 
             cmd = "mpirun %s %s %s %s" % (np, hostfile, self.mpi_opts, cmd)
 
+        self.logger.debug("Application command:")
+        self.logger.debug("  Original: %s %s", _execmd, _exeopt)
+        self.logger.debug("  ToolWrap: %s %s", execmd, exeopt)
+        self.logger.debug("  Final   : %s", cmd)
+        self.logger.debug("")
+
         self.queue.submit(cmd, block)
 
     def check(self):
         return self.queue.check()
 
     def collect_data(self):
-        self.tool.collect_data()
+        if os.path.isfile("%s/data.ppk" % self.experiment.insname):
+            self.logger.verb("Found data.ppk, bypassing data collection\n")
+        else:
+            self.tool.collect_data()
+
         self.datastore.load()

@@ -1,5 +1,8 @@
 import os
+import logging
 import subprocess
+
+logger = logging.getLogger(__name__)
 
 def run(template, script, **kwargs):
     """
@@ -15,6 +18,7 @@ def run(template, script, **kwargs):
     Returns:
       None
     """
+    global logger
     delete = False
     this_dir, this_file = os.path.split(__file__)
 
@@ -22,14 +26,18 @@ def run(template, script, **kwargs):
         script = '.script'
         delete = True
 
-    f = open("%s/scripts/%s" % (this_dir, template), "r")
-    content = f.read().format(**kwargs)
-    f.close()
+    logger.info("Populating a helper script (%s) from the template (%s)", script, template)
 
-    f = open(script, 'w')
-    f.write(content)
-    f.close()
+    with open("%s/scripts/%s" % (this_dir, template), "r") as f:
+        content = f.read().format(**kwargs)
+
+    with open(script, 'w') as f:
+        f.write(content)
+
     os.chmod(script, 0755)
+
+    logger.info("Running the helper script (%s)", script)
+    logger.cmd(os.path.realpath(script))
 
     subprocess.call(os.path.realpath(script))
 

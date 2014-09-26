@@ -1,4 +1,5 @@
 import os
+import logging
 import subprocess
 import ConfigParser
 
@@ -10,6 +11,7 @@ class Tool(AbstractTool):
         self.name       = "tau"
         self.longname   = "Tool.tau.%s" % experiment.name
         self.experiment = experiment
+        self.logger     = logging.getLogger(__name__)
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -98,10 +100,13 @@ class Tool(AbstractTool):
         raise Exception("TAU: invalid mode: %s. (Available: instrumentation, sampling)" % mode)
 
     def collect_data(self):
-        process = subprocess.Popen(["paraprof",
-                                    "--pack",
-                                    "%s/data.ppk" % self.experiment.insname,
-                                    "%s/profiles" % self.experiment.insname],
+        cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
+               "--pack",
+               "%s/data.ppk" % self.experiment.insname,
+               "%s/profiles" % self.experiment.insname]
+        self.logger.info("Pack collected data to TAU .ppk package")
+        self.logger.cmd(' '.join(cmd))
+        process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()

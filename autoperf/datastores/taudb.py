@@ -1,4 +1,5 @@
 import os
+import logging
 import ConfigParser
 
 from ..utils import config
@@ -9,6 +10,7 @@ class Datastore:
         self.name       = "taudb"
         self.longname   = "Datastore.taudb.%s" % experiment.name
         self.experiment = experiment
+        self.logger     = logging.getLogger(__name__)
 
         self.config  = config.get("%s.config" % self.longname)
 
@@ -27,6 +29,7 @@ class Datastore:
             "hpctoolkit": self.load_hpctoolkit,
             }
 
+        self.logger.info("Loading collected data to TAUdb:")
         source = self.tool.name
         try:
             dispatch[source]()
@@ -34,7 +37,8 @@ class Datastore:
             raise Exception("Invalid data source: %s" % e.args[0])
 
     def load_tau(self):
-        script.run("taudb_loadtrial.py", None,
+        script.run("taudb_loadtrial.py",
+                   "%s/taudb_loadtrial.py" % self.experiment.insname,
                    tauroot  = self.experiment.tauroot,
                    taudb    = self.config,
                    filetype = "profiles",
@@ -44,7 +48,8 @@ class Datastore:
                    source   = "profiles")
 
     def load_hpctoolkit(self):
-        script.run("taudb_loadtrial.py", None,
+        script.run("taudb_loadtrial.py",
+                   "%s/taudb_loadtrial.py" % self.experiment.insname,
                    tauroot  = self.experiment.tauroot,
                    taudb    = self.config,
                    filetype = "hpc",
