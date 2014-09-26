@@ -203,7 +203,7 @@ def compare(aResult, bResult, metric):
     # calculate absolute and relative difference
     for event in events:
         absDiff[event] = abs(bData[event] - aData[event])
-        relDiff[event] = absDiff[event] / max(aData[event], bData[event])
+        relDiff[event] = absDiff[event] / aData[event]
 
     # prepare for the filter
     if mode == "absolute":
