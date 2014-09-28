@@ -27,9 +27,19 @@ class Platform(AbstractPlatform):
         self.queue.setup()
 
     def setup_str(self):
+        """
+        Returns:
+          string: A string of commands which should be executed before
+                  any application which will run on this platform
+        """
         return self.tool.setup_str()
 
     def build_env(self):
+        """
+        Returns:
+          dict: A dict of environment variables which should be set
+                before building any applications on this platform
+        """
         env = { }
 
         env = dict(env.items() + self.tool.build_env().items())
@@ -37,6 +47,17 @@ class Platform(AbstractPlatform):
         return env
 
     def run(self, _execmd, _exeopt, block=False):
+        """
+        Run an application on this platform.
+
+        Args:
+          execmd (string): the command going to run
+          exeopt (string): the cmdline option for `execmd`
+          block  (bool)  : block until application exit?
+
+        Returns:
+          None
+        """
         execmd, exeopt = self.tool.wrap_command(_execmd, _exeopt)
         cmd = "%s %s" % (execmd, exeopt)
 
@@ -63,13 +84,17 @@ class Platform(AbstractPlatform):
 
         self.queue.submit(cmd, block)
 
-    def check(self):
-        return self.queue.check()
-
     def collect_data(self):
+        """
+        Collect the profiling data we get, do some postprocessing if
+        necessary.
+
+        Returns:
+          None
+        """
         if os.path.isfile("%s/data.ppk" % self.experiment.insname):
             self.logger.verb("Found data.ppk, bypassing data collection\n")
         else:
+            self.tool.aggregate()
             self.tool.collect_data()
-
-        self.datastore.load()
+            self.datastore.load()

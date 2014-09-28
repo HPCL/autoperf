@@ -1,6 +1,5 @@
 import os
 import logging
-import subprocess
 import ConfigParser
 
 from ..utils import config
@@ -56,19 +55,18 @@ class Tool(AbstractTool):
           string: A string of commands needed to be executed before
                   running TAU experiment
         """
-        tau_setup   = "mkdir -p %s/profiles\n" % self.experiment.insname
+        datadir     = self.experiment.datadirs[self.experiment.iteration]
+        metrics     = self.experiment.parted_metrics[self.experiment.iteration]
+
+        tau_setup   = "# TAU environment variables\n"
         tau_options = config.get_section(self.longname)
         for name, value in tau_options:
             # take all upper case options as TAU environment variables
             if name.upper() == name:
                 tau_setup += "export %s=%s\n" % (name, value)
 
-        # index of metric sets created by partitioner is encoded in
-        # experiment instance name
-        part = int(self.experiment.insname[27:])
-
-        tau_setup += "export TAU_METRICS=%s\n" % self.experiment.parted_metrics[part]
-        tau_setup += "export PROFILEDIR=%s/profiles\n" % self.experiment.insname
+        tau_setup += "export TAU_METRICS=%s\n" % metrics
+        tau_setup += "export PROFILEDIR=%s/profiles\n" % datadir
         return tau_setup
 
     def wrap_command(self, execmd, exeopt):
@@ -99,15 +97,27 @@ class Tool(AbstractTool):
 
         raise Exception("TAU: invalid mode: %s. (Available: instrumentation, sampling)" % mode)
 
-    def collect_data(self):
-        cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
-               "--pack",
-               "%s/data.ppk" % self.experiment.insname,
-               "%s/profiles" % self.experiment.insname]
-        self.logger.info("Pack collected data to TAU .ppk package")
-        self.logger.cmd(' '.join(cmd))
-        process = subprocess.Popen(cmd,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        out, err = process.communicate()
+    def aggregate(self):
+        """
+        Aggregate data collected by all iterations of the current
+        experiment. We assume that iterations have all been finished.
+        """
+        self.logger.info("Aggregating all collected data")
 
+        for datadir in self.experiment.datadirs:
+            metrics = os.listdir("%s/profiles" % datadir)
+            for metric in metrics:
+                target    = os.path.relpath("%s/profiles/%s" % (datadir, metric),
+                                            "%s/profiles"    % self.experiment.insname)
+                link_name = "%s/profiles/%s" % (self.experiment.insname, metric)
+
+                self.logger.cmd("ln -s %s %s", target, link_name)
+
+                # link error will happen if different iterations share
+                # some metrics, in this case we just ignore the error
+                try:
+                    os.symlink(target, link_name)
+                except:
+                    pass
+
+        self.logger.newline()

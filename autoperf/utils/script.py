@@ -37,9 +37,9 @@ def run(template, script, **kwargs):
     os.chmod(script, 0755)
 
     logger.info("Running the helper script (%s)", script)
-    logger.cmd(os.path.realpath(script))
+    logger.cmd(os.path.relpath(script))
 
-    subprocess.call(os.path.realpath(script))
+    subprocess.call(os.path.relpath(script))
 
     if delete:
         os.unlink(script)

@@ -13,10 +13,15 @@ class MyLogger(Logger):
         Logger.__init__(self, name)
 
     def shift(self):
-        MyLogger.indent = "    %s" % MyLogger.indent
+        if self.isEnabledFor(self.CMD):
+            MyLogger.indent = "    %s" % MyLogger.indent
 
     def unshift(self):
-        MyLogger.indent = MyLogger.indent[:-4]
+        if self.isEnabledFor(self.CMD):
+            MyLogger.indent = MyLogger.indent[:-4]
+
+    def newline(self):
+        Logger.critical(self, "")
 
     def verb(self, msg, *args, **kwargs):
         msg = "%s# %s" % (MyLogger.indent, msg)

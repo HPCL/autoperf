@@ -30,16 +30,16 @@ echo NP : $NP
 echo PBS_NP: $PBS_NP
 
 # mark the job as running
-echo -n "{exp_name} {insname} PBS:$PBS_JOBID Running" >{insname}/job.stat
+echo -n "{exp_name} {insname} PBS:$PBS_JOBID Running" >{datadir}/.job.stat
 
 # setup the environment for the experiment
 {exp_setup}
 
 # run the experiment
-{exp_run} 2>&1 | tee {insname}/job.log
+{exp_run} 2>&1 | tee {datadir}/job.log
 
 # mark the job as finished
-echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
+echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
 
 # notify autoperf that we are done
 {notify}ssh {hostname} kill -SIGUSR1 {pid}
@@ -89,6 +89,9 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
         self.platform = self.experiment.platform
         
     def submit(self, cmd, block=False):
+        datadir = self.experiment.datadirs[self.experiment.iteration]
+        jobstat = "%s/.job.stat" % datadir
+
         content = self.pbs_script.format(
             tau_root     = self.experiment.tauroot,
             pbs_nodes    = self.nodes,
@@ -98,6 +101,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
             exp_name     = self.experiment.name,
             exp_setup    = self.platform.setup_str(),
             exp_run      = cmd,
+            datadir      = datadir,
             pid          = os.getpid(),
             hostname     = socket.gethostname(),
             insname      = self.experiment.insname,
@@ -106,7 +110,8 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
 
         self.logger.info("Populating the PBS job script")
 
-        script = open("%s/job.sh" % self.experiment.insname, "w+")
+        script_name = "%s/job.sh" % datadir
+        script = open(script_name, "w+")
         script.write(content)
         script.flush()
         script.seek(0)
@@ -114,7 +119,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
         print "*** Submitting PBS job",
 
         self.logger.info("Submitting the PBS job script")
-        self.logger.cmd("qsub %s/job.sh\n", self.experiment.insname)
+        self.logger.cmd("qsub %s\n", script_name)
 
         # For Python 2.7+, we can use subprocess.check_output() instead
         process = subprocess.Popen("qsub",
@@ -129,11 +134,11 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{insname}/job.stat
 
         script.close()
 
-        f = open("%s/job.stat" % self.experiment.insname, "w")
-        f.write("%s %s PBS:%s Queueing" % (self.experiment.name,
-                                           self.experiment.insname,
-                                           self.job_id))
-        f.close()
+        # place the job stat marker
+        with open(jobstat, "w") as f:
+            f.write("%s %s PBS:%s Queueing" % (self.experiment.name,
+                                               self.experiment.insname,
+                                               self.job_id))
 
         if block:
             print "*** Waiting for the task to be finished...",

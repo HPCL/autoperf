@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 import datetime
 import subprocess
@@ -16,15 +17,24 @@ class Experiment:
     analyses  = None
 
     def __init__(self, name, insname=None):
+        """
+        Instantiating an experiment. Do the first step of the
+        initialization. If `insname` is not given, it will take
+        current timestamp as the default value.
+
+        Args:
+          name    (string): The name of this experiment
+          insname (string): The instance ID of this experiment
+        """
         experiments = config.get("Main.Experiments").split()
         if name not in experiments:
-            raise Exception("Experiment '%s' not defined" % name)
+            raise Exception("Unknown experiment: '%s'" % name)
         else:
             self.name     = name
             self.longname = "Experiments.%s" % name
 
-        self.timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
-        self.insname   = insname
+        self.insname  = insname
+        self.datadirs = [ ]
 
         # get some basic config values
         self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
@@ -81,6 +91,9 @@ class Experiment:
         self.logger.info("");
 
     def logger_init(self):
+        """
+        Get logger configurations and set it up.
+        """
         self.logger = logging.getLogger(__name__)
 
         # log destination
@@ -115,8 +128,124 @@ class Experiment:
         self.logger.info("Rootdir  : %s", self.rootdir)
         self.logger.info("MPI      : %s", self.is_mpi)
         self.logger.info("CUPTI    : %s", self.is_cupti)
-        self.logger.info("Timestamp: %s", self.timestamp)
+        self.logger.info("Instance : %s", self.insname)
         self.logger.info("LogLevel : %s", logging.getLevelName(self.logger.getEffectiveLevel()))
+
+    def _get_status(self, experiment, dirname):
+        """
+        This helper function checks whether `dirname` contains a valid
+        instance of `experiment`. If it does, return status of every
+        iteration of the instance as a list. Return an empty list if
+        no valid instance found.
+
+        Args:
+          dirname (string): A directory
+
+        Returns:
+          list: the status the instance
+        """
+        status = [ ]
+
+        # `dirname` should be in specific pattern (i.e. timestamp)
+        if not re.match(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{6}",
+                        os.path.basename(dirname)):
+            return status
+
+        # now looking for the stat marker
+        for item in os.listdir(dirname):
+            # stat marker is not a directory
+            if os.path.isdir("%s/%s" % (dirname, item)):
+                continue
+
+            # experiment name is also encoded in stat marker name for
+            # convenience
+            m = re.match(r"\.job-(.+)-\d+\.stat", item)
+            if m is None:
+                continue
+            else:
+                expname = m.group(1)
+
+            # be aware of that multiple experiments could share a
+            # single rootdir, so let's make sure this instance belongs
+            # to current experiment
+            if expname != experiment:
+                continue
+
+            stat   = { }
+            marker = "%s/%s" % (dirname, item)
+
+            if os.path.isfile(marker):
+                with open(marker, 'r') as fp:
+                    content = fp.read().split()
+                    stat["expname"] = content[0]
+                    stat["insname"] = content[1]
+                    stat["jobid"]   = content[2]
+                    stat["status"]  = content[3]
+
+            else:
+                # small chance that job stat marker is not placed yet
+                stat["expname"] = expname
+                stat["insname"] = dirname
+                stat["jobid"]   = "Unknown"
+                stat["status"]  = "Unknown"
+
+            status.append(stat)
+
+        return status
+
+    def get_status(self, path='.'):
+        """
+        Search `path` for all instances of current experiment, get
+        their status and return.
+
+        Args:
+          path (string): A directory path
+
+        Returns:
+          list: A list of status
+        """
+        stats = [ ]
+
+        dirs = [os.path.join(path, f) for f in os.listdir(path)]
+        dirs = [d for d in dirs if os.path.isdir(d)]
+        for dirname in dirs:
+            stat = self._get_status(self.name, dirname);
+            if len(stat) != 0:
+                stats.append(stat)
+
+        stats.sort(key=lambda stat: stat[0]["insname"])
+        return stats
+
+    def get_all_instance(self, expname=None):
+        """
+        Get all instances of an experiment.
+
+        Args:
+          expname (string): Name of an experiment
+
+        Returns:
+          list: A list of (instance_name, data_directory)
+        """
+        if expname is None:
+            expname = self.name
+
+        instances = [ ]
+
+        rootdir = config.get("Experiments.%s.rootdir" % expname,
+                             self.cwd)
+        rootdir = os.path.expanduser(self.rootdir)
+        rootdir = os.path.join(self.cwd, rootdir)
+
+        dirs = [os.path.join(rootdir, f) for f in os.listdir(rootdir)]
+        dirs = [d for d in dirs if os.path.isdir(d)]
+        for dirname in dirs:
+            stat = self._get_status(expname, dirname)
+            if len(stat) != 0:
+                instances.append((os.path.basename(dirname), dirname))
+
+        instances.sort(key = lambda inst: inst[0])
+
+        return instances
 
     def build(self):
         """
@@ -154,6 +283,10 @@ class Experiment:
             raise Exception("Builder failed")
 
     def setup(self):
+        """
+        This is the second step of the initialization. We setup
+        submodules after they have all been instantiated.
+        """
         self.platform.setup()
         self.tool.setup()
         self.datastore.setup()
@@ -162,7 +295,9 @@ class Experiment:
             self.analyses[a].setup()
 
     def link_items(self):
-        # link necessary files, if they are specified in config file
+        """
+        Link necessary files, if they are specified in config file
+        """
         try:
             items = config.get("%s.link" % self.longname).split()
         except ConfigParser.Error:
@@ -183,7 +318,9 @@ class Experiment:
                 os.symlink(item, link_name)
 
     def copy_items(self):
-        # copy necessary files, if they are specified in config file
+        """
+        Copy necessary files, if they are specified in config file
+        """
         try:
             items = config.get("%s.copy" % self.longname).split()
         except ConfigParser.Error:
@@ -217,16 +354,20 @@ class Experiment:
         """
         print "*** Preparing to run %s" % self.name
 
+        self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+
+        # logger
         self.logger.info("Run the experiment")
-        self.logger.cmd("function run-%s () {", self.timestamp)
-        if self.logger.isEnabledFor(logging.CMD):
-            self.logger.shift()
+        self.logger.cmd("function run-%s () {", self.insname)
+        self.logger.shift()
+        # 'cd' actually happens in __init__()
         self.logger.cmd("cd %s\n", self.rootdir)
 
         execmd = config.get("%s.execmd" % self.longname)
         execmd = os.path.expanduser(execmd)
         exeopt = config.get("%s.exeopt" % self.longname, "")
 
+        # link, copy and build
         self.link_items()
         self.copy_items()
         self.build()
@@ -238,49 +379,85 @@ class Experiment:
         self.metrics = list(set(self.metrics))
 
         # partition the metrics
+        from partitioner import partitioner
         dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
         algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
-
-        from partitioner import partitioner
-
-        self.logger.info("Partitioning the metrics:")
-
         self.parted_metrics = partitioner(dbfile, self.metrics, algo, False)
 
-        for i in range(len(self.parted_metrics)):
-            self.logger.info("  %2d: %s", i+1, self.parted_metrics[i])
-
+        # logger
+        self.logger.info("Partitioning the metrics:")
         if len(self.parted_metrics) == 0:
             self.logger.critical("CRITICAL: partitioner failed, abort\n")
-            self.cleanup()
+            # 'cd' actually never happens
+            self.logger.cmd("cd %s", self.cwd)
+            self.logger.unshift()
+            self.logger.cmd( "}")
             raise Exception("Metrics partition failed!")
+        for i in range(len(self.parted_metrics)):
+            self.logger.info("  %2d: %s", i+1, self.parted_metrics[i])
+        self.logger.newline()
+
+        # populate the data directories
+        self.logger.info("Populating data directories")
+        self.logger.cmd("mkdir -p %s/profiles", self.insname)
+        os.makedirs("%s/profiles" % self.insname)
+
+        self.datadirs = [ ]
+        for i in range(len(self.parted_metrics)):
+            datadir = "%s/.iter-%02d" % (self.insname, i)
+            self.datadirs.append(datadir)
+
+            self.logger.cmd("mkdir -p %s/profiles", datadir)
+            os.makedirs("%s/profiles" % datadir)
+
+            # pre-link job log and stat marker
+            target    = os.path.relpath("%s/job.log" % datadir, self.insname)
+            link_name = "%s/job-%02d.log" % (self.insname, i)
+            self.logger.cmd("ln -s %s %s", target, link_name)
+            os.symlink(target, link_name)
+            target    = os.path.relpath("%s/.job.stat" % datadir, self.insname)
+            link_name = "%s/.job-%s-%02d.stat" % (self.insname, self.name , i)
+            self.logger.cmd("ln -s %s %s", target, link_name)
+            os.symlink(target, link_name)
+
+        self.logger.newline()
 
         # run the experiment
         for i in range(len(self.parted_metrics)):
-            self.insname = self.timestamp + "T%03d" % i
-
-            self.logger.info("Running experiment, pass %d/%d\n", i+1, len(self.parted_metrics))
-            self.logger.cmd("mkdir -p %s", self.insname)
-
-            os.makedirs(self.insname)
+            self.logger.info("Running experiment, iteration %d of %d",
+                             i+1, len(self.parted_metrics))
+            self.iteration = i
             self.platform.run(execmd, exeopt, block)
+            self.logger.newline()
 
-        self.insname = None
-
-    def check(self):
-        return self.platform.check()
+        # 'cd' actually happens in cleanup()
+        self.logger.cmd("cd %s", self.cwd)
+        self.logger.unshift()
+        self.logger.cmd( "}")
 
     def analyze(self):
-        self.logger.info("Analyze the experiment")
-
+        # sanity check
         if self.insname is None:
             self.logger.critical("CRITICAL: do not know the instanceId of the experiment, abort")
             raise Exception("Do not know the instanceId of the experiment")
 
+        # logger
+        self.logger.info("Analyze the experiment")
         self.logger.cmd("function analyze-%s () {", self.insname)
-        if self.logger.isEnabledFor(logging.CMD):
-            self.logger.shift()
+        self.logger.shift()
+        # 'cd' actually happens in __init__()
         self.logger.cmd("cd %s\n", self.rootdir)
+
+        # we need to re-discover data directories if we are not
+        # running in block mode
+        if len(self.datadirs) == 0:
+            for d in os.listdir(self.insname):
+                if not os.path.isdir("%s/%s" % (self.insname, d)):
+                    continue
+                if not re.match("\.iter-\d+$", d):
+                    continue
+                self.datadirs.append("%s/%s" % (self.insname, d))
+            self.datadirs.sort()
 
         # collect generated data and do the post-processing
         self.platform.collect_data()
@@ -290,18 +467,18 @@ class Experiment:
         for analysis in self.analyses.values():
             analysis.run()
 
-    def cleanup(self):
+        # logger
+        self.logger.newline()
+        # 'cd' actually happens in cleanup()
         self.logger.cmd("cd %s", self.cwd)
+        self.logger.unshift()
+        self.logger.cmd( "}")
 
+    def cleanup(self):
         os.chdir(self.cwd)
 
-        if self.logger.isEnabledFor(logging.CMD):
-            self.logger.unshift()
-        self.logger.cmd( "}")
         self.logger.info("")
         self.logger.info("********** EXPERIMENT END   **********")
-
-        # make sure there is a blank line for pretty print
-        self.logger.log(logging.CRITICAL, "")
+        self.logger.newline()
 
         rootLogger.removeHandler(self.logHandler)

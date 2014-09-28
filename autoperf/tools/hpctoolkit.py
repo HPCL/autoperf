@@ -28,57 +28,103 @@ class Tool(AbstractTool):
         return ""
 
     def wrap_command(self, execmd, exeopt):
-        self.measurement = "%s/measurement" % self.experiment.insname
-        _execmd = "hpcrun -o %s" % self.measurement
+        datadir = self.experiment.datadirs[self.experiment.iteration]
+        metrics = self.experiment.parted_metrics[self.experiment.iteration]
 
-        part = int(self.experiment.insname[27:])
+        measurement = "%s/measurement" % datadir
+        _execmd = "hpcrun -o %s" % measurement
 
-        for metric in self.experiment.parted_metrics[part].split(':'):
+        # FIXME: event period is missing
+        for metric in metrics.split(':'):
             _execmd += " -e %s" % metric
 
         _execmd += " %s" % execmd
 
         return [_execmd, exeopt]
 
-    def collect_data(self):
+    def aggregate(self):
+        """
+        Aggregate data collected by all iterations of the current
+        experiment. We assume that iterations have all been finished.
+        """
         execmd = config.get("%s.execmd" % self.experiment.longname)
         execmd = os.path.expanduser(execmd)
         exebin = os.path.basename(execmd)
         appsrc = config.get("%s.appsrc" % self.longname)
 
-        self.measurement = "%s/measurement" % self.experiment.insname
-        self.database    = "%s/database"    % self.experiment.insname
-        self.hpcstruct   = "%s/%s.hpcstruct" % (self.experiment.insname, exebin)
-
+        self.logger.info("Aggregating all collected data")
+        hpcstruct = "%s/%s.hpcstruct" % (self.experiment.insname, exebin)
         cmd = ["hpcstruct",
                "-o",
-               self.hpcstruct,
+               hpcstruct,
                execmd]
         self.logger.info("HPCToolkit: run hpcstruct")
         self.logger.cmd(' '.join(cmd))
         subprocess.call(cmd)
 
-        cmd =["hpcprof",
-              "-o",
-              self.database,
-              "-S",
-              self.hpcstruct,
-              "-I",
-              "%s/'*'" % appsrc,
-              self.measurement]
-        self.logger.info("HPCToolkit: run hpcprof")
-        self.logger.cmd(' '.join(cmd))
-        subprocess.call(cmd)
+        # This could be stupid, but it is the only way I know to
+        # aggregate HPCToolkit collected data:
+        for datadir in self.experiment.datadirs:
+            measurement = "%s/measurement" % datadir
+            database    = "%s/database"    % datadir
 
-        cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
-               "-f",
-               "hpc",
-               "--pack",
-               "%s/data.ppk" % self.experiment.insname,
-               "%s/experiment.xml" % self.database]
-        self.logger.info("Pack collected data to TAU .ppk package")
-        self.logger.cmd(' '.join(cmd))
-        process = subprocess.Popen(cmd,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        out, err = process.communicate()
+            # 1. convert to ppk (paraprof -f hpc --pack)
+            cmd =["hpcprof",
+                  "-o",
+                  database,
+                  "-S",
+                  hpcstruct,
+                  "-I",
+                  "%s/'*'" % appsrc,
+                  measurement]
+            self.logger.info("HPCToolkit: run hpcprof")
+            self.logger.cmd(' '.join(cmd))
+            subprocess.call(cmd)
+
+            cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
+                   "-f",
+                   "hpc",
+                   "--pack",
+                   "%s/data.ppk" % datadir,
+                   "%s/experiment.xml" % database]
+            self.logger.info("Pack collected data to TAU .ppk package")
+            self.logger.cmd(' '.join(cmd))
+            process = subprocess.Popen(cmd,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            out, err = process.communicate()
+
+            # 2. dump as tau profile (paraprof --dump)
+            cwd = os.getcwd()
+            self.logger.cmd("cd %s/profiles", datadir)
+            os.chdir("%s/profiles" % datadir)
+
+            cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
+                   "--dump",
+                   "../data.ppk"]
+            self.logger.info("Unpack .ppk to TAU profiles")
+            self.logger.cmd(' '.join(cmd))
+            process = subprocess.Popen(cmd,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            out, err = process.communicate()
+
+            self.logger.cmd("cd %s", cwd)
+            os.chdir(cwd)
+
+            # 3. aggregate tau profiles
+            for metric in os.listdir("%s/profiles" % datadir):
+                target    = os.path.relpath("%s/profiles/%s" % (datadir, metric),
+                                            "%s/profiles"    % self.experiment.insname)
+                link_name = "%s/profiles/%s" % (self.experiment.insname, metric)
+
+                self.logger.cmd("ln -s %s %s", target, link_name)
+
+                # link error will happen if different iterations share
+                # some metrics, in this case we just ignore the error
+                try:
+                    os.symlink(target, link_name)
+                except:
+                    pass
+
+            self.logger.newline()

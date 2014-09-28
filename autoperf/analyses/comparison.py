@@ -22,7 +22,7 @@ class Analysis(AbstractAnalysis):
     def setup(self):
         self.aName     = config.get("%s.instance"  % self.longname, "last")
 
-        instances = self.get_all_instance(self.base)
+        instances = self.experiment.get_all_instance(self.base)
         if len(instances) == 0:
             raise Exception("Can not find any instance of experiment '%s'" % self.base)
 
@@ -33,44 +33,6 @@ class Analysis(AbstractAnalysis):
                 if self.aName == n:
                     self.aDir = d
                     break
-
-    def get_all_instance(self, expname):
-        """
-        Get all instances of an experiment.
-
-        Args:
-          expname (string): Name of an experiment
-
-        Returns:
-          list: A list of (instance_name, data_directory)
-        """
-        instances = [ ]
-
-        rootdir = config.get("Experiments.%s.rootdir" % expname,
-                             self.experiment.cwd)
-        rootdir = os.path.join(self.experiment.cwd, rootdir)
-
-        dirs = [os.path.join(rootdir, f) for f in os.listdir(rootdir)]
-        dirs = [d for d in dirs if os.path.isdir(d)]
-        for dirname in dirs:
-            if not re.match(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{6}T\d{3}",
-                            os.path.basename(dirname)):
-                continue
-
-            status = "%s/job.stat" % dirname
-            if not os.path.isfile(status):
-                continue
-
-            fp = open(status, 'r')
-            stat = fp.read().split()
-            fp.close()
-
-            if stat[0] == expname:
-                instances.append((os.path.basename(dirname), dirname))
-
-        instances.sort(key = lambda inst: inst[0])
-
-        return instances
 
     def run(self):
         self.bName  = self.experiment.insname

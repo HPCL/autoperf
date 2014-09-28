@@ -24,36 +24,14 @@ class Datastore:
         self.tool = self.experiment.tool
 
     def load(self):
-        dispatch = {
-            "tau":        self.load_tau,
-            "hpctoolkit": self.load_hpctoolkit,
-            }
-
         self.logger.info("Loading collected data to TAUdb:")
-        source = self.tool.name
-        try:
-            dispatch[source]()
-        except KeyError as e:
-            raise Exception("Invalid data source: %s" % e.args[0])
 
-    def load_tau(self):
         script.run("taudb_loadtrial.py",
                    "%s/taudb_loadtrial.py" % self.experiment.insname,
                    tauroot  = self.experiment.tauroot,
                    taudb    = self.config,
-                   filetype = "profiles",
+                   filetype = "packed",
                    appname  = self.appname,
                    expname  = self.experiment.name,
                    trial    = self.experiment.insname,
-                   source   = "profiles")
-
-    def load_hpctoolkit(self):
-        script.run("taudb_loadtrial.py",
-                   "%s/taudb_loadtrial.py" % self.experiment.insname,
-                   tauroot  = self.experiment.tauroot,
-                   taudb    = self.config,
-                   filetype = "hpc",
-                   appname  = self.appname,
-                   expname  = self.experiment.name,
-                   trial    = self.experiment.insname,
-                   source   = "database/experiment.xml")
+                   source   = "data.ppk")

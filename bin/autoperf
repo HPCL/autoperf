@@ -42,23 +42,25 @@ parser.add_option("-e", "--exp",
                   "the order they appear. [default: NUM=1]")
 parser.add_option("-b", "--block",
                   action="store_true", dest="block", default=False,
-                  help="Instead of exit immediately after submit the experiment "
-                  "to the batch system, now block until the job is finished "
-                  "[default: %default]")
+                  help="Instead of exiting immediately after submitting the"
+                  "experiment to the batch system, now block until the job "
+                  "is finished [default: %default]")
 parser.add_option("-c", "--check",
                   action="store_const", const="check", dest="mode",
-                  help="When used with '-a' or '-e', show the status (Unknown, "
-                  "Running or Finished) of those experiments instead of running them")
+                  help="When used with '-a', '-e' or '-i', show the status ("
+                  "Unknown, Queueing, Running or Finished) of those experiments "
+                  "instead of running them")
 parser.add_option("-y", "--analyze",
                   action="store_const", const="analyze", dest="mode",
-                  help="When used with '-a' or '-e', analyze those experiments "
-                  "data instead of running them. The experiment must be in "
-                  "'Finished' state")
+                  help="When used with '-a', '-e' or '-i', analyze those "
+                  "experiments data instead of running them. The experiment must "
+                  "be in 'Finished' state")
 parser.add_option("-i", "--insname",
-                  action="store", type="string", dest="insname",
+                  action="append", type="string", dest="insnames",
                   metavar="INSTANCE", default=None,
                   help="Use with '-c' or '-y' to specify the instance name of "
-                  "the experiment. Check or analyze all instances if not specified")
+                  "the experiment. Check or analyze all instances if not specified. "
+                  "This option can be specified multiple times")
 
 (options, args) = parser.parse_args()
 
@@ -88,6 +90,9 @@ def parse_config():
         exit(1)
 
 def get_experiment_list(allow_dup=True):
+    """
+    Get the list of experiment we need to concern with
+    """
     global options
     if options.exps is None:
         return config.get("Main.Experiments").split()
@@ -119,21 +124,53 @@ def run_experiments():
 
         experiment.cleanup()
 
-def check_an_experiment(name, insname):
-    logging.disable(logging.WARNING)
+def check_an_experiment(expname, insnames=None):
+    """
+    Check and return the status of all the instances of experiment
+    `expname`. If `insname` is not None, check only those instances
 
-    experiment = Experiment(name, insname)
+    Args:
+      expname (string): Name of an experiment
+      insnames  (list): List of instances need to check
+
+    Returns:
+      list: List of instance status
+    """
+    logging.disable(logging.CRITICAL)
+
+    experiment = Experiment(expname, None)
     experiment.setup()
 
-    stats = experiment.check()
+    stats = experiment.get_status()
 
     experiment.cleanup()
 
     logging.disable(logging.NOTSET)
 
-    return stats;
+    if insnames is None:
+        return stats
+    else:
+        return [stat for stat in stats if stat[0]['insname'] in insnames]
 
-def check_experiments(insname):
+def is_finished(instance):
+    """
+    Check whether an experiment instance is finished. The instance
+    could have several iterations because of the partitioner, so it is
+    considered as 'Finished' only if all iterations are done.
+
+    Args:
+      instance (list): List of iteration status
+
+    Returns:
+      bool: Whether the instance is finished or not
+    """
+    for iteration in instance:
+        if iteration['status'] != 'Finished':
+            return False
+
+    return True
+
+def check_experiments(insnames):
     fmtstr = "{0:20} {1:30} {2:15} {3:10}"
 
     print "*** Experiment status:"
@@ -142,30 +179,46 @@ def check_experiments(insname):
 
     exps = get_experiment_list(False)
     for exp in exps:
-        for stat in check_an_experiment(exp, insname):
-            print fmtstr.format(stat[0], stat[1], stat[2], stat[3])
+        for instance in check_an_experiment(exp, insnames):
+            # all iterations of an instance shall have same
+            # experiment name and instance name
+            expname = instance[0]['expname']
+            insname = instance[0]['insname']
 
-def analyze_an_experiment(name, insname):
-    for stat in check_an_experiment(name, insname):
-        if stat[3] != 'Finished':
-            print "*** Experiment %s %s is not finished yet, ignore" % (name, insname)
-        else:
-            print "*** Analyzing %s %s ..." % (name, stat[1])
-            experiment = Experiment(name, stat[1])
+            if is_finished(instance):
+                print fmtstr.format(expname, insname, "-", "Finished")
+            else:
+                for iteration in instance:
+                    print fmtstr.format(expname, insname,
+                                        iteration['jobid'],
+                                        iteration['status'])
+                    # don't bother show expname and insname for
+                    # the following iterations
+                    expname = ""
+                    insname = ""
+
+def analyze_an_experiment(expname, insnames):
+    for instance in check_an_experiment(expname, insnames):
+        insname = instance[0]['insname']
+        if is_finished(instance):
+            print "*** Analyzing %s %s ..." % (expname, insname)
+            experiment = Experiment(expname, insname)
             experiment.setup()
             experiment.analyze()
             experiment.cleanup()
+        else:
+            print "*** Experiment %s %s is not finished yet, ignore" % (expname, insname)
 
-def analyze_experiments(insname):
-    exps = get_experiment_list()
+def analyze_experiments(insnames):
+    exps = get_experiment_list(False)
     for exp in exps:
-        analyze_an_experiment(exp, insname)
+        analyze_an_experiment(exp, insnames)
 
 parse_config()
 
 if options.mode is None:
     run_experiments()
 elif options.mode == 'check':
-    check_experiments(options.insname)
+    check_experiments(options.insnames)
 elif options.mode == 'analyze':
-    analyze_experiments(options.insname)
+    analyze_experiments(options.insnames)

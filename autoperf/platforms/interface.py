@@ -38,15 +38,6 @@ class AbstractPlatform:
         """
         raise NotImplementedError
 
-    def check(self):
-        """
-        Check the status of the applications running on this platform
-
-        Returns:
-          None
-        """
-        raise NotImplementedError
-
     def collect_data(self):
         """
         Collect the profiling data we get, do some postprocessing if
