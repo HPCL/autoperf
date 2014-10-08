@@ -2,6 +2,8 @@
 Autoperf
 ========
 
+Autoperf is a tool for creating and managing performance experiments, including data post processing and analysis. It provides a simple format for defining the experiment environment and data to be collected, and interfaces to a variety of performance tools (e.g., TAU and HPCToolkit) to perform the measurements and subsequent analyses. The current capabilities include the collection of detailed hardware performance counters, derived performance metrics computations, statistical analysis, and preliminary support for comparisons of different code versions.
+
 Directory Structure
 ===================
 ::
