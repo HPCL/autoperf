@@ -203,7 +203,13 @@ def compare(aResult, bResult, metric):
     # calculate absolute and relative difference
     for event in events:
         absDiff[event] = abs(bData[event] - aData[event])
-        relDiff[event] = absDiff[event] / aData[event]
+
+        # not sure what to do when denominator is zero, for now let's
+        # just pretend it is 1
+        if aData[event] == 0:
+            relDiff[event] = absDiff[event] / 1
+        else:
+            relDiff[event] = absDiff[event] / aData[event]
 
     # prepare for the filter
     if mode == "absolute":
