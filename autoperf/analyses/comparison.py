@@ -12,7 +12,7 @@ class Analysis(AbstractAnalysis):
         self.experiment = experiment
 
         self.longmetrics = config.get("%s.metrics" % self.longname, "TIME").split()
-        self.metrics     = self.longmetrics
+        self.metrics     = [m.partition('@')[0] for m in self.longmetrics]
 
         self.mode      = config.get("%s.mode"      % self.longname, "absolute")
         self.throttle  = config.get("%s.throttle"  % self.longname, 1000)

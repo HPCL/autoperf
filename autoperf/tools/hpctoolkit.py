@@ -17,10 +17,6 @@ class Tool(AbstractTool):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses
 
-        self.metrics = [ ]
-        for analysis in self.analyses.values():
-            self.metrics += analysis.longmetrics
-
     def build_env(self):
         return dict()
 
@@ -34,9 +30,10 @@ class Tool(AbstractTool):
         measurement = "%s/measurement" % datadir
         _execmd = "hpcrun -o %s" % measurement
 
-        # FIXME: event period is missing
         for metric in metrics.split(':'):
-            _execmd += " -e %s" % metric
+            for m in self.experiment.longmetrics:
+                if m.partition('@')[0] == metric:
+                    _execmd += " -e %s" % m
 
         _execmd += " %s" % execmd
 

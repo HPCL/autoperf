@@ -373,10 +373,13 @@ class Experiment:
         self.build()
 
         # get all metrics we need to measure
-        self.metrics = [ ]
+        self.metrics     = [ ]
+        self.longmetrics = [ ]
         for analysis in self.analyses.values():
-            self.metrics += analysis.metrics
-        self.metrics = list(set(self.metrics))
+            self.metrics     += analysis.metrics
+            self.longmetrics += analysis.longmetrics
+        self.metrics     = list(set(self.metrics))
+        self.longmetrics = list(set(self.longmetrics))
 
         # partition the metrics
         from partitioner import partitioner
