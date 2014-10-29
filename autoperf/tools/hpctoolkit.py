@@ -31,9 +31,7 @@ class Tool(AbstractTool):
         _execmd = "hpcrun -o %s" % measurement
 
         for metric in metrics.split(':'):
-            for m in self.experiment.longmetrics:
-                if m.partition('@')[0] == metric:
-                    _execmd += " -e %s" % m
+            _execmd += " -e %s@%s" % (metric, self.experiment.metric_set.interval[metric])
 
         _execmd += " %s" % execmd
 

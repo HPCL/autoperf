@@ -6,9 +6,10 @@ import subprocess
 import shutil, shlex, errno
 import ConfigParser
 
-from .             import logger as rootLogger
-from .utils        import config
-from .utils.logger import MyLogger
+from .                import logger as rootLogger
+from .utils           import config
+from .utils.logger    import MyLogger
+from .utils.MetricSet import MetricSet
 
 class Experiment:
     platform  = None
@@ -35,6 +36,8 @@ class Experiment:
 
         self.insname  = insname
         self.datadirs = [ ]
+
+        self.metric_set = MetricSet()
 
         # get some basic config values
         self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
@@ -291,8 +294,13 @@ class Experiment:
         self.tool.setup()
         self.datastore.setup()
 
-        for a in self.analyses:
-            self.analyses[a].setup()
+        for a in self.analyses.itervalues():
+            a.setup()
+
+        # now populate the metric set we need to measure
+        for a in self.analyses.itervalues():
+            for m in a.longmetrics:
+                self.metric_set.add(m)
 
     def link_items(self):
         """
@@ -372,20 +380,11 @@ class Experiment:
         self.copy_items()
         self.build()
 
-        # get all metrics we need to measure
-        self.metrics     = [ ]
-        self.longmetrics = [ ]
-        for analysis in self.analyses.values():
-            self.metrics     += analysis.metrics
-            self.longmetrics += analysis.longmetrics
-        self.metrics     = list(set(self.metrics))
-        self.longmetrics = list(set(self.longmetrics))
-
         # partition the metrics
         from partitioner import partitioner
         dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
         algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
-        self.parted_metrics = partitioner(dbfile, self.metrics, algo, False)
+        self.parted_metrics = partitioner(dbfile, list(self.metric_set.nmetrics), algo, False)
 
         # logger
         self.logger.info("Partitioning the metrics:")
