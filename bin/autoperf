@@ -26,7 +26,7 @@ for d in site_dirs:
 # command line parsing
 
 parser = OptionParser()
-parser.add_option("-C", "--Config",
+parser.add_option("-f", "--config",
                   action="store", dest="cfgfile",
                   help="Specify a config file. If not specified or file "
                   "does not exist, search for .autoperf.cfg, autoperf.cfg, "
