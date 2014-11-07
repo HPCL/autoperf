@@ -24,46 +24,46 @@ class Tool(AbstractTool):
         if self.experiment.is_cupti:
             self.binding += ",cupti"
 
+    def get_tau_vars(self):
+        """
+        Get all TAU environment variables specified under [Tool.tau]
+
+        Returns:
+          map: A map from variable name to its value
+        """
+        tau_vars = dict()
+        tau_options = config.get_section(self.longname)
+        for name, value in tau_options:
+            # take all upper case options as TAU environment variables
+            if name.upper() == name:
+                tau_vars[name] = value
+
+        return tau_vars
+
     def build_env(self):
         """
         Returns:
           map: A map of environment variables needed to build
                application with TAU
         """
-        tau_makefile = config.get("%s.TAU_MAKEFILE" % self.longname,
-                                  "Makefile.tau-papi-mpi-pdt")
-
-        try:
-            selfile = config.get("%s.selfile" % self.longname)
-        except ConfigParser.Error:
-            tau_options = os.getenv("TAU_OPTIONS", "")
-        else:
-            selfile = os.path.abspath(selfile)
-            tau_options = "%s -optTauSelectFile=%s" % (os.getenv("TAU_OPTIONS", ""), selfile)
-
-        env = {
-            'TAU_ROOT'    : self.experiment.tauroot,
-            'TAU_MAKEFILE': "%s/lib/%s" % (self.experiment.tauroot, tau_makefile),
-            'TAU_OPTIONS' : tau_options
-            }
+        env = self.get_tau_vars()
+        env['TAU_ROOT'] = self.experiment.tauroot
 
         return env
 
     def setup_str(self):
         """
         Returns:
-          string: A string of commands needed to be executed before
-                  running TAU experiment
+          string: A string of commands to be executed before running
+                  TAU experiment
         """
-        datadir     = self.experiment.datadirs[self.experiment.iteration]
-        metrics     = self.experiment.parted_metrics[self.experiment.iteration]
+        datadir   = self.experiment.datadirs[self.experiment.iteration]
+        metrics   = self.experiment.parted_metrics[self.experiment.iteration]
 
-        tau_setup   = "# TAU environment variables\n"
-        tau_options = config.get_section(self.longname)
-        for name, value in tau_options:
-            # take all upper case options as TAU environment variables
-            if name.upper() == name:
-                tau_setup += "export %s=%s\n" % (name, value)
+        tau_setup = "# TAU environment variables\n"
+        tau_vars  = self.get_tau_vars()
+        for name in tau_vars:
+            tau_setup += "export %s=%s\n" % (name, tau_vars[name])
 
         tau_setup += "export TAU_METRICS=%s\n" % metrics
         tau_setup += "export PROFILEDIR=%s/profiles\n" % datadir
