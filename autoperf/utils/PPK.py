@@ -60,7 +60,24 @@ class FunctionName:
     """
     def __init__(self, name):
         self.fullname = name
+
+        # the top level profiler
+        if name == ".TAU application":
+            self.type = "ROOT"
+            self.filename = None
+            self.lineno   = None
+            self.signature = ".TAU application"
+            self.resolved  = True
+            return
         
+        if name == "[CONTEXT] .TAU application":
+            self.type = "TOPLEVEL"
+            self.filename = None
+            self.lineno   = None
+            self.signature = "TOPLEVEL"
+            self.resolved  = True
+            return
+
         # unresolved address
         match = re.match(r"^0x[0-9a-f]+", name)
         if match:
@@ -99,7 +116,7 @@ class FunctionName:
         else:
             while True:
                 # [...] ... UNRESOLVED [...]
-                match = re.search(r"^\[.*?\].* UNRESOLVED \[.*?\]$", name)
+                match = re.search(r"^\[.*?\].* UNRESOLVED \[[^\[\]]*?\]$", name)
                 if match:
                     self.signature = 'UNRESOLVED'
                     break
@@ -172,7 +189,7 @@ class Event:
       FunctionA => FunctionB => ... => FunctionC => [CONTEXT] FunctonC =>
       [UNWIND] FunctionD => ... => [UNWIND] FunctionE => [SAMPLE] FunctionF
     """
-    def __init__(self, fullname):
+    def __init__(self, fullname, hotspots=[]):
         self.groups    = [ ]
         self.fullname  = fullname
         self.shortname = None
@@ -180,8 +197,9 @@ class Event:
 
         # check whether this is a derived event
         if len(self.callstack) == 1:
-            if '[SAMPLE]'  in fullname or '[UNWIND]'  in fullname or \
-               '[CONTEXT]' in fullname or '[CALLSITE' in fullname:
+            if '[SAMPLE]'  in fullname or '[UNWIND]'   in fullname or \
+               '[CONTEXT]' in fullname or '[CALLSITE]' in fullname or \
+               '[SUMMARY]' in fullname or  '.TAU application' == fullname:
                 self.isDerived = True
             else:
                 self.isDerived = False
@@ -196,12 +214,27 @@ class Event:
 
         # backtrace the callstack, find first resolved function name,
         # take it as our short name
+        first_resolved = None
+        first_hotspot  = None
         for f in reversed(self.callstack):
             if f.resolved:
-                self.shortname = f.signature
-                if self.shortname is '':
-                    print "Ender: " + f.fullname
-                break
+                # find out the first resolved site
+                if first_resolved is None:
+                    first_resolved = f.signature
+
+                # find out the first hotspot site, which is not
+                # necessarily the first resolved site
+                if first_hotspot is None and f.filename is not None:
+                    for spot in hotspots:
+                        match = re.search(spot, f.filename)
+                        if match:
+                            first_hotspot = f.signature
+
+        # favor the hotspot
+        if first_hotspot:
+            self.shortname = first_hotspot
+        elif first_resolved:
+            self.shortname = first_resolved
 
         if self.shortname is None and not self.isDerived:
             raise InvalidEventError(fullname)
@@ -413,9 +446,10 @@ class PPK:
     EXCLUSIVE = 0
     INCLUSIVE = 1
     
-    def __init__(self, filename):
+    def __init__(self, filename, hotspots):
         self.pos        = 0       # r/w position pointer
         self.filename   = filename
+        self.hotspots   = hotspots
 
         self.metadata   = { }     # map of metadata name->value
         self.metrics    = [ ]     # list of metric names
@@ -504,7 +538,7 @@ class PPK:
         numFunctions = self._readInt()
         for i in range(numFunctions):
             functionName = self._readUTF()
-            event        = Event(functionName)
+            event        = Event(functionName, hotspots)
 
             numThisGroups = self._readInt()
             for j in range(numThisGroups):
@@ -741,4 +775,3 @@ class PPK:
         
     def getAggIncMean(self, event, metric):
         return self._getAggData(event, metric, PPK.MEAN, PPK.INCLUSIVE)
-        

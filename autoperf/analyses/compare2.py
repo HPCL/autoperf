@@ -80,6 +80,7 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         self.throttle  = config.get("%s.throttle"  % self.longname, 1000)
         self.threshold = config.get("%s.threshold" % self.longname, 10)
         self.base      = config.get("%s.base"      % self.longname)
+        self.hotspots  = config.get("%s.hotspots"  % self.longname, "").split()
 
     def setup(self):
         self.aName     = config.get("%s.instance"  % self.longname, "last")
@@ -120,7 +121,7 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
             else:
                 relDiff[event] = absDiff[event] / aData[event]
 
-        if self.mode is "absolute":
+        if self.mode == "absolute":
             diff = absDiff.items()
         else:
             diff = relDiff.items()
@@ -158,8 +159,8 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         self.bName  = self.experiment.insname
         self.bDir   = os.path.join(os.getcwd(), self.bName)
 
-        self.aPPK = PPK("%s/data.ppk" % self.aDir)
-        self.bPPK = PPK("%s/data.ppk" % self.bDir)
+        self.aPPK = PPK("%s/data.ppk" % self.aDir, self.hotspots)
+        self.bPPK = PPK("%s/data.ppk" % self.bDir, self.hotspots)
 
         self.aPPK.attachMetricSet(self.experiment.metric_set)
         self.bPPK.attachMetricSet(self.experiment.metric_set)
