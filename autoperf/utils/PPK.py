@@ -10,6 +10,7 @@ from itertools import product
 
 from MathExp   import MathExp
 from MetricSet import MetricSet
+from metadata  import *
 
 class _Error(Exception):
     """Base class for exceptions in this module"""
@@ -375,8 +376,9 @@ class Profile:
         Args:
           ms (object): MetricSet
         """
-        excSymtab = dict(self.exclusive)
-        incSymtab = dict(self.inclusive)
+        metaSym   = get_sys_info()
+        excSymtab = dict(self.exclusive.items() + metaSym.items())
+        incSymtab = dict(self.inclusive.items() + metaSym.items())
 
         excVals = ms.eval(excSymtab)
         incVals = ms.eval(incSymtab)

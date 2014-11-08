@@ -322,7 +322,7 @@ class MathExp:
                 self.apply_function(symtab, eval_stack, token[1])
 
         if len(eval_stack) == 1:
-            return eval_stack[0][1]
+            return self.resolve_symbol(symtab, eval_stack[0])
         else:
             raise Exception('Syntax error')
 

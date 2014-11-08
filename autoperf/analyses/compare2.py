@@ -82,6 +82,8 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         self.base      = config.get("%s.base"      % self.longname)
         self.hotspots  = config.get("%s.hotspots"  % self.longname, "").split()
 
+        self.throttle  = float(self.throttle)
+
     def setup(self):
         self.aName     = config.get("%s.instance"  % self.longname, "last")
 
@@ -129,7 +131,7 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         # apply the throttle
         def throttle_filter(item):
             event = item[0]
-            return (aData[event] >= int(self.throttle)) and (bData[event] >= int(self.throttle))
+            return (aData[event] >= self.throttle) and (bData[event] >= self.throttle)
         diff = filter(throttle_filter, diff)
 
 

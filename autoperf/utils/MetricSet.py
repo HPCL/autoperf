@@ -79,6 +79,10 @@ class MetricSet:
         else:
             interval = p[2]
 
+        # ignore metadata
+        if metric.startswith("META_"):
+            return
+
         if self.is_derived(metric):
             self.add_derived_metric(metric, interval)
         else:
