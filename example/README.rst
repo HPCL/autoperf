@@ -235,13 +235,13 @@ Options
 
   Datastore
 
-    value: "taudb"
+    value: "nop" or "taudb"
 
     meaning: where to save the performance data
 
     meandatory: no
 
-    default: "taudb"
+    default: "nop"
 
   Analyses
 

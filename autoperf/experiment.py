@@ -42,7 +42,7 @@ class Experiment:
         # get some basic config values
         self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
         self.tool_name      = config.get("%s.Tool"       % self.longname, "tau")
-        self.datastore_name = config.get("%s.Datastore"  % self.longname, "taudb")
+        self.datastore_name = config.get("%s.Datastore"  % self.longname, "nop")
         self.analyses_name  = config.get("%s.Analyses"   % self.longname).split()
 
         self.cwd            = os.getcwd()

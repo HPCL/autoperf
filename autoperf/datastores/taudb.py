@@ -4,8 +4,9 @@ import ConfigParser
 
 from ..utils import config
 from ..utils import script
+from .interface import AbstractDatastore
 
-class Datastore:
+class Datastore(AbstractDatastore):
     def __init__(self, experiment):
         self.name       = "taudb"
         self.longname   = "Datastore.taudb.%s" % experiment.name
