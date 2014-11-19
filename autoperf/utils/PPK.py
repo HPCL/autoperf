@@ -369,16 +369,16 @@ class Profile:
         else:
             raise Error("Invalid parameter")
 
-    def updateDerivedMetric(self, ms):
+    def updateDerivedMetric(self, ms, meta):
         """
         Calc and update derived metrics into profile data
 
         Args:
           ms (object): MetricSet
+          meta (map) : a map of system metadata
         """
-        metaSym   = get_sys_info()
-        excSymtab = dict(self.exclusive.items() + metaSym.items())
-        incSymtab = dict(self.inclusive.items() + metaSym.items())
+        excSymtab = dict(self.exclusive.items() + meta.items())
+        incSymtab = dict(self.inclusive.items() + meta.items())
 
         excVals = ms.eval(excSymtab)
         incVals = ms.eval(incSymtab)
@@ -678,14 +678,16 @@ class PPK:
 
         self.metrics.extend(ms.dmetrics)
 
+        metaSym   = get_sys_info()
+
         # handle raw data
         for profile in self.functionProfiles:
-            profile.updateDerivedMetric(ms)
+            profile.updateDerivedMetric(ms, metaSym)
 
         # handle aggregated data
         for thread in self.threads:
             for profile in thread.aggProfiles.itervalues():
-                profile.updateDerivedMetric(ms)
+                profile.updateDerivedMetric(ms, metaSym)
 
     def populateAggData(self):
         """Populate aggregated data into a numpy array"""
