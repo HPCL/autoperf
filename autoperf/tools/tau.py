@@ -1,6 +1,7 @@
 import os
 import logging
 import ConfigParser
+import subprocess
 
 from ..utils import config
 from .interface import *
@@ -16,13 +17,31 @@ class Tool(AbstractTool):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses
 
+        options = self.get_tau_options()
+
         if self.experiment.is_mpi:
-            self.binding = "mpi"
+            if "mpi" in options:
+                self.binding = "mpi"
+            else:
+                raise Exception("TAU is not configed with MPI")
         else:
             self.binding = "serial"
 
+        # always enable pthread tracking when possible
+        if "PTHREAD" in options:
+            self.binding += ",pthread"
+
         if self.experiment.is_cupti:
-            self.binding += ",cupti"
+            if "CUPTI" in options:
+                self.binding += ",cupti"
+            else:
+                raise Exception("TAU is not configed with CUPTI")
+
+    def get_tau_options(self):
+        options = subprocess.check_output(["%s/bin/tau-config" % self.experiment.tauroot,
+                                           "--list-options"])
+        options = options.strip().split(',')
+        return options
 
     def get_tau_vars(self):
         """
