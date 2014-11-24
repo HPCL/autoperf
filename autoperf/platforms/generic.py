@@ -75,6 +75,8 @@ class Platform(AbstractPlatform):
                 hostfile = ""
 
             cmd = "mpirun %s %s %s %s" % (np, hostfile, self.mpi_opts, cmd)
+        if self.experiment.threads > 1:
+            cmd = "OMP_NUM_THREADS=%d %s" % (self.experiment.threads, cmd)
 
         self.logger.debug("Application command:")
         self.logger.debug("  Original: %s %s", _execmd, _exeopt)

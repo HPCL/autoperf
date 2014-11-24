@@ -55,6 +55,7 @@ class Experiment:
         self.is_cupti       = config.getboolean("%s.cupti" % self.longname, False)
         self.tauroot        = config.get("%s.tauroot"      % self.longname)
         self.tauroot        = os.path.expanduser(self.tauroot)
+        self.threads        = config.getint("%s.threads" % self.longname, 1)
 
         # now let's get into the rootdir
         if not os.path.isdir(self.rootdir):
