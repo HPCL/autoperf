@@ -27,7 +27,7 @@ class Experiment:
           name    (string): The name of this experiment
           insname (string): The instance ID of this experiment
         """
-        experiments = config.get("Main.Experiments").split()
+        experiments = config.get_list("Main.Experiments")
         if name not in experiments:
             raise Exception("Unknown experiment: '%s'" % name)
         else:

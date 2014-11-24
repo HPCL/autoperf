@@ -23,6 +23,7 @@ for d in site_dirs:
     if os.path.isdir(pkg_dir) and d not in sys.path:
         sys.path.append(d)
 
+
 # command line parsing
 
 parser = OptionParser()
@@ -89,13 +90,15 @@ def parse_config():
         print "*** Can not find any valid config file. Abort"
         exit(1)
 
+
+
 def get_experiment_list(allow_dup=True):
     """
     Get the list of experiment we need to concern with
     """
     global options
     if options.exps is None:
-        return config.get("Main.Experiments").split()
+        return config.get_list("Main.Experiments")
     else:
         exps = [ ]
         for expnum in options.exps:

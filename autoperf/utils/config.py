@@ -135,6 +135,33 @@ def getboolean(spec, default=None):
     """
     return get(spec, default, "boolean")
 
+import re
+exp_code_re = re.compile('^\s*([\w_]+){(.*)}$')
+
+def get_list(secname):
+    """
+    Generate the experiment names
+    """
+    exp_strings = get(secname).split()
+    newlist = []
+    for exp in exp_strings:
+        if exp.find('{') < 0:
+            newlist.append(exp)
+            continue
+        m = exp_code_re.match(exp)
+        if m:
+            try:
+                exec(m.group(2))
+            except:
+                print "Invalid expression in experiment list: %s" % m.group(2)
+                exit(1)
+            else:
+                if 'threads' in locals().keys() and isinstance(threads,list):
+                    for t in threads: newlist.append(m.group(1) + '.' + str(t))
+                else:
+                    newlist.append(exp)
+    return newlist
+
 if __name__ == '__main__':
     parse(sys.argv[1])
     print repr(getint(sys.argv[2]))
