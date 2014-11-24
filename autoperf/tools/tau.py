@@ -20,20 +20,20 @@ class Tool(AbstractTool):
         options = self.get_tau_options()
 
         if self.experiment.is_mpi:
-            if "mpi" in options:
-                self.binding = "mpi"
+            if "MPI" in options:
+                self.binding = "MPI"
             else:
                 raise Exception("TAU is not configed with MPI")
         else:
-            self.binding = "serial"
+            self.binding = "SERIAL"
 
         # always enable pthread tracking when possible
         if "PTHREAD" in options:
-            self.binding += ",pthread"
+            self.binding += ",PTHREAD"
 
         if self.experiment.is_cupti:
             if "CUPTI" in options:
-                self.binding += ",cupti"
+                self.binding += ",CUPTI"
             else:
                 raise Exception("TAU is not configed with CUPTI")
 
