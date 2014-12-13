@@ -3,6 +3,8 @@ import logging
 import ConfigParser
 import subprocess
 
+from glob import glob
+
 from ..utils import config
 from .interface import *
 
@@ -17,31 +19,37 @@ class Tool(AbstractTool):
         self.platform = self.experiment.platform
         self.analyses = self.experiment.analyses
 
-        options = self.get_tau_options()
+        options = self.get_tau_bindings()
 
-        if self.experiment.is_mpi:
-            if "MPI" in options:
-                self.binding = "MPI"
-            else:
-                raise Exception("TAU is not configed with MPI")
-        else:
-            self.binding = "SERIAL"
-
-        # always enable pthread tracking when possible
-        if "PTHREAD" in options:
-            self.binding += ",PTHREAD"
+        self.binding = "papi,pdt"
+        options = [b for b in options if 'papi' in b]
+        options = [b for b in options if 'pdt' in b]
 
         if self.experiment.is_cupti:
-            if "CUPTI" in options:
-                self.binding += ",CUPTI"
-            else:
-                raise Exception("TAU is not configed with CUPTI")
+            self.binding += ",cupti"
+            options = [b for b in options if 'cupti' in b]
 
-    def get_tau_options(self):
-        options = subprocess.check_output(["%s/bin/tau-config" % self.experiment.tauroot,
-                                           "--list-options"])
-        options = options.strip().split(',')
-        return options
+        if self.experiment.is_mpi:
+            self.binding += ",mpi"
+            options = [b for b in options if 'mpi' in b]
+        else:
+            self.binding += ",serial"
+            options = [b for b in options if 'mpi' not in b]
+
+        if len(options) == 0:
+            raise Exception("Error: TAU is not configured to support binding `%s'" % self.binding);
+
+        # enable pthread tracking whenever possible
+        options = [b for b in options if 'pthread' in b];
+        if len(options) > 0:
+            self.binding += ",pthread"
+
+        self.logger.info("Using TAU binding: %s" % self.binding)
+
+    def get_tau_bindings(self):
+        """ Get available TAU bindings combination """
+        makefiles = map(os.path.basename, glob("%s/lib/Makefile.tau-*" % self.experiment.tauroot))
+        return [str.split(s, '-')[1:] for s in makefiles]
 
     def get_tau_vars(self):
         """
