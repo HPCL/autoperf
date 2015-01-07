@@ -67,6 +67,14 @@ def _unpack_spec(spec):
     else:
         return _find(section, option)
 
+def set(spec, value):
+    global cfg_parser
+
+    section, dot, option = spec.rpartition('.')
+    if not cfg_parser.has_section(section):
+        cfg_parser.add_section(section)
+    cfg_parser.set(section, option, value)
+
 def get_section(section):
     global cfg_parser
 

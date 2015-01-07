@@ -2,10 +2,8 @@
 
 import os, sys
 import logging
+import argparse
 import distutils.sysconfig
-
-# ACISS is still using Python 2.6.6
-from optparse import OptionParser
 
 # include autoperf in the Python's search path
 abs_path  = os.path.realpath(sys.argv[0])
@@ -26,44 +24,58 @@ for d in site_dirs:
 
 # command line parsing
 
-parser = OptionParser()
-parser.add_option("-f", "--config",
-                  action="store", dest="cfgfile",
-                  help="Specify a config file. If not specified or file "
-                  "does not exist, search for .autoperf.cfg, autoperf.cfg, "
-                  "~/.autoperf.cfg in order")
-parser.add_option("-a", "--all",
-                  action="store_true", dest="runall", default=True,
-                  help="Run each experiment once. Default if no option is "
-                  "given. Has no effect if '-e' is given")
-parser.add_option("-e", "--exp",
-                  action="append", dest="exps", metavar="EXP[@NUM]",
-                  help="Run experiment EXP NUM times. This option can be "
-                  "used several times and experiments will be executed in "
-                  "the order they appear. [default: NUM=1]")
-parser.add_option("-b", "--block",
-                  action="store_true", dest="block", default=False,
-                  help="Instead of exiting immediately after submitting the"
-                  "experiment to the batch system, now block until the job "
-                  "is finished [default: %default]")
-parser.add_option("-c", "--check",
-                  action="store_const", const="check", dest="mode",
-                  help="When used with '-a', '-e' or '-i', show the status ("
-                  "Unknown, Queueing, Running or Finished) of those experiments "
-                  "instead of running them")
-parser.add_option("-y", "--analyze",
-                  action="store_const", const="analyze", dest="mode",
-                  help="When used with '-a', '-e' or '-i', analyze those "
-                  "experiments data instead of running them. The experiment must "
-                  "be in 'Finished' state")
-parser.add_option("-i", "--insname",
-                  action="append", type="string", dest="insnames",
-                  metavar="INSTANCE", default=None,
-                  help="Use with '-c' or '-y' to specify the instance name of "
-                  "the experiment. Check or analyze all instances if not specified. "
-                  "This option can be specified multiple times")
+parser = argparse.ArgumentParser()
+parser.set_defaults(mode="run")
 
-(options, args) = parser.parse_args()
+# config specification
+parser.add_argument("-f", "--config",
+                    action="store", dest="cfgfile",
+                    help="Specify a config file. If not specified or file "
+                    "does not exist, search for .autoperf.cfg, autoperf.cfg, "
+                    "~/.autoperf.cfg in order")
+parser.add_argument("-D",
+                    action="append", dest="cfgoptions",
+                    metavar="CONFIG.OPTION=VALUE", default=[],
+                    help="Override a config option in config file. This "
+                    "option can be specified multiple times")
+
+# operation mode
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-r", "--run",
+                   action="store_const", const="run", dest="mode",
+                   help="When used with '-e', run specified experiment(s). "
+                   "Otherwise run each defined experiment once. (default)")
+group.add_argument("-c", "--check",
+                   action="store_const", const="check", dest="mode",
+                   help="When used with '-e' or '-i', show the status ("
+                   "Unknown, Queueing, Running or Finished) of those experiments. "
+                   "Otherwise, show status of all experiments.")
+group.add_argument("-y", "--analyze",
+                   action="store_const", const="analyze", dest="mode",
+                   help="When used with '-e' or '-i', analyze those "
+                   "experiments data. Otherwise, analyze all exepriments. "
+                   "The experiment must be in 'Finished' state.")
+
+# experiment selection
+parser.add_argument("-e", "--exp",
+                    action="append", dest="exps", metavar="EXP[@NUM]",
+                    help="Select experiment EXP NUM times. This option can be "
+                    "used multiple times and experiments will be selected in "
+                    "the order they appear. [default: NUM=1]")
+parser.add_argument("-i", "--insname",
+                    action="append", dest="insnames",
+                    metavar="INSTANCE", default=None,
+                    help="Use with '-c' or '-y' to specify the instance name of "
+                    "the experiment. This option can be specified multiple times")
+
+# block
+parser.add_argument("-b", "--block",
+                    action="store_true", dest="block", default=False,
+                    help="Instead of exiting immediately after submitting the"
+                    "experiment to the batch system, now block until the job "
+                    "is finished [default: %(default)s]")
+
+options = parser.parse_args()
 
 # now run the experiments
 
@@ -71,6 +83,7 @@ from autoperf.utils      import config
 from autoperf.experiment import *
 
 def parse_config():
+    global options
     cfgfiles = ['.autoperf.cfg',
                 'autoperf.cfg',
                 os.path.expanduser('~/.autoperf.cfg')]
@@ -90,7 +103,10 @@ def parse_config():
         print "*** Can not find any valid config file. Abort"
         exit(1)
 
-
+    # handle cmdline option override
+    for cfgoption in options.cfgoptions:
+        spec, equal, value = cfgoption.rpartition('=')
+        config.set(spec, value)
 
 def get_experiment_list(allow_dup=True):
     """
@@ -219,7 +235,7 @@ def analyze_experiments(insnames):
 
 parse_config()
 
-if options.mode is None:
+if options.mode == 'run':
     run_experiments()
 elif options.mode == 'check':
     check_experiments(options.insnames)
