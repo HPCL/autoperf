@@ -28,6 +28,7 @@ class Analysis(AbstractAnalysis):
             pass
 
     def run(self):
+        return # comment this line to run script below
         self.run_script("%s.py" % self.name,
                         TAULIB          = "%s/lib"      % self.experiment.tauroot,
                         ppk             = "%s/data.ppk" % self.experiment.insname,
