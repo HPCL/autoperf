@@ -105,7 +105,7 @@ def parse_config():
 
     # handle cmdline option override
     for cfgoption in options.cfgoptions:
-        spec, equal, value = cfgoption.rpartition('=')
+        spec, equal, value = cfgoption.partition('=')
         config.set(spec, value)
 
 def get_experiment_list(allow_dup=True):
