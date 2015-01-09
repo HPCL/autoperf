@@ -189,12 +189,27 @@ class Experiment:
             else:
                 # small chance that job stat marker is not placed yet
                 stat["expname"] = expname
-                stat["insname"] = dirname
+                stat["insname"] = os.path.basename(dirname)
                 stat["jobid"]   = "Unknown"
                 stat["status"]  = "Unknown"
 
+            # double check the job status, i.e. qdel? ctrl-c?
+            if stat["status"] != "Finished" and stat["status"] != "Unknown":
+                queue, colon, jobid = stat["jobid"].partition(":")
+
+                # try our best, use the queue name saved in stat
+                # marker instead of current config file
+                _module_ = __import__("queues.%s" % queue,
+                                      globals(),
+                                      fromlist=["Queue"],
+                                      level=1)
+
+                if _module_.Queue(self).get_status(stat["jobid"]) == "Dead":
+                    stat["status"] = "Aborted"
+
             status.append(stat)
 
+        status.sort(key=lambda stat: stat["jobid"])
         return status
 
     def get_status(self, path='.'):

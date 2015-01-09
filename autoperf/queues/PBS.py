@@ -87,6 +87,19 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
 
     def setup(self):
         self.platform = self.experiment.platform
+
+    def get_status(self, idstr):
+        queue, colon, jobid = idstr.partition(":")
+        if queue != "PBS":
+            raise Exception("Fatal error: job queue mismatch!")
+
+        try:
+            with open(os.devnull, "w") as FNULL:
+                subprocess.check_call(["qstat", jobid], stdout=FNULL, stderr=FNULL)
+        except subprocess.CalledProcessError:
+            return "Dead"
+        else:
+            return "Alive"
         
     def submit(self, cmd, block=False):
         datadir = self.experiment.datadirs[self.experiment.iteration]
@@ -135,6 +148,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         script.close()
 
         # place the job stat marker
+        # FIXME: race condition with the PBS job script
         with open(jobstat, "w") as f:
             f.write("%s %s PBS:%s Queueing" % (self.experiment.name,
                                                self.experiment.insname,

@@ -10,7 +10,7 @@ class Queue(AbstractQueue):
 export PATH={tau_root}/bin:$PATH
 
 # mark the job as running
-echo -n "{exp_name} {insname} serial Running" >{datadir}/.job.stat
+echo -n "{exp_name} {insname} serial:$$ Running" >{datadir}/.job.stat
 
 # setup the environment for the experiment
 {exp_setup}
@@ -19,7 +19,7 @@ echo -n "{exp_name} {insname} serial Running" >{datadir}/.job.stat
 {exp_run} 2>&1 | tee {datadir}/job.log
 
 # mark the job as finished
-echo -n "{exp_name} {insname} serial Finished" >{datadir}/.job.stat
+echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
 """
 
     def __init__(self, experiment):
@@ -29,6 +29,21 @@ echo -n "{exp_name} {insname} serial Finished" >{datadir}/.job.stat
 
     def setup(self):
         self.platform = self.experiment.platform
+
+    def get_status(self, idstr):
+        queue, colon, pid = idstr.partition(":")
+        if queue != "serial":
+            print "queue: %s" % queue
+            raise Exception("Fatal error: job queue mismatch!")
+
+        # sending signal 0 to a pid will raise OSError if the pid is
+        # not running, and do nothing otherwise
+        try:
+            os.kill(int(pid), 0)
+        except OSError:
+            return "Dead"
+        else:
+            return "Alive"
 
     def submit(self, cmd, block=False):
         datadir = self.experiment.datadirs[self.experiment.iteration]
