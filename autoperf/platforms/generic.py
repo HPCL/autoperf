@@ -32,7 +32,12 @@ class Platform(AbstractPlatform):
           string: A string of commands which should be executed before
                   any application which will run on this platform
         """
-        return self.tool.setup_str()
+        prologue = "# Generic environment variables\n"
+        for name, value in config.get_section("Env.%s" % self.experiment.name):
+            prologue += "export %s='%s'\n" % (name, value)
+        prologue += self.tool.setup_str()
+
+        return prologue
 
     def build_env(self):
         """
