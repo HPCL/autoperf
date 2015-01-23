@@ -6,12 +6,16 @@ from .interface import AbstractPlatform
 from ..utils import config
 
 class Platform(AbstractPlatform):
-    name     = "generic"
-    mpi_opts = ""
+    name         = "generic"
+    mpi_launcher = ""
+    mpi_opts     = ""
 
     def __init__(self, experiment):
         self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
+
+        if self.mpi_launcher == "":
+            self.mpi_launcher = config.get("%s.mpi_lancher" % self.longname, "mpirun")
 
         _queue  = config.get("%s.Queue" % self.longname, "serial")
 
@@ -57,19 +61,8 @@ class Platform(AbstractPlatform):
         cmd = "%s %s" % (execmd, exeopt)
 
         if self.experiment.is_mpi:
-            try:
-                np = config.get("%s.mpi_np" % self.experiment.longname)
-                np = "-np %s" % np
-            except ConfigParser.Error:
-                np = ""
-
-            try:
-                hostfile = config.get("%s.mpi_hostfile" % self.experiment.longname)
-                hostfile = "--hostfile %s" % hostfile
-            except ConfigParser.Error:
-                hostfile = ""
-
-            cmd = "mpirun %s %s %s %s" % (np, hostfile, self.mpi_opts, cmd)
+            self.mpi_opts += config.get("%s.mpi_opts" % self.experiment.longname, "")
+            cmd = "%s %s %s" % (self.mpi_launcher, self.mpi_opts, cmd)
         if self.experiment.threads > 1:
             cmd = "OMP_NUM_THREADS=%d %s" % (self.experiment.threads, cmd)
 

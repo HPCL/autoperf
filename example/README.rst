@@ -142,25 +142,15 @@ Options
 
     default: "no"
 
-  mpi_np
-
-    value: a number
-
-    meaning: "-np" option for "mpirun"
-
-    mandatory: no
-
-    default: no default value
-
-  mpi_hostfile
+  mpi_opts
 
     value: a string
 
-    meaming: "-hostfile" option for "mpirun"
+    meaning: command line options for MPI launcher
 
     mandatory: no
 
-    default: no default value
+    default: empty
 
   copy:
 
@@ -215,7 +205,7 @@ Options
 
   Platform
 
-    value: "generic" or "aciss"
+    value: "generic", "aciss" or "hopper"
 
     meaning: the platform we are using
 
@@ -265,14 +255,25 @@ Options
 
   Queue
 
-    value: "serial" or "PBS"
+    value: "serial", "PBS" or "mic"
 
     meaning: the batch system we are going to use. Chosse "serial" if
-    do not use any batch system.
+    do not use any batch system. "mic" is used to run MIC native
+    application.
     
     mandatory: no
 
     default: "serial"
+
+  mpi_launcher
+
+    value: a string
+
+    meaning: name of the MPI launcher
+
+    mandatory: no
+
+    default: "mpirun"
 
 Queue
 ~~~~~
