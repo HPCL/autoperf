@@ -51,19 +51,9 @@ class Platform(AbstractPlatform):
 
         return env
 
-    def run(self, _execmd, _exeopt, block=False):
-        """
-        Run an application on this platform.
-
-        Args:
-          execmd (string): the command going to run
-          exeopt (string): the cmdline option for `execmd`
-          block  (bool)  : block until application exit?
-
-        Returns:
-          None
-        """
-        execmd, exeopt = self.tool.wrap_command(_execmd, _exeopt)
+    def wrap_command(self, _execmd, _exeopt):
+        execmd, exeopt = self.queue.wrap_command(_execmd, _exeopt)
+        execmd, exeopt = self.tool.wrap_command(execmd, exeopt)
         cmd = "%s %s" % (execmd, exeopt)
 
         if self.experiment.is_mpi:
@@ -86,9 +76,23 @@ class Platform(AbstractPlatform):
         self.logger.debug("Application command:")
         self.logger.debug("  Original: %s %s", _execmd, _exeopt)
         self.logger.debug("  ToolWrap: %s %s", execmd, exeopt)
-        self.logger.debug("  Final   : %s", cmd)
-        self.logger.debug("")
 
+        return cmd
+
+    def run(self, _execmd, _exeopt, block=False):
+        """
+        Run an application on this platform.
+
+        Args:
+          execmd (string): the command going to run
+          exeopt (string): the cmdline option for `execmd`
+          block  (bool)  : block until application exit?
+
+        Returns:
+          None
+        """
+        cmd = self.wrap_command(_execmd, _exeopt)
+        self.logger.debug("  Final   : %s", cmd)
         self.queue.submit(cmd, block)
 
     def collect_data(self):

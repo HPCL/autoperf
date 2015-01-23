@@ -17,3 +17,6 @@ class AbstractQueue:
 
     def submit(self, cmd, block=False):
         raise NotImplementedError
+
+    def wrap_command(self, execmd, exeopt):
+        return [execmd, exeopt]

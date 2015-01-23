@@ -57,6 +57,10 @@ class Experiment:
         self.tauroot        = os.path.expanduser(self.tauroot)
         self.threads        = config.getint("%s.threads" % self.longname, 1)
 
+        self.execmd         = config.get("%s.execmd" % self.longname)
+        self.execmd         = os.path.expanduser(self.execmd)
+        self.exeopt         = config.get("%s.exeopt" % self.longname, "")
+
         # now let's get into the rootdir
         if not os.path.isdir(self.rootdir):
             os.makedirs(self.rootdir)
@@ -387,10 +391,6 @@ class Experiment:
         # 'cd' actually happens in __init__()
         self.logger.cmd("cd %s\n", self.rootdir)
 
-        execmd = config.get("%s.execmd" % self.longname)
-        execmd = os.path.expanduser(execmd)
-        exeopt = config.get("%s.exeopt" % self.longname, "")
-
         # link, copy and build
         self.link_items()
         self.copy_items()
@@ -445,7 +445,7 @@ class Experiment:
             self.logger.info("Running experiment, iteration %d of %d",
                              i+1, len(self.parted_metrics))
             self.iteration = i
-            self.platform.run(execmd, exeopt, block)
+            self.platform.run(self.execmd, self.exeopt, block)
             self.logger.newline()
 
         # 'cd' actually happens in cleanup()
