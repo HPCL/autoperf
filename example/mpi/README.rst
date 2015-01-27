@@ -62,26 +62,20 @@ You can give options to the batch system with this section. If none is
 given, system default will be used.::
 
   [Queue]
-  nodes     = 2
-  ppn       = 12
-  walltime  = 4:00:00
-  pmem      = 1gb
-  queuename = short
+  options   = -l nodes=2:ppn=12
+              -l walltime=4:00:00
+              -l pmem=1gb
+              -q short
 
 [Analyses.metrics].derived_metrics
 ----------------------------------
-You can define some derived metrics based on regular metrics. First,
-specify regular metrics you want to collect::
+You can define some derived metrics based on regular metrics. Simply
+put metric specification under autoperf/utils/metric_spec/ directory::
+
+  $ cat ../../autoperf/utils/metric_spec/FP_INEFFICIENT2
+  ((PAPI_FP_INS/PAPI_TOT_INS)*(PAPI_RES_STL/PAPI_TOT_CYC))*(PAPI_TOT_CYC/META_CPU_HZ)
+
+Then you can use them as normal metrics:
 
   [Analyses.metrics]
-  metrics = PAPI_FP_INS PAPI_TOT_INS PAPI_RES_STL PAPI_TOT_CYC
-            PAPI_L1_DCM PAPI_L1_ICM PAPI_L2_DCM PAPI_L2_ICM
-            PAPI_L1_TCM PAPI_L2_TCM PAPI_L3_TCM
-
-Next, name the derived metrics you need::
-
-  derived_metrics = FP_INEFFICIENT2
-
-At last, you need to give your derived metric its definition::
-
-  FP_INEFFICIENT2 = ((PAPI_FP_INS/PAPI_TOT_INS)*(PAPI_RES_STL/PAPI_TOT_CYC))*(PAPI_TOT_CYC/2075051737)
+  metrics = PAPI_L1_DCM FP_INEFFICIENT2

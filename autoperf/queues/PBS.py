@@ -14,11 +14,7 @@ class Queue(AbstractQueue):
 #PBS -o {insname}/pbs.log
 #PBS -e {insname}/pbs.log
 #PBS -j oe
-#{pbs_nodes}
-#{pbs_walltime}
-#{pbs_pmem}
-#{pbs_qname}
-#
+{pbs_options}
 
 export PATH={tau_root}/bin:$PATH
 
@@ -52,33 +48,9 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         self.done       = False
         self.logger     = logging.getLogger(__name__)
 
-        try:
-            nodes = config.get("%s.nodes" % self.longname)
-            try:
-                ppn = config.get("%s.ppn" % self.longname)
-                self.nodes = "PBS -l nodes=%s:ppn=%s" % (nodes, ppn)
-            except ConfigParser.Error:
-                self.nodes = "PBS -l nodes=%s" % nodes
-        except ConfigParser.Error:
-            self.nodes = ""
-
-        try:
-            walltime  = config.get("%s.walltime" % self.longname)
-            self.walltime = "PBS -l walltime=%s" % walltime
-        except ConfigParser.Error:
-            self.walltime = ""
-
-        try:
-            pmem = config.get("%s.pmem" % self.longname)
-            self.pmem = "PBS -l pmem=%s" % pmem
-        except ConfigParser.Error:
-            self.pmem = ""
-
-        try:
-            queuename = config.get("%s.queuename" % self.longname)
-            self.queuename = "PBS -q %s" % queuename
-        except:
-            self.queuename = ""
+        self.options    = ""
+        for opt in config.get("%s.options" % self.longname, []).splitlines():
+            self.options += "#PBS %s\n" % opt
 
         signal.signal(signal.SIGUSR1, self._wakeup)
 
@@ -107,10 +79,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
 
         content = self.pbs_script.format(
             tau_root     = self.experiment.tauroot,
-            pbs_nodes    = self.nodes,
-            pbs_walltime = self.walltime,
-            pbs_pmem     = self.pmem,
-            pbs_qname    = self.queuename,
+            pbs_options  = self.options,
             exp_name     = self.experiment.name,
             exp_setup    = self.platform.setup_str(),
             exp_run      = cmd,

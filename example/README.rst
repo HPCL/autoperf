@@ -287,19 +287,11 @@ Fullname
 
 Options for Queue.PBS
 
-  nodes
+  options
 
-  ppn
+    value: newline splited string
 
-  walltime
-
-  pmem
-
-  queuename
-
-    value: a number or string
-
-    meaning: corrosponding option for PBS script
+    meaning: options for PBS script, e.g. "-q short"
 
     mandatory: no
 

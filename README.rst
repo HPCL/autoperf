@@ -73,34 +73,37 @@ A driver script named "autoperf" is included in *bin/*. Run the driver
 script to execute the experiments and collect the data::
 
   $ autoperf -h
-  Usage: autoperf [options]
+  usage: autoperf [-h] [-f CFGFILE] [-D CONFIG.OPTION=VALUE] [-r | -c | -y]
+                  [-e EXP[@NUM]] [-i INSTANCE] [-b]
 
-  Options:
+  optional arguments:
     -h, --help            show this help message and exit
-    -f CFGFILE, --config=CFGFILE
+    -f CFGFILE, --config CFGFILE
                           Specify a config file. If not specified or file does
                           not exist, search for .autoperf.cfg, autoperf.cfg,
                           ~/.autoperf.cfg in order
-    -a, --all             Run each experiment once. Default if no option is
-                          given. Has no effect if '-e' is given
-    -e EXP[@NUM], --exp=EXP[@NUM]
-                          Run experiment EXP NUM times. This option can be used
-                          several times and experiments will be executed in the
-                          order they appear. [default: NUM=1]
-    -b, --block           Instead of exit immediately after submit the
-                          experiment to the batch system, now block until the
-                          job is finished [default: False]
-    -c, --check           When used with '-a' or '-e', show the status (Unknown,
-                          Running or Finished) of those experiments instead of
-                          running them
-    -y, --analyze         When used with '-a' or '-e', analyze those experiments
-                          data instead of running them. The experiment must be
-                          in 'Finished' state
-    -i INSTANCE, --insname=INSTANCE
+    -D CONFIG.OPTION=VALUE
+                          Override a config option in config file. This option
+                          can be specified multiple times
+    -r, --run             When used with '-e', run specified experiment(s).
+                          Otherwise run each defined experiment once. (default)
+    -c, --check           When used with '-e' or '-i', show the status (Unknown,
+                          Queueing, Running or Finished) of those experiments.
+                          Otherwise, show status of all experiments.
+    -y, --analyze         When used with '-e' or '-i', analyze those experiments
+                          data. Otherwise, analyze all exepriments. The
+                          experiment must be in 'Finished' state.
+    -e EXP[@NUM], --exp EXP[@NUM]
+                          Select experiment EXP NUM times. This option can be
+                          used multiple times and experiments will be selected
+                          in the order they appear. [default: NUM=1]
+    -i INSTANCE, --insname INSTANCE
                           Use with '-c' or '-y' to specify the instance name of
-                          the experiment. Check or analyze all instances if not
-                          specified
-
+                          the experiment. This option can be specified multiple
+                          times
+    -b, --block           Instead of exiting immediately after submitting
+                          theexperiment to the batch system, now block until the
+                          job is finished [default: False]
 
 Thus, you could try::
 
