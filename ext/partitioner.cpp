@@ -9,11 +9,12 @@
 
 #include <new>
 #include <vector>
+#include <sstream>
 #include <iostream>
+#include <iterator>
 #include <algorithm>
 
 #include <papi.h>
-#include <gmp.h>
 #include <sqlite3.h>
 
 #ifdef WITH_CUPTI
@@ -60,12 +61,10 @@ report_error(const char *msg, const char *extra, const char *lineno)
 static void
 split_events(const char *events, vector<string> &splited_events)
 {
-    // char *ptr = strdup(PyString_AS_STRING(_events));
-    char *str;
     char *ptr;
     char *colon;
 
-    str = ptr = strdup(events);
+    ptr = strdup(events);
 
     while (1) {
 	colon = strchr(ptr, ':');
@@ -78,8 +77,6 @@ split_events(const char *events, vector<string> &splited_events)
 	    ptr = colon + 1;
 	}
     }
-
-    free(str);
 }
 
 static void
@@ -461,93 +458,6 @@ my_rand(int i)
 // 	return "Yes";
 // }
 
-static string
-chooser2string(mpz_t chooser)
-{
-    string str;
-    mp_bitcnt_t start = 0, found;
-
-    if (mpz_cmp_ui(chooser, 0) == 0) {
-	return "";
-    }
-
-    while (1) {
-	found = mpz_scan1(chooser, start);
-
-	if (found == ULONG_MAX) {
-	    break;
-	}
-
-	start = found + 1;
-
-	str += papi_avail_counters[found].symbol;
-	str += ":";
-    }
-
-    str.erase(str.length() - 1);
-
-    return str;
-}
-
-static string
-chooser2string(vector<mp_bitcnt_t> &chooser)
-{
-    mpz_t c;
-    vector<mp_bitcnt_t>::iterator iter;
-
-    mpz_init_set_ui(c, 0);
-
-    for (iter=chooser.begin(); iter!=chooser.end(); iter++) {
-	mpz_setbit(c, *iter);
-    }
-
-    string str = chooser2string(c);
-
-    mpz_clear(c);
-
-    return str;
-}
-
-static string
-chooser2string(char *chooser)
-{
-    mpz_t c;
-    mpz_init_set_str(c, chooser, 62);
-
-    string str = chooser2string(c);
-
-    mpz_clear(c);
-
-    return str;
-}
-
-// static int
-// string2chooser(vector<char*> &str, mpz_t chooser)
-// {
-//     unsigned int i;
-//     char *name;
-//     vector<char*>::iterator iter;
-
-//     mpz_set_ui(chooser, 0);
-
-//     for (iter=str.begin(); iter!=str.end(); iter++) {
-// 	for (i=0; i<avail_counters.size(); i++) {
-// 	    name = avail_counters[i].symbol;
-// 	    if (strcmp(name, *iter) == 0) {
-// 		mpz_setbit(chooser, i);
-// 		break;
-// 	    }
-// 	}
-
-// 	if (i == avail_counters.size()) {
-// 	    report_error("Counter doesn't exist", *iter, XSTR(__LINE__));
-// 	    return -1;
-// 	}
-//     }
-
-//     return 0;
-// }
-
 // static int
 // _dump_counter(PAPI_event_info_t &info)
 // {
@@ -603,36 +513,20 @@ papi_get_avail_counters(vector<PAPI_event_info_t> &counters)
     return 0;
 }
 
-static void
-papi_free_parts(vector<char*> *parts)
-{
-    if (parts == NULL) {
-	return;
-    }
-
-    for_each(parts->begin(), parts->end(), free);
-
-    delete parts;
-}
-
-static vector<char*>*
-_papi_greedy_partition(vector<mp_bitcnt_t> &group)
+static vector<string>*
+_papi_greedy_partition(vector<string> &events)
 {
     int rv;
     vector<int> event_sets;
-    vector< vector<mp_bitcnt_t> > parts; // parts in index-vector
-					 // representation
+    vector<string> *parts = new vector<string>;
 
     unsigned int i, j;
 
-    for (i=0; i<group.size(); i++) {
-	mp_bitcnt_t index = group[i];
-	int event_code    = papi_avail_counters[index].event_code;
-
+    for (i=0; i<events.size(); i++) {
 	for (j=0; j<event_sets.size(); j++) {
-	    rv = PAPI_add_event(event_sets[j], event_code);
+	    rv = PAPI_add_named_event(event_sets[j], (char*)events[i].c_str());
 	    if (rv == PAPI_OK) {
-		parts[j].push_back(index);
+		parts->at(j) += ":" + events[i];
 		break;
 	    } else {
 		/* can not put in this event_set, try next one */
@@ -650,19 +544,17 @@ _papi_greedy_partition(vector<mp_bitcnt_t> &group)
 	    rv = PAPI_create_eventset(&set);
 	    if (rv != PAPI_OK) {
 		report_error("PAPI_create_eventset", PAPI_STRERROR(), XSTR(__LINE__));
-		exit(1);
+		goto bail;
 	    }
 
-	    rv = PAPI_add_event(set, event_code);
+	    rv = PAPI_add_named_event(set, (char*)events[i].c_str());
 	    if (rv == PAPI_OK) {
 		event_sets.push_back(set);
-		parts.push_back(vector<mp_bitcnt_t>(1, index));
+		parts->push_back(events[i]);
 	    } else {
 		/* this should not happen */
 		report_error("PAPI_add_event", PAPI_STRERROR(), XSTR(__LINE__));
-		printf("i=%d, j=%d\n", i, j);
-		printf("events: %s\n", chooser2string(group).c_str());
-		exit(1);
+		goto bail;
 	    }
 	}
     }
@@ -672,74 +564,49 @@ _papi_greedy_partition(vector<mp_bitcnt_t> &group)
 	rv = PAPI_cleanup_eventset(event_sets[i]);
 	if (rv != PAPI_OK) {
 	    report_error("PAPI_cleanup_eventset", PAPI_STRERROR(), XSTR(__LINE__));
-	    exit(1);
+	    goto bail;
 	}
 
 	rv =PAPI_destroy_eventset(&event_sets[i]);
 	if (rv != PAPI_OK) {
 	    report_error("PAPI_destroy_eventset", PAPI_STRERROR(), XSTR(__LINE__));
-	    exit(1);
+	    goto bail;
 	}
     }
 
-    mpz_t x;
-    vector<char*> *bf_parts;	// parts in bit-field representation
-    vector<mp_bitcnt_t>::iterator pbit;
-    vector< vector<mp_bitcnt_t> >::iterator ppart;
+    return parts;
 
-    mpz_init(x);
-    bf_parts = new vector<char*>;
-
-    for (ppart=parts.begin(); ppart!=parts.end(); ppart++) {
-	mpz_set_ui(x, 0);
-
-	for (pbit=ppart->begin(); pbit!=ppart->end(); pbit++) {
-	    mpz_setbit(x, *pbit);
-	}
-
-	bf_parts->push_back(mpz_get_str(NULL, 62, x));
-    }
-
-    mpz_clear(x);
-
-    return bf_parts;
+bail:
+    delete parts;
+    return NULL;
 }
 
-static vector<char*>*
-papi_greedy_partition(mpz_t chooser)
+static vector<string>*
+papi_greedy_partition(vector<string> &events)
 {
-    vector<mp_bitcnt_t> group;
-    mp_bitcnt_t start = 0, found;
-
-    while (1) {
-	found = mpz_scan1(chooser, start);
-
-	if (found == ULONG_MAX) {
-	    break;
-	}
-
-	start = found + 1;
-	group.push_back(found);
-    }
-
     int i;
-    unsigned int nparts = group.size() + 1;
-    vector<char*> *parts = NULL;
+    unsigned int nparts = events.size() + 1;
+    vector<string> *parts = NULL;
 
     // try greedy with random order for several times
     for (i=0; i<GREEDY_RETRY; i++) {
-	vector <char*> *_parts;
-	random_shuffle(group.begin(), group.end(), my_rand);
+	vector <string> *_parts;
+	random_shuffle(events.begin(), events.end(), my_rand);
 
-	_parts = _papi_greedy_partition(group);
+	_parts = _papi_greedy_partition(events);
+	if (_parts == NULL) {
+	    delete parts;
+	    return NULL;
+	}
+	
 	if (_parts->size() < nparts) {
 	    /* get a better result */
-	    papi_free_parts(parts);
+	    delete parts;
 	    parts  = _parts;
 	    nparts = parts->size();
 	} else {
 	    /* drop the result */
-	    papi_free_parts(_parts);
+	    delete _parts;
 	}
     }
 
@@ -749,32 +616,32 @@ papi_greedy_partition(mpz_t chooser)
 static int
 _get_one_part(void *data, int ncol, char **text, char **name)
 {
-    vector<char*> *parts;
+    vector<string> *parts;
 
-    parts = (vector<char*>*) data;
+    parts = (vector<string>*) data;
 
-    parts->push_back(strdup(text[0]));
+    parts->push_back(text[0]);
 
     return 0;
 }
 
-static vector<char*>*
-papi_cached_partition(mpz_t chooser)
+static vector<string>*
+papi_cached_partition(vector<string> &events)
 {
     string sql;
-    vector<char*> *parts;
-    char *events;
+    vector<string> *parts;
     char *err;
 
-    parts  = new vector<char*>;
-    events = mpz_get_str(NULL, 62, chooser);
+    stringstream ss;
+    ostream_iterator<string> ssit(ss, ":");
+    sort(events.begin(), events.end());
+    copy(events.begin(), events.end(), ssit);
 
     sql += "SELECT part from partition WHERE events='";
-    sql += events;
+    sql += ss.str();
     sql += "';";
 
-    free(events);
-
+    parts  = new vector<string>;
     sqlite3_exec(db, sql.c_str(), _get_one_part, parts, &err);
     if (err != NULL) {
 	report_error("SQLite3", err, XSTR(__LINE__));
@@ -787,14 +654,14 @@ papi_cached_partition(mpz_t chooser)
 }
 
 static int
-_papi_save_result(char *events, char *part)
+_papi_save_result(string &key, string &part)
 {
     char *err;
     string sql;
     vector<int>::iterator iter;
 
     sql += "INSERT INTO partition (events, part) VALUES ('";
-    sql += events;
+    sql += key;
     sql += "', '";
     sql += part;
     sql += "');";
@@ -810,25 +677,25 @@ _papi_save_result(char *events, char *part)
 }
 
 static int
-papi_save_result(char *events, vector<char*> *parts)
+papi_save_result(string &key, vector<string> *parts)
 {
-    vector<char*>::iterator iter;
+    vector<string>::iterator iter;
 
     for (iter=parts->begin(); iter!=parts->end(); iter++) {
-	_papi_save_result(events, *iter);
+	_papi_save_result(key, *iter);
     }
 
     return 0;
 }
 
 static int
-papi_delete_result(char *chooser)
+papi_delete_result(string &key)
 {
     char *err;
     string sql;
 
     sql += "DELETE FROM partition WHERE events='";
-    sql += chooser;
+    sql += key;
     sql += "';";
 
     sqlite3_exec(db, sql.c_str(), NULL, NULL, &err);
@@ -842,25 +709,28 @@ papi_delete_result(char *chooser)
 }
 
 static int
-papi_update_result(mpz_t chooser, vector<char*> *parts)
+papi_update_result(vector<string> &events, vector<string> *parts)
 {
     int rv;
-    char *events;
 
-    events = mpz_get_str(NULL, 62, chooser);
+    stringstream ss;
+    ostream_iterator<string> ssit(ss, ":");
+    sort(events.begin(), events.end());
+    copy(events.begin(), events.end(), ssit);
 
-    rv = papi_delete_result(events);
+    string key = ss.str();
+
+    rv = papi_delete_result(key);
     if (rv != 0) {
 	goto bail;
     }
 
-    rv = papi_save_result(events, parts);
+    rv = papi_save_result(key, parts);
     if (rv != 0) {
 	goto bail;
     }
 
 bail:
-    free(events);
     return rv;
 }
 
@@ -885,7 +755,7 @@ papi_setup_schema(void)
     return 0;
 }
 
-typedef vector<char*>* (*papi_partitioner_t)(mpz_t);
+typedef vector<string>* (*papi_partitioner_t)(vector<string> &events);
 
 static vector<string>*
 papi_partitioner(const char *dbfile, vector<string> &events,
@@ -893,9 +763,8 @@ papi_partitioner(const char *dbfile, vector<string> &events,
 {
     int rv;
     unsigned int i;
-    mpz_t chooser;
-    vector<char*>* parts = NULL;
-    vector<char*>* cached_parts;
+    vector<string>* parts = NULL;
+    vector<string>* cached_parts;
 
     vector<string>::iterator iter;
 
@@ -908,7 +777,19 @@ papi_partitioner(const char *dbfile, vector<string> &events,
 	{"greedy", papi_greedy_partition},
     };
 
-    mpz_init(chooser);
+    /* check whether requested events are avaiable for current platform */
+    for(iter=events.begin(); iter!=events.end(); iter++) {
+	for (i=0; i<papi_avail_counters.size(); i++) {
+	    if (*iter == papi_avail_counters[i].symbol) {
+		break;
+	    }
+	}
+
+	if (i == papi_avail_counters.size()) {
+	    report_error("Event doesn't exist", iter->c_str(), XSTR(__LINE__));
+	    return NULL;
+	}
+    }
 
     /* SQLite3 setup */
     rv = sqlite3_open(dbfile, &db);
@@ -922,25 +803,10 @@ papi_partitioner(const char *dbfile, vector<string> &events,
 	goto bail;
     }
 
-    /* setup PAPI event chooser */
-    for (iter=events.begin(); iter!=events.end(); iter++) {
-	for (i=0; i<papi_avail_counters.size(); i++) {
-	    if (iter->compare(papi_avail_counters[i].symbol) == 0) {
-		mpz_setbit(chooser, i);
-		break;
-	    }
-	}
-
-	if (i == papi_avail_counters.size()) {
-	    report_error("Counter doesn't exist", iter->c_str(), XSTR(__LINE__));
-	    goto bail;
-	}
-    }
-
     /* partition PAPI events using the given algo */
     for (i=0; i<sizeof(algos)/sizeof(algos[0]); i++) {
 	if (strcasecmp(algo, algos[i].name) == 0) {
-	    parts = algos[i].partition(chooser);
+	    parts = algos[i].partition(events);
 	    break;
 	}
     }
@@ -950,16 +816,21 @@ papi_partitioner(const char *dbfile, vector<string> &events,
 	goto bail;
     }
 
-    cached_parts = papi_cached_partition(chooser);
+    // something wrong in partition process
+    if (parts == NULL) {
+	goto bail;
+    }
+
+    cached_parts = papi_cached_partition(events);
     if (cached_parts == NULL) {
-	papi_free_parts(parts);
+	delete parts;
 	parts = NULL;
 	goto bail;
     }
 
     if ((cached_parts->size() == 0) ||
 	(parts->size() < cached_parts->size())) {
-	papi_update_result(chooser, parts);
+	papi_update_result(events, parts);
     }
 
     if (fashion) {
@@ -968,28 +839,18 @@ papi_partitioner(const char *dbfile, vector<string> &events,
 	/* use the best partition result */
 	if ((cached_parts->size() == 0) ||
 	    (parts->size() < cached_parts->size())) {
-	    papi_free_parts(cached_parts);
+	    delete cached_parts;
 	} else {
-	    papi_free_parts(parts);
+	    delete parts;
 	    parts = cached_parts;
 	}
     }
 
 bail:
     /* clean up */
-    mpz_clear(chooser);
     sqlite3_close(db);
 
-    if (parts == NULL) {
-	return NULL;
-    } else {
-	vector<string> *_parts = new vector<string>;
-	for (i=0; i<parts->size(); i++) {
-	    _parts->push_back(chooser2string(parts->at(i)));
-	}
-	papi_free_parts(parts);
-	return _parts;
-    }
+    return parts;
 }
 
 

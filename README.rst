@@ -40,8 +40,8 @@ Read this if you want to know more about distutils:
   https://docs.python.org/2/install/index.html
 
 The C extension in this package requires headers and libraries of
-PAPI/GMP/SQLITE3 to compile. You may need to point out where to find
-those using environment variables *PAPI*, *GMP* and *SQLITE3*. 
+PAPI/SQLITE3 to compile. You may need to point out where to find those
+using environment variables *PAPI* and *SQLITE3*.
 
 Autoperf also supports CUDA/CUPTI. To enable this feature, set
 environment variable *CUDA* to the CUDA installation directory on your

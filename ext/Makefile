@@ -1,15 +1,15 @@
-GMP     = /usr/local/packages/gmp/5.0.5
+PAPI    = $(HOME)/prefix/papi
 SQLITE3 = $(HOME)/prefix/sqlite-3.8.5
-CUDA    = /usr/local/packages/cuda/6.5
+#CUDA    = /usr/local/packages/cuda/6.5
 
 #export TAU_MAKEFILE=$(TAU_ROOT)/x86_64/lib/Makefile.tau-papi-mpi-pdt
 #CXX     = tau_cxx.sh
 
 CXX      = g++
-CPPFLAGS = -I$(PAPI)/include -I$(GMP)/include -I$(SQLITE3)/include
+CPPFLAGS = -I$(PAPI)/include -I$(SQLITE3)/include
 CXXFLAGS = -Wall -Wno-write-strings -g
-LDFLAGS  = -L$(PAPI)/lib -L$(GMP)/lib -L$(SQLITE3)/lib -Wl,-rpath=$(SQLITE3)/lib
-LDLIBS   = -lpapi -lgmp -lsqlite3
+LDFLAGS  = -L$(PAPI)/lib -L$(SQLITE3)/lib -Wl,-rpath=$(SQLITE3)/lib,-rpath=$(PAPI)/lib
+LDLIBS   = -lpapi -lsqlite3
 
 ifdef CUDA
 CPPFLAGS += -DWITH_CUPTI -I$(CUDA)/include -I$(CUDA)/extras/CUPTI/include

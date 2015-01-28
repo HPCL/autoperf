@@ -75,7 +75,7 @@ put metric specification under autoperf/utils/metric_spec/ directory::
   $ cat ../../autoperf/utils/metric_spec/FP_INEFFICIENT2
   ((PAPI_FP_INS/PAPI_TOT_INS)*(PAPI_RES_STL/PAPI_TOT_CYC))*(PAPI_TOT_CYC/META_CPU_HZ)
 
-Then you can use them as normal metrics:
+Then you can use them as normal metrics::
 
   [Analyses.metrics]
   metrics = PAPI_L1_DCM FP_INEFFICIENT2
