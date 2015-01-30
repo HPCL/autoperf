@@ -6,16 +6,18 @@ from .interface import AbstractPlatform
 from ..utils import config
 
 class Platform(AbstractPlatform):
-    name         = "generic"
-    mpi_launcher = ""
-    mpi_opts     = ""
+    name          = "generic"
+    launcher      = ""
+    launcher_opts = ""
 
     def __init__(self, experiment):
         self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
-        if self.mpi_launcher == "":
-            self.mpi_launcher = config.get("%s.mpi_lancher" % self.longname, "mpirun")
+        if self.launcher == "":
+            self.launcher = config.get("%s.launcher" % experiment.longname, "")
+
+        self.launcher_opts += config.get("%s.launcher_opts" % experiment.longname, "")
 
         _queue  = config.get("%s.Queue" % self.longname, "serial")
 
@@ -58,11 +60,15 @@ class Platform(AbstractPlatform):
     def wrap_command(self, _execmd, _exeopt):
         execmd, exeopt = self.queue.wrap_command(_execmd, _exeopt)
         execmd, exeopt = self.tool.wrap_command(execmd, exeopt)
-        cmd = "%s %s" % (execmd, exeopt)
 
-        if self.experiment.is_mpi:
-            self.mpi_opts += config.get("%s.mpi_opts" % self.experiment.longname, "")
-            cmd = "%s %s %s" % (self.mpi_launcher, self.mpi_opts, cmd)
+        # ignore launcher and launcher option if they are not specified
+        if self.launcher == "":
+            cmd = "%s %s" % (execmd, exeopt)
+        else:
+            cmd = "%s %s %s %s" % (self.launcher, self.launcher_opts, execmd, exeopt)
+
+        cmd = cmd.strip()
+
         if self.experiment.threads > 1:
             cmd = "OMP_NUM_THREADS=%d %s" % (self.experiment.threads, cmd)
 
