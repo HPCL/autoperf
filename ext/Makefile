@@ -1,15 +1,15 @@
 PAPI    = $(HOME)/prefix/papi
-SQLITE3 = $(HOME)/prefix/sqlite-3.8.5
 #CUDA    = /usr/local/packages/cuda/6.5
 
 #export TAU_MAKEFILE=$(TAU_ROOT)/x86_64/lib/Makefile.tau-papi-mpi-pdt
 #CXX     = tau_cxx.sh
 
+CC       = gcc
 CXX      = g++
-CPPFLAGS = -I$(PAPI)/include -I$(SQLITE3)/include
+CPPFLAGS = -I$(PAPI)/include
 CXXFLAGS = -Wall -Wno-write-strings -g
-LDFLAGS  = -L$(PAPI)/lib -L$(SQLITE3)/lib -Wl,-rpath=$(SQLITE3)/lib,-rpath=$(PAPI)/lib
-LDLIBS   = -lpapi -lsqlite3
+LDFLAGS  = -L$(PAPI)/lib -Wl,-rpath=$(PAPI)/lib -lpthread -ldl
+LDLIBS   = -lpapi
 
 ifdef CUDA
 CPPFLAGS += -DWITH_CUPTI -I$(CUDA)/include -I$(CUDA)/extras/CUPTI/include
@@ -41,6 +41,15 @@ MISC_METRICS = TIME
 METRICS = $(PAPI_METRICS) $(CUDA_METRICS) $(MISC_METRICS)
 
 all: $(TARGETS)
+
+partitioner: sqlite3.o partitioner.o
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
+
+partitioner.o: partitioner.cpp
+	$(CXX) $^ $(CPPFLAGS) $(CXXFLAGS) -c
+
+sqlite3.o: sqlite3.c
+	$(CC) sqlite3.c -lpthread -ldl -c
 
 test:
 	./partitioner sqlite3.db $(subst $(eval) ,:,$(METRICS)) greedy true

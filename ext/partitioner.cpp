@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include <papi.h>
-#include <sqlite3.h>
+#include "sqlite3.h"
 
 #ifdef WITH_CUPTI
 #include <cupti.h>

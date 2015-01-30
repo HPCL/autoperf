@@ -4,13 +4,10 @@ from distutils.core import setup, Extension
 # where to find headers/libraries to compile the extension
 CUDA    = os.getenv('CUDA')
 PAPI    = os.getenv('PAPI', '/usr/local/packages/papi/5.0.1')
-SQLITE3 = os.getenv('SQLITE3', os.environ['HOME']+'/prefix/sqlite-3.8.5')
 
-INCLUDE_DIRS  = [PAPI    + '/include',
-                 SQLITE3 + '/include']
-LIBRARY_DIRS  = [PAPI    + '/lib',
-                 SQLITE3 + '/lib']
-LIBRARIES     = ['papi', 'sqlite3']
+INCLUDE_DIRS  = [PAPI    + '/include']
+LIBRARY_DIRS  = [PAPI    + '/lib']
+LIBRARIES     = ['papi']
 DEFINE_MACROS = [('EXT_PYTHON', None)]
 
 if CUDA is not None:
@@ -33,7 +30,7 @@ for root, dirs, files in os.walk(src_dir, topdown=True):
 
 # partitioner is a python extension written in c++
 partitioner = Extension(name                 = 'autoperf.partitioner',
-                        sources              = ['ext/partitioner.cpp'],
+                        sources              = ['ext/partitioner.cpp', 'ext/sqlite3.c'],
                         language             = 'c++',
                         include_dirs         = INCLUDE_DIRS,
                         library_dirs         = LIBRARY_DIRS,
