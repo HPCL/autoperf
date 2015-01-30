@@ -132,21 +132,21 @@ Options
 
     default: "no"
 
-  mpi
-
-    value: "yes" or "no"
-
-    meaning: whether the experiment is working on a MPI application
-
-    mandatory: no
-
-    default: "no"
-
-  mpi_opts
+  launcher
 
     value: a string
 
-    meaning: command line options for MPI launcher
+    meaning: a program used to launch the user application
+
+    mandatory: no
+
+    default: "aprun" for NERSC systems, empty for others
+
+  launcher_opts
+
+    value: a string
+
+    meaning: command line options for application launcher
 
     mandatory: no
 
@@ -264,16 +264,6 @@ Options
     mandatory: no
 
     default: "serial"
-
-  mpi_launcher
-
-    value: a string
-
-    meaning: name of the MPI launcher
-
-    mandatory: no
-
-    default: "mpirun"
 
 Queue
 ~~~~~

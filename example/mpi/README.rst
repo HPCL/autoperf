@@ -34,16 +34,20 @@ This could be used to give your application some cmdline options.::
   ...
   ...
 
-[Experiments].mpi
+[Experiments].launcher
 -----------------
-This tells *autoperf* that it's working on some MPI application.::
+This tells *autoperf* that the application shall be invoked by a launcher.
+This is usually the case for MPI application. Cray also requires to launch
+your applicaition (MPI or not) with "aprun".::
 
   [Experiments]
   ...
   ...
-  mpi = yes
+  launcher = mpirun
   ...
   ...
+
+Launcher option can be specified with [Experiments].launcher_opts.
 
 [Platform]
 ----------
