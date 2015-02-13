@@ -49,7 +49,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         self.logger     = logging.getLogger(__name__)
 
         self.options    = ""
-        for opt in config.get("%s.options" % self.longname, []).splitlines():
+        for opt in config.get("%s.options" % self.longname, "").splitlines():
             self.options += "#PBS %s\n" % opt
 
         signal.signal(signal.SIGUSR1, self._wakeup)
