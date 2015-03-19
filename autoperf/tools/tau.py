@@ -87,6 +87,12 @@ class Tool(AbstractTool):
         datadir   = self.experiment.datadirs[self.experiment.iteration]
         metrics   = self.experiment.parted_metrics[self.experiment.iteration]
 
+        # make sure more than one metrics are measured, so TAU will
+        # put data into MULTI__* directory, so we can easily aggregate
+        # them together
+        if len(metrics.split(':')) == 1:
+            metrics = "%s:TIME" % metrics
+
         tau_setup = "# TAU environment variables\n"
         tau_vars  = self.get_tau_vars()
         for name in tau_vars:
