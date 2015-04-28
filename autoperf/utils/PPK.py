@@ -407,10 +407,11 @@ class FunctionProfile(Profile):
       A => ... => [CONTEXT] B => ... => [UNWIND] C
     """
     def __init__(self, ppk, nodeId, contextId, threadId, functionId):
-        self.event     = ppk.events[functionId]
-        self.groups    = self.event.groups
-        self.shortname = self.event.shortname
-        self.isDerived = self.event.isDerived
+        self.functionId = functionId
+        self.event      = ppk.events[functionId]
+        self.groups     = self.event.groups
+        self.shortname  = self.event.shortname
+        self.isDerived  = self.event.isDerived
 
         Profile.__init__(self, ppk, nodeId, contextId, threadId, self.event.fullname)
 
@@ -485,19 +486,19 @@ class PPK:
         if not (cookie1 is 'P' and cookie2 is 'P' and cookie3 is 'K'):
             raise InvalidPPKError(filename)
 
-        version    = self._readInt()
-        compatible = self._readInt()
+        self.version    = self._readInt()
+        self.compatible = self._readInt()
 
-        if compatible > 2:
+        if self.compatible > 2:
             raise Exception("This packed profile is not compatible, "\
-                            "please upgrade\nVersion: %x > 2" % compatible)
+                            "please upgrade\nVersion: %x > 2" % self.compatible)
 
-        if version >= 2:
+        if self.version >= 2:
             # older versions will skip over this many bytes
-            self._readInt()
+            self.pad1 = self._readInt()
 
-            bytesToSkip = self._readInt()
-            self._skipBytes(bytesToSkip)
+            self.bytesToSkip = self._readInt()
+            self._skipBytes(self.bytesToSkip)
 
             # process metadata
             numTrialMetaData = self._readInt()
@@ -520,11 +521,9 @@ class PPK:
                     name  = self._readUTF()
                     value = self._readUTF()
                     thread.addMetadata(name, value)
-
-                self.threads.append(thread)
         else:
-            bytesToSkip = self._readInt()
-            self._skipBytes(bytesToSkip)
+            self.bytesToSkip = self._readInt()
+            self._skipBytes(self.bytesToSkip)
 
         # process metrics
         numMetrics = self._readInt()
@@ -596,11 +595,120 @@ class PPK:
         if self.pos < len(self.contents):
             raise InvalidPPKError(filename)
 
+    def addMetadata(self, name, value):
+        self.metadata[name] = value
+
+    def dump(self, ppkfile):
+        self.pack_format = ">"
+        self.pack_data   = [ ]
+
+        self._writeChar('P')
+        self._writeChar('P')
+        self._writeChar('K')
+
+        self._writeInt(self.version)
+        self._writeInt(self.compatible)
+
+        if self.version >= 2:
+            self._writeInt(self.pad1)
+
+            self._writeInt(self.bytesToSkip)
+            self._writePad(self.bytesToSkip)
+
+            # process metadata
+            self._writeInt(len(self.metadata.keys()))
+            for name, value in self.metadata.items():
+                self._writeUTF(name)
+                self._writeUTF(value)
+
+            # process thread metadata
+            self._writeInt(len(self.threads))
+            for thread in self.threads:
+                self._writeInt(thread.nodeId)
+                self._writeInt(thread.contextId)
+                self._writeInt(thread.threadId)
+
+                self._writeInt(len(thread.metadata.keys()))
+                for name, value in thread.metadata.items():
+                    self._writeUTF(name)
+                    self._writeUTF(value)
+        else:
+            self._writeInt(self.bytesToSkip)
+            self._writePad(self.bytesToSkip)
+
+        # process metrics
+        self._writeInt(len(self.metrics))
+        for metric in self.metrics:
+            self._writeUTF(metric)
+
+        # process groups
+        self._writeInt(len(self.groups))
+        for group in self.groups:
+            self._writeUTF(group)
+
+        #process functions
+        self._writeInt(len(self.events))
+        for event in self.events:
+            self._writeUTF(event.fullname)
+
+            self._writeInt(len(event.groups))
+            for group in event.groups:
+                self._writeInt(self.groups.index(group))
+
+
+        # process user events
+        self._writeInt(len(self.userEvents))
+        for event in self.userEvents:
+            self._writeUTF(event)
+
+        # process thread data
+        fpBegin = 0;
+        upBegin = 0;
+        self._writeInt(len(self.threads))
+        for thread in self.threads:
+            self._writeInt(thread.nodeId)
+            self._writeInt(thread.contextId)
+            self._writeInt(thread.threadId)
+
+            # write function profiles
+            fpNum = len(thread.functionProfiles.keys())
+            self._writeInt(fpNum)
+            for profile in self.functionProfiles[fpBegin:fpBegin+fpNum]:
+                self._writeInt(profile.functionId)
+                self._writeDouble(profile.numCalls)
+                self._writeDouble(profile.numSubr)
+
+                for metric in self.metrics:
+                    self._writeDouble(profile.exclusive[metric])
+                    self._writeDouble(profile.inclusive[metric])
+            fpBegin += fpNum
+
+            # write user event profiles
+            upNum = len(thread.userEventProfiles.keys())
+            self._writeInt(upNum)
+            for profile in self.userEventProfiles[upBegin:upBegin+upNum]:
+                self._writeInt(profile.userEventId)
+                self._writeInt(profile.numSamples)
+                self._writeDouble(profile.minValue)
+                self._writeDouble(profile.maxValue)
+                self._writeDouble(profile.meanValue)
+                self._writeDouble(profile.sumSquared)
+            upBegin += upNum
+
+        f = gzip.open(ppkfile, 'wb')
+        f.write(pack(self.pack_format, *self.pack_data))
+        f.close()
+
     def _readChar(self):
-        rv = unpack("cc", self.contents[self.pos:self.pos+2])
+        rv = unpack("Bc", self.contents[self.pos:self.pos+2])
         self.pos += 2
 
         return rv[1]
+
+    def _writeChar(self, char):
+        self.pack_format += "Bc"
+        self.pack_data.append(0)
+        self.pack_data.append(char)
 
     def _readUnsignedShort(self):
         rv = unpack(">H", self.contents[self.pos:self.pos+2])
@@ -608,17 +716,29 @@ class PPK:
 
         return rv[0]
 
+    def _writeUnsignedShort(self, us):
+        self.pack_format += "H"
+        self.pack_data.append(us)
+
     def _readInt(self):
         rv = unpack(">i", self.contents[self.pos:self.pos+4])
         self.pos += 4
 
         return rv[0]
 
+    def _writeInt(self, i):
+        self.pack_format += "i"
+        self.pack_data.append(i)
+
     def _readDouble(self):
         rv = unpack(">d", self.contents[self.pos:self.pos+8])
         self.pos += 8
 
         return rv[0]
+
+    def _writeDouble(self, d):
+        self.pack_format += "d"
+        self.pack_data.append(d)
 
     def _readUTF(self):
         len = self._readUnsignedShort()
@@ -627,8 +747,18 @@ class PPK:
 
         return rv[0]
 
+    def _writeUTF(self, utf):
+        self.pack_format += "H%ds" % len(utf)
+        self.pack_data.append(len(utf))
+        self.pack_data.append(utf)
+
     def _skipBytes(self, bytesToSkip):
         self.pos += bytesToSkip
+
+    def _writePad(self, length):
+        if (length > 0):
+            self.pack_format += "%dB" % length
+            self.pack_data.extend([0x55] * length)
 
     def _addNode(self, nodeId):
         if nodeId not in self.nodes:
@@ -779,3 +909,8 @@ class PPK:
         
     def getAggIncMean(self, event, metric):
         return self._getAggData(event, metric, PPK.MEAN, PPK.INCLUSIVE)
+
+if __name__ == "__main__":
+    ppk = PPK(sys.argv[1], "whatever")
+    ppk.addMetadata("AP_CONFIG", "deadbeef")
+    ppk.dump('foo.ppk')
