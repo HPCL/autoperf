@@ -670,6 +670,8 @@ class PPK:
             self._writeInt(thread.contextId)
             self._writeInt(thread.threadId)
 
+            print "Handle thread %d ..." % thread.threadId
+
             # write function profiles
             fpNum = len(thread.functionProfiles.keys())
             self._writeInt(fpNum)

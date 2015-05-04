@@ -419,3 +419,25 @@ Options for Analyses.metrics
     mandatory: yes if *derived_metrics* is defined
 
     default: no default value
+
+Env
+~~~
+Purpose
+
+  All name/value pairs in this section are set as environment variable
+  for the experiment.
+
+Fullname
+
+  Env.$Experiments
+
+Metadata
+~~~~~~~~
+Purpose
+
+  All name/value pairs in this section will be added into "-y"
+  generated PPK file as metadata.
+
+Fullname
+
+  Metadata.$Experiments

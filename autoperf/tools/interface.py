@@ -1,5 +1,8 @@
 import subprocess
 
+from ..utils import config
+from ..utils.PPK import PPK
+
 class AbstractTool:
     name       = "Abstract"
     longname   = "Abstract"
@@ -56,3 +59,13 @@ class AbstractTool:
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()
+
+        # now add user specivied metadata
+        num = 0
+        ppk = PPK("%s/data.ppk" % self.experiment.insname, "");
+        for name, value in config.get_section("Metadata.%s" % self.experiment.name):
+            num += 1
+            ppk.addMetadata(name, value)
+
+        if (num > 0):
+            ppk.dump("%s/data.ppk" % self.experiment.insname)
