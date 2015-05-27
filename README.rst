@@ -27,8 +27,8 @@ Prerequisites
 ===================
 
 * Python, including the development headers (e.g., python-dev package in various Linux distros)
-* `Jython <http://www.jython.org>`
-* One or more performance measurement tools, e.g., `PAPI <http://icl.cs.utk.edu/papi/>`, `TAU <http://tau.uoregon.edu>`, `HPCToolkit <http://hpctoolkit.org>`.
+* `Jython <http://www.jython.org>`_
+* One or more performance measurement tools, e.g., `PAPI <http://icl.cs.utk.edu/papi/>`_, `TAU <http://tau.uoregon.edu>`_, `HPCToolkit <http://hpctoolkit.org>`_.
 
 Install
 ===================
