@@ -23,6 +23,13 @@ Directory Structure
   README.rst     -- this file
 
 
+Prerequisites
+===================
+
+* Python, including the development headers (e.g., python-dev package in various Linux distros)
+* Jython 
+* One or more performance measurement tools, e.g., [PAPI](http://icl.cs.utk.edu/papi/), [TAU](http://tau.uoregon.edu), [HPCToolkit](http://hpctoolkit.org).
+
 Install
 ===================
 
