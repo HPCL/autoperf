@@ -72,7 +72,26 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
             return "Dead"
         else:
             return "Alive"
-        
+
+    @staticmethod
+    def cancel(iteration):
+        queue, colon, jobid = iteration['jobid'].partition(":")
+        if queue != "PBS":
+            raise Exception("Fatal error: job queue mismatch!")
+
+        try:
+            with open(os.devnull, "w") as FNULL:
+                subprocess.check_call(["qdel", jobid], stdout=FNULL, stderr=FNULL)
+        except:
+            print "Failed to cancel PBS job %s..." % jobid
+
+        # update marker
+        with open(iteration["marker"], "w+") as fp:
+            fp.write("%s %s %s Cancelled" % (
+                    iteration["expname"],
+                    iteration["insname"],
+                    iteration["jobid"]))
+
     def submit(self, cmd, block=False):
         datadir = self.experiment.datadirs[self.experiment.iteration]
         jobstat = "%s/.job.stat" % datadir
@@ -138,4 +157,3 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
             self.done = False
 
         return self.job_id
-

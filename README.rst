@@ -26,9 +26,12 @@ Directory Structure
 Prerequisites
 ===================
 
-* Python, including the development headers (e.g., python-dev package in various Linux distros)
+* Python, including the development headers (e.g., python-dev package
+  in various Linux distros)
 * `Jython <http://www.jython.org>`_
-* One or more performance measurement tools, e.g., `PAPI <http://icl.cs.utk.edu/papi/>`_, `TAU <http://tau.uoregon.edu>`_, `HPCToolkit <http://hpctoolkit.org>`_.
+* One or more performance measurement tools, e.g., `PAPI
+  <http://icl.cs.utk.edu/papi/>`_, `TAU <http://tau.uoregon.edu>`_,
+  `HPCToolkit <http://hpctoolkit.org>`_.
 
 Install
 ===================
@@ -80,7 +83,7 @@ A driver script named "autoperf" is included in *bin/*. Run the driver
 script to execute the experiments and collect the data::
 
   $ autoperf -h
-  usage: autoperf [-h] [-f CFGFILE] [-D CONFIG.OPTION=VALUE] [-r | -c | -y]
+  usage: autoperf [-h] [-f CFGFILE] [-D CONFIG.OPTION=VALUE] [-r | -c | -y | -q]
                   [-e EXP[@NUM]] [-i INSTANCE] [-b]
 
   optional arguments:
@@ -100,6 +103,8 @@ script to execute the experiments and collect the data::
     -y, --analyze         When used with '-e' or '-i', analyze those experiments
                           data. Otherwise, analyze all exepriments. The
                           experiment must be in 'Finished' state.
+    -q, --cancel          When used with '-e' or '-i', cancel those experiments
+                          if they are still running.
     -e EXP[@NUM], --exp EXP[@NUM]
                           Select experiment EXP NUM times. This option can be
                           used multiple times and experiments will be selected

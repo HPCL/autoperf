@@ -9,6 +9,10 @@ class AbstractQueue:
     def get_status(self, idstr):
         raise NotImplementedError
 
+    @staticmethod
+    def cancel(iteration):
+        raise NotImplementedError
+
     def __init__(self, experiment):
         raise NotImplementedError
 

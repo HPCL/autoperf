@@ -180,11 +180,12 @@ class Experiment:
                 continue
 
             stat   = { }
-            marker = "%s/%s" % (dirname, item)
+            marker = os.path.realpath("%s/%s" % (dirname, item))
 
             if os.path.isfile(marker):
                 with open(marker, 'r') as fp:
                     content = fp.read().split()
+                    stat["marker"]  = marker
                     stat["expname"] = content[0]
                     stat["insname"] = content[1]
                     stat["jobid"]   = content[2]
@@ -192,6 +193,7 @@ class Experiment:
 
             else:
                 # small chance that job stat marker is not placed yet
+                stat["marker"]  = marker
                 stat["expname"] = expname
                 stat["insname"] = os.path.basename(dirname)
                 stat["jobid"]   = "Unknown"

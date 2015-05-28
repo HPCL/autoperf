@@ -55,6 +55,10 @@ group.add_argument("-y", "--analyze",
                    help="When used with '-e' or '-i', analyze those "
                    "experiments data. Otherwise, analyze all exepriments. "
                    "The experiment must be in 'Finished' state.")
+group.add_argument("-q", "--cancel",
+                   action="store_const", const="cancel", dest="mode",
+                   help="When used with '-e' or '-i', cancel those experiments "
+                   "if they are still running.")
 
 # experiment selection
 parser.add_argument("-e", "--exp",
@@ -171,23 +175,27 @@ def check_an_experiment(expname, insnames=None):
     else:
         return [stat for stat in stats if stat[0]['insname'] in insnames]
 
-def is_finished(instance):
+def get_overall_status(instance):
     """
-    Check whether an experiment instance is finished. The instance
-    could have several iterations because of the partitioner, so it is
-    considered as 'Finished' only if all iterations are done.
+    Get overall status of the `instance'.
+      Cancelled: *any* of the iteration is in `Cancelled' state
+      Finished : *all* of the iterations are `Finished'
+      Running  : none of above
 
     Args:
       instance (list): List of iteration status
 
     Returns:
-      bool: Whether the instance is finished or not
+      string: the overall status
     """
+    status = 'Finished'
     for iteration in instance:
+        if iteration['status'] == 'Cancelled':
+            return 'Cancelled'
         if iteration['status'] != 'Finished':
-            return False
+            status = 'Running'
 
-    return True
+    return status
 
 def check_experiments(insnames):
     fmtstr = "{0:20} {1:30} {2:15} {3:10}"
@@ -204,8 +212,9 @@ def check_experiments(insnames):
             expname = instance[0]['expname']
             insname = instance[0]['insname']
 
-            if is_finished(instance):
-                print fmtstr.format(expname, insname, "-", "Finished")
+            status = get_overall_status(instance)
+            if status != 'Running':
+                print fmtstr.format(expname, insname, "-", status)
             else:
                 for iteration in instance:
                     print fmtstr.format(expname, insname,
@@ -215,6 +224,19 @@ def check_experiments(insnames):
                     # the following iterations
                     expname = ""
                     insname = ""
+
+def cancel_experiments(insnames):
+    exps = get_experiment_list(False)
+    for exp in exps:
+        platform = config.get("Experiments.%s.Platform" % exp)
+        queue    = config.get("Platform.%s.Queue" % platform)
+        _module = __import__("autoperf.queues.%s" % queue,
+                             globals(),
+                             fromlist=["Queue"])
+        for instance in check_an_experiment(exp, insnames):
+            for iteration in instance:
+                if iteration['status'] != 'Finished' and iteration['status'] != 'Cancelled':
+                    _module.Queue.cancel(iteration)
 
 def analyze_an_experiment(expname, insnames):
     for instance in check_an_experiment(expname, insnames):
@@ -241,3 +263,5 @@ elif options.mode == 'check':
     check_experiments(options.insnames)
 elif options.mode == 'analyze':
     analyze_experiments(options.insnames)
+elif options.mode == 'cancel':
+    cancel_experiments(options.insnames)
