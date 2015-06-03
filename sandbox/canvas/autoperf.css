@@ -1,0 +1,154 @@
+body {
+     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+}
+
+h1 {
+    color: #A7C942;
+}
+
+table {
+    width: 100%;
+    /* table-layout: fixed; */
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #98bf21;
+    padding: 3px 7px 2px 7px;
+    word-wrap: break-word;
+}
+
+th {
+    background-color: #A7C942;
+    color: white;
+}
+
+.alt {
+    background-color: #EAF2D3;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #FF704D;
+    text-decoration: underline;
+}
+
+/* menu bar */
+ul.OptionList {
+    list-style-type: none;
+    margin: 0 20px 0 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+ul.OptionList li {
+    padding: 3px 7px 2px 7px;
+}
+
+ul.OptionList li:not(.head):hover {
+    color: white;
+    background-color: green;
+    cursor: pointer;
+}
+
+ul.OptionList li.head:hover {
+    cursor: pointer;
+}
+
+ul.OptionList li.head {
+    background-color: #98bf21;
+}
+
+ul.OptionList li.head input {
+    border-radius: 10px;
+    padding: 0 3px 1px 3px;
+    min-width: 60px;
+    max-width: 300px;
+    float: right;
+}
+
+ul.OptionList li.active {
+    color: white;
+    background-color: green;
+}
+
+div#top {
+    overflow: auto;
+}
+
+div#detail {
+    overflow: hidden;
+    width: 100%;
+}
+
+div#application {
+    float: left;
+    width: 10%;
+}
+
+div#trial {
+    float: left;
+    width: 20%;
+}
+
+div#metric_thread {
+    float: left;
+    width: 10%;
+}
+
+div#metadata {
+    float: left;
+    width: 40%;
+}
+
+div#metadata table {
+    width: 300px;
+}
+
+div#timer {
+    width: 600px;
+}
+
+div#timer table {
+    width: 100%;
+}
+
+div#graph {
+    float: left;
+}
+
+div.head {
+    margin: 0 20px 0 0;
+}
+
+input {
+    box-sizing: border-box;
+    outline: 0;
+}
+
+input.txt {
+    border-radius: 10px;
+    background-color: #98BF21;
+    border: 1px solid #98BF21;
+    padding: 3px 7px 2px 7px;
+    width: 100%;
+    height: 25px;
+    font-size: 15px;
+}
+
+input.txt:hover {
+    cursor: pointer;
+}
+
+input.txt:focus {
+    background-color: white;
+}
+
+canvas {
+    width: 500px;
+    height: 400px;
+}
