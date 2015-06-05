@@ -241,7 +241,7 @@ def cancel_experiments(insnames):
 def analyze_an_experiment(expname, insnames):
     for instance in check_an_experiment(expname, insnames):
         insname = instance[0]['insname']
-        if is_finished(instance):
+        if get_overall_status(instance) == "Finished":
             print "*** Analyzing %s %s ..." % (expname, insname)
             experiment = Experiment(expname, insname)
             experiment.setup()
