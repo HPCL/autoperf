@@ -33,11 +33,11 @@ WHERE
     AND
     timer.id = timer_callpath.timer
     AND
+    timer.name LIKE '%[SUMMARY]%'
+    AND
     timer_call_data.thread = {$threadId}
     AND
     timer_value.metric = {$metricId}
-    AND 
-    timer.name like ‘%[SUMMARY]%'
 ORDER BY
     timer_value.{$type}_percent
 DESC
