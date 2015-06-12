@@ -73,7 +73,7 @@ def set(spec, value):
     section, dot, option = spec.rpartition('.')
     if not cfg_parser.has_section(section):
         cfg_parser.add_section(section)
-    cfg_parser.set(section, option, value)
+    cfg_parser.set(section, option, str(value))
 
 def get_section(section):
     global cfg_parser
@@ -150,6 +150,7 @@ def get_list(secname):
     """
     Generate the experiment names
     """
+    global cfg_parser
     exp_strings = get(secname).split()
     newlist = []
     for exp in exp_strings:
@@ -165,7 +166,11 @@ def get_list(secname):
                 exit(1)
             else:
                 if 'threads' in locals().keys() and isinstance(threads,list):
-                    for t in threads: newlist.append(m.group(1) + '.' + str(t))
+                    for t in threads: 
+			name = m.group(1) + '.' + str(t)
+ 			newlist.append(name)
+			#print "set: Experiments.%s.threads" % name, t
+			set("Experiments.%s.threads" % name, t)
                 else:
                     newlist.append(exp)
     return newlist
