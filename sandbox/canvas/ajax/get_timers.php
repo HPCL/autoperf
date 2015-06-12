@@ -33,6 +33,8 @@ WHERE
     AND
     timer.id = timer_callpath.timer
     AND
+    timer.name LIKE '%[SUMMARY]%'
+    AND
     timer_call_data.thread = {$threadId}
     AND
     timer_value.metric = {$metricId}
