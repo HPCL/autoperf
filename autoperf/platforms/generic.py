@@ -41,6 +41,9 @@ class Platform(AbstractPlatform):
         prologue = "# Generic environment variables\n"
         for name, value in config.get_section("Env.%s" % self.experiment.name):
             prologue += "export %s='%s'\n" % (name, value)
+
+	#print "NUMBER OF THREADS = %d" % self.experiment.threads
+        prologue += "export OMP_NUM_THREADS=%d\n" % (self.experiment.threads)
         prologue += self.tool.setup_str()
 
         return prologue
