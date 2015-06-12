@@ -1,9 +1,9 @@
 <?php
 
 /* database connections */
-$dbhost = "taudb.nic.uoregon.edu";
-$dbname = "geant4";
-$dbuser = "geant4_collaborator";
-$dbpass = "ask boyana for password";
+$dbhost = "brix.d.cs.uoregon.edu";
+$dbname = "autoperfdb";
+$dbuser = "autoperf_user";
+$dbpass = "ask boyana norris for password";
 
 ?>
