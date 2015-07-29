@@ -49,9 +49,10 @@ class AbstractTool:
         Returns:
           None
         """
+        ppkfile = "%s/%s.ppk" % (self.experiment.insname, self.experiment.ppkname)
         cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
                "--pack",
-               "%s/%s.ppk" % (self.experiment.insname, self.experiment.ppkname),
+               ppkfile, 
                "%s/profiles" % self.experiment.insname]
         self.logger.info("Pack collected data to TAU .ppk package")
         self.logger.cmd(' '.join(cmd))
@@ -60,12 +61,12 @@ class AbstractTool:
                                    stderr=subprocess.PIPE)
         out, err = process.communicate()
 
-        # now add user specivied metadata
+        # now add user specified metadata
         num = 0
-        ppk = PPK("%s/data.ppk" % self.experiment.insname, "");
+        ppk = PPK(ppkfile, "");
         for name, value in config.get_section("Metadata.%s" % self.experiment.name):
             num += 1
             ppk.addMetadata(name, value)
 
         if (num > 0):
-            ppk.dump("%s/data.ppk" % self.experiment.insname)
+            ppk.dump(ppkfile)
