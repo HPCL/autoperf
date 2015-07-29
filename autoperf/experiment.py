@@ -61,6 +61,8 @@ class Experiment:
         self.execmd         = os.path.expanduser(self.execmd)
         self.exeopt         = config.get("%s.exeopt" % self.longname, "")
 
+        self.ppkname        = config.get("%s.ppkname" % self.longname, "data")
+
         # now let's get into the rootdir
         if not os.path.isdir(self.rootdir):
             os.makedirs(self.rootdir)

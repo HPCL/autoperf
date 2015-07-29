@@ -51,7 +51,7 @@ class AbstractTool:
         """
         cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
                "--pack",
-               "%s/data.ppk" % self.experiment.insname,
+               "%s/%s.ppk" % (self.experiment.insname, self.experiment.ppkname),
                "%s/profiles" % self.experiment.insname]
         self.logger.info("Pack collected data to TAU .ppk package")
         self.logger.cmd(' '.join(cmd))

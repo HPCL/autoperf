@@ -203,6 +203,16 @@ Options
 
     default: no default value
 
+  ppkname
+
+    value: a string
+
+    meaning: Name of generated PPK data file (without .ppk suffix)
+
+    mandatory: no
+
+    default: "data"
+
   Platform
 
     value: "generic", "aciss" or "hopper"

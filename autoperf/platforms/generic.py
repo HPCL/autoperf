@@ -105,8 +105,8 @@ class Platform(AbstractPlatform):
         Returns:
           None
         """
-        if os.path.isfile("%s/data.ppk" % self.experiment.insname):
-            self.logger.verb("Found data.ppk, bypassing data collection\n")
+        if os.path.isfile("%s/%s.ppk" % (self.experiment.insname, self.experiment.ppkname)):
+            self.logger.verb("Found ppk file, bypassing data collection\n")
         else:
             self.tool.aggregate()
             self.tool.collect_data()
