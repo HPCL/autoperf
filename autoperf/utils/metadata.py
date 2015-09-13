@@ -5,16 +5,7 @@ from os.path import join, isdir
 
 class _CPUInfo:
     def __eq__(self, other):
-        if cmp(self.cache, other.cache) != 0:
-            return False
-
-        if self.hz != other.hz:
-            return False
-
-        if self.model != other.model:
-            return False
-
-        return True
+        return self.model == other.model
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -63,10 +54,6 @@ class _CPUInfo:
             if m is not None:
                 self.model = m.group(1)
 
-            m = re.match(r"cpu MHz\s*: (.*)", line)
-            if m is not None:
-                self.hz = float(m.group(1)) * 1000000
-
             m = re.match(r"cpu cores\s*: (.*)", line)
             if m is not None:
                 self.cores = int(m.group(1))
@@ -107,9 +94,6 @@ def _get_cpu_info():
 
     # physical CPU number
     metadata["META_CPU_NUM"] = len(physical_id)
-
-    # CPU frequency in HZ
-    metadata["META_CPU_HZ"] = cpuinfo[0].hz
 
     # CPU model
     metadata["META_CPU_MODEL"] = cpuinfo[0].model
