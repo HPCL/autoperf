@@ -37,7 +37,6 @@ class Experiment:
         self.insname  = insname
         self.datadirs = [ ]
 
-        self.metric_set = MetricSet()
 
         # get some basic config values
         self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
@@ -62,6 +61,12 @@ class Experiment:
         self.exeopt         = config.get("%s.exeopt" % self.longname, "")
 
         self.ppkname        = config.get("%s.ppkname" % self.longname, "data")
+
+        self.specdirs       = config.get("%s.specdirs" % self.longname, "").split()
+        self.specdirs       = map(os.path.expanduser, self.specdirs)
+        self.specdirs       = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
+
+        self.metric_set = MetricSet(self.specdirs)
 
         # now let's get into the rootdir
         if not os.path.isdir(self.rootdir):

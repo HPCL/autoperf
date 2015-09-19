@@ -247,9 +247,19 @@ Options
 
     value: list of "metrics", "gensel"
 
-    meanling: list of analysis we need to perform on performance data
+    meaning: list of analysis we need to perform on performance data
 
     mandatory: yes
+
+  specdirs
+
+    value: list of string
+
+    meaning: list of directories used to search for derived metric spec
+
+    mandatory: no
+
+    default: ""
 
 Platform
 ~~~~~~~~
