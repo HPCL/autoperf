@@ -1,7 +1,7 @@
 <?php
 
 function taudb_connect() {
-    include "config.php";
+    include "config_local.php";
     return pg_connect("host={$dbhost} dbname={$dbname} user={$dbuser} password='{$dbpass}'");
 }
 

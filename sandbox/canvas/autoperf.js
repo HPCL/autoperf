@@ -71,7 +71,7 @@ var OptionList = function(name, data, cb_click) {
     this.parent   = undefined;
     this.children = [ ];
     this.head = $("<div class='head'><input class='txt' value="+this.name+"></div>");
-
+    
     var ul = $("<ul class='OptionList'></ul>");
     var on_click = this.on_click;
 
