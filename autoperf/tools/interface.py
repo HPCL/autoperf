@@ -68,5 +68,11 @@ class AbstractTool:
             num += 1
             ppk.addMetadata(name, value)
 
+        # also calculate and attach derived metrics
+        metric_set = self.experiment.metric_set
+        if metric_set.dmetrics:
+            num += len(metric_set.dmetrics)
+            ppk.attachMetricSet(metric_set)
+
         if (num > 0):
             ppk.dump(ppkfile)
