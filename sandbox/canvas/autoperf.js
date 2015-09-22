@@ -258,6 +258,7 @@ function set_default(optionList, dataArray, ind) {
 	    
 		/* change "active" */
 	    //optionList.ul.find(".active").removeClass("active");
+	    $( "li" ).first().removeClass("active");
 	    $( "li" ).eq(ind).addClass("active");
 
 	    /* call user callback */
@@ -286,7 +287,7 @@ function cb_get_applications(json) {
     	      cb_get_trials);
 
     });
-	set_default(app, data);
+	set_default(app, data, 0);
 
     app.fill("div#application");
 
@@ -317,7 +318,7 @@ function cb_get_trials(json) {
     	      cb_get_metrics);
     });
 
-    set_default(trial, data);
+    set_default(trial, data, 0);
     trial.fill("div#trial");
 
     app.adopt(trial);
@@ -346,7 +347,7 @@ function cb_get_metrics(json) {
     	      },
     	      cb_get_threads);
     });
-	set_default(metric, data);
+	set_default(metric, data, 0);
 
     metric.fill("div#metric");
 
@@ -377,7 +378,8 @@ function cb_get_threads(json) {
     });
 
     // TODO: this doesn't quite work yet
-    set_default(thread,data,get_index(data,"Mean"));
+    //set_default(thread,data,get_index(data,"Mean"));
+    set_default(thread,data,0);
 
     thread.fill("div#thread");
     trial.adopt(thread);
