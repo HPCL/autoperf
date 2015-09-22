@@ -75,6 +75,8 @@ function get_index(dataArray, val) {
 }
 
 
+
+
 var OptionList = function(name, data, cb_click) {
     this.name     = name;
     this.data     = data;
@@ -94,9 +96,10 @@ var OptionList = function(name, data, cb_click) {
     $.each(this.data, function(index, entry) {
 	var li;
 
-	if (index == 0) {
+	if (index == default_index) {
 		li = $("<li class='active'>" + entry.value + "</li>");
-	} else if (index%2) {
+	} else 
+	if (index%2) {
 	    li = $("<li class='alt'>" + entry.value + "</li>");
 	} else {
 	    li = $("<li>" + entry.value + "</li>");
@@ -169,6 +172,31 @@ var OptionList = function(name, data, cb_click) {
 
     this.ul = ul;
     this.ul.data("OptionList", this);
+}
+
+OptionList.prototype.set_default = function(optionList, dataArray, ind) {
+
+	//console.dir(optionList.ul.find(".active"));
+	if (optionList.ul.find(".active").value != undefined) {
+		optionList.cb_click(optionList);
+		return;
+	}
+	
+	if (ind === undefined || ind === null) {
+		ind = 0;
+	}
+	if (dataArray.length > 0) {
+	    // special handling for threads value (want to display "Mean" by default)
+	    optionList.active = dataArray[ind];
+	    
+		/* change "active" */
+	    //optionList.ul.find(".active").removeClass("active");
+	    $( "li" ).first().removeClass("active");
+	    $( "li" ).eq(ind).addClass("active");
+
+	    /* call user callback */
+	    optionList.cb_click(optionList);
+    }
 }
 
 OptionList.prototype.adopt = function(optionList) {
@@ -247,25 +275,6 @@ function canvas_init() {
 }
 
 
-function set_default(optionList, dataArray, ind) {
-
-	if (ind === undefined || ind === null) {
-		ind = 0;
-	}
-	if (dataArray.length > 0) {
-	    // special handling for threads value (want to display "Mean" by default)
-	    optionList.active = dataArray[ind];
-	    
-		/* change "active" */
-	    //optionList.ul.find(".active").removeClass("active");
-	    $( "li" ).first().removeClass("active");
-	    $( "li" ).eq(ind).addClass("active");
-
-	    /* call user callback */
-	    optionList.cb_click(optionList);
-    }
-}
-
 function cb_get_applications(json) {
     var app;
     var data = new Array;
@@ -287,7 +296,7 @@ function cb_get_applications(json) {
     	      cb_get_trials);
 
     });
-	set_default(app, data, 0);
+	app.set_default(app, data, 0);
 
     app.fill("div#application");
 
@@ -318,7 +327,7 @@ function cb_get_trials(json) {
     	      cb_get_metrics);
     });
 
-    set_default(trial, data, 0);
+    trial.set_default(trial, data, 0);
     trial.fill("div#trial");
 
     app.adopt(trial);
@@ -347,7 +356,7 @@ function cb_get_metrics(json) {
     	      },
     	      cb_get_threads);
     });
-	set_default(metric, data, 0);
+	metric.set_default(metric, data, 0);
 
     metric.fill("div#metric");
 
@@ -378,8 +387,8 @@ function cb_get_threads(json) {
     });
 
     // TODO: this doesn't quite work yet
-    //set_default(thread,data,get_index(data,"Mean"));
-    set_default(thread,data,0);
+    //thread.set_default(thread,data,get_index(data,"Mean"));
+    thread.set_default(thread,data,0);
 
     thread.fill("div#thread");
     trial.adopt(thread);
