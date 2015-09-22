@@ -130,11 +130,38 @@ div#metadata {
     overflow: auto;
 }
 
+
+div#metadataheader {
+    background-color: #98bf21;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+div#metadataheader table, td, tr {
+    border-color: white;
+    border-radius: 7px;
+    padding: 0 3px 1px 3px;
+    border-width: 1px;
+    border-color: white;
+}
+
 div#metadata table {
     clear: both;
     width: 100%;
+    table-layout: fixed;
 }
 
+div#metadataheader td.first {
+    width: 250px;
+}
+div#metadata td.first {
+    width: 250px;
+}
+
+div#metadata tr:nth-child(even) {
+    background-color: #EAF2D3;
+}
 
 div#timerheader {
     clear: both;

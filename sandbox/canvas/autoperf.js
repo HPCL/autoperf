@@ -401,12 +401,15 @@ function cb_get_metadata(json) {
 	    	cb_get_timers);
 	}
 
-    var metadata = $("<table></table>");
 
-    metadata.append("<tr><th>Key</th><th>Value</th></tr");
+    var head = $("<div id='metadataheader'><table width='100%'><tr><td class='first'>Metadata Key</td><td class='head'>Metadata Value</td></tr></table></div>");
+	$("div#metadataheader").html(head);
+
+	var metadata = $("<table></table>");
+    //metadata.append("<tr><th>Key</th><th>Value</th></tr");
 
     $.each(json, function(name, value) {
-	metadata.append("<tr><td>" + name + "</td><td>" + value + "</td></tr>");
+	metadata.append("<tr><td class='first'>" + name + "</td><td>" + value + "</td></tr>");
     });
 
     $("div#metadata").html(metadata);
