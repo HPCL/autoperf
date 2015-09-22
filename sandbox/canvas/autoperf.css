@@ -201,7 +201,8 @@ div#timer tr:nth-child(even) {
 }
 
 div#graphheader {
-    text-align: center;
+    text-indent: 130px;
+    text-align: left;
     font-weight: bold;
     font-size: 1.2em;
 }
