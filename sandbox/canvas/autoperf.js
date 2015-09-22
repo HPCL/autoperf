@@ -436,7 +436,7 @@ function cb_get_timers(json) {
 
     // d3_nodes(json);
     // d3_bubble(json);
-    $("div#graphheader").html($("<div id='graphheader'>Metric Values</div>"));
+    $("div#graphheader").html($("<div id='graphheader'>Metric % Total</div>"));
 
     var bubble = new BubbleChart("timer",
 			     metric.active.id,
