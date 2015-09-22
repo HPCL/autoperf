@@ -64,18 +64,6 @@ ElementBlock.prototype.hide = function(speed) {
 }
 
 
-function get_index(dataArray, val) {
-	//console.dir(dataArray);
-	for (var i = 0; i < dataArray.length; i++) {
-		if (dataArray[i].value == val) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-
-
 
 var OptionList = function(name, data, cb_click) {
     this.name     = name;
@@ -84,7 +72,7 @@ var OptionList = function(name, data, cb_click) {
     this.active   = undefined;
     this.parent   = undefined;
     this.children = [ ];
-    this.head = $("<div class='head'><input class='txt' value="+this.name+"></div>");
+    this.head = $("<div class='head'><input class='txt' value="+this.name+"><img class='search' src='images/search.png'/></div>");
     
     var ul = $("<ul class='OptionList'></ul>");
     var on_click = this.on_click;
@@ -190,9 +178,10 @@ OptionList.prototype.set_default = function(optionList, dataArray, ind) {
 	    optionList.active = dataArray[ind];
 	    
 		/* change "active" */
-	    //optionList.ul.find(".active").removeClass("active");
 	    $( "li" ).first().removeClass("active");
 	    $( "li" ).eq(ind).addClass("active");
+	    // TODO: scroll into view not working yet, fix
+	    //scrollIntoView(optionList.ul.find(".active"));
 
 	    /* call user callback */
 	    optionList.cb_click(optionList);
@@ -438,10 +427,10 @@ function cb_get_timers(json) {
 
 
     /* show in a table */   
- 	var head = $("<div id='timerheader'><table width='400px'><tr><td class='head' width='200px'>Name</td><td class='head'>Value</td><td class='head'>Percent</td></tr></table></div>");
+ 	var head = $("<table width='400px'><tr><td class='head' width='200px'>Name</td><td class='head'>Value</td><td class='head'>Percent</td></tr></table>");
     $("div#timerheader").html(head);
 
-    var timers = $("<div id='timer'><table></table></div>");
+    var timers = $("<table></table>");
     $("div#timer").html(timers);
     timer_append(json);
 
@@ -539,6 +528,24 @@ function d3_nodes(data) {
 	console.log(this);
 	$(this).toggleClass("active");
     });
+}
+
+//////////////////////// Helpers /////////////////////
+function get_index(dataArray, val) {
+	//console.dir(dataArray);
+	for (var i = 0; i < dataArray.length; i++) {
+		if (dataArray[i].value == val) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+function scrollIntoView(eleID) {
+   var e = document.getElementById(eleID);
+   if (!!e && e.scrollIntoView) {
+       e.scrollIntoView();
+   }
 }
 
 /////////////////////// PieChart //////////////////////

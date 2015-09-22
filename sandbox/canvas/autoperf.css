@@ -5,10 +5,11 @@ html {
 body {
      font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
      font-size: 75%;
+     background-image: url("images/background.jpg");
 }
 
 h1 {
-    color: #A7C942;
+    color: #4CC552;
 }
  
 h3#sechead {
@@ -22,13 +23,13 @@ table {
 }
 
 table, th, td {
-    border: 1px solid #98bf21;
+    border: 1px solid #4CC552;
     padding: 3px 7px 2px 7px;
     word-wrap: break-word;
 }
 
 th {
-    background-color: #A7C942;
+    background-color: #4CC552;
     color: white;
 }
 
@@ -49,11 +50,12 @@ a:hover {
 /* menu bar */
 ul.OptionList {
     list-style-type: none;
+    background-color: white;
     margin: 0 10px 0 0;
     padding: 0;
     height: 150px;
     border-radius: 5px;
-    border: 2px solid #8AC007;
+    border: 2px solid #4CC552;
     padding: 7px;
     overflow: auto;
 }
@@ -73,7 +75,7 @@ ul.OptionList li.head:hover {
 }
 
 ul.OptionList li.head {
-    background-color: #98bf21;
+    background-color: #4CC552;
 }
 
 ul.OptionList li.head input {
@@ -125,14 +127,20 @@ div#thread {
 div#metadata {
     clear: both;
     float: left;
-    width: 100%;
+    width: 800px;
     height: 100px;
+    /* box borders and scrollbar */
+    border-radius: 5px;
+    border: 2px solid #4CC552;
+    padding: 7px;
+    background-color: white;
     overflow: auto;
 }
 
 
 div#metadataheader {
-    background-color: #98bf21;
+    background-color: #4CC552;
+    width: 818px;
     text-align: left;
     font-weight: bold;
     font-size: 1.1em;
@@ -165,8 +173,8 @@ div#metadata tr:nth-child(even) {
 
 div#timerheader {
     clear: both;
-    background-color: #98bf21;
-    width: 400px;
+    background-color: #4CC552;
+    width: 418px;
     float: left;
 }
 
@@ -184,9 +192,13 @@ div#timerheader td.head {
 }
 
 div#timer {
-    clear:both;
+    clear: both;
+    background-color: white;
     width: 400px;
     max-height: 400px;
+    border-radius: 5px;
+    border: 2px solid #4CC552;
+    padding: 7px;
     float: left;
     overflow: auto;
 }
@@ -217,6 +229,10 @@ div.head {
     margin: 5px 20px 0 0;
 }
 
+img.search {
+    vertical-align: top;
+}
+
 input {
     box-sizing: border-box;
     outline: 0;
@@ -224,10 +240,13 @@ input {
 
 input.txt {
     border-radius: 10px;
-    background-color: #98BF21;
-    border: 1px solid #98BF21;
-    padding: 3px 7px 2px 7px;
-    width: 100%;
+    vertical-align: top;
+    /* background-color: #98BF21;*/
+    background-color: yellow;
+    border: 1px solid #4CC552;
+    margin-right: 5px;
+    padding: 3px 5px 2px 5px;
+    width: 86%;
     height: 25px;
     font-size: 15px;
 }
