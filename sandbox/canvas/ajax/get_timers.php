@@ -9,7 +9,7 @@ $metricId = $_GET['metricId'];
 
 /* optional parameters */
 $type     = isset($_GET['type'])   ? $_GET['type']   : "exclusive";
-$limit    = isset($_GET['limit'])  ? $_GET['limit']  : 10;
+$limit    = isset($_GET['limit'])  ? $_GET['limit']  : 100;
 $offset   = isset($_GET['offset']) ? $_GET['offset'] : 0;
 
 $taudb = taudb_connect() or die('Could not connect: ' . pg_last_error());
