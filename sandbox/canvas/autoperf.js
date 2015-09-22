@@ -63,6 +63,18 @@ ElementBlock.prototype.hide = function(speed) {
     return this;
 }
 
+
+function get_index(dataArray, val) {
+	//console.dir(dataArray);
+	for (var i = 0; i < dataArray.length; i++) {
+		if (dataArray[i].value == val) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+
 var OptionList = function(name, data, cb_click) {
     this.name     = name;
     this.data     = data;
@@ -75,18 +87,23 @@ var OptionList = function(name, data, cb_click) {
     var ul = $("<ul class='OptionList'></ul>");
     var on_click = this.on_click;
 
+	var default_index = get_index(data, "Mean"); 
+	if (default_index < 0) default_index = 0;
+
     /* add list content, note that "this" will be masked in $.each() */
     $.each(this.data, function(index, entry) {
 	var li;
 
-	if (index%2) {
+	if (index == 0) {
+		li = $("<li class='active'>" + entry.value + "</li>");
+	} else if (index%2) {
 	    li = $("<li class='alt'>" + entry.value + "</li>");
 	} else {
 	    li = $("<li>" + entry.value + "</li>");
 	}
 
 	li.data("index", index);
-
+   
 	li.on("click", function() {
 	    var optionList = $(this).parent().data("OptionList");
 
@@ -101,6 +118,8 @@ var OptionList = function(name, data, cb_click) {
 
 	li.appendTo(ul);
     });
+
+
 
     this.head.find("input").on("focus", function(evt) {
 	$(this).val($(this).data("pattern"));
@@ -227,6 +246,25 @@ function canvas_init() {
     $.get("ajax/get_applications.php", cb_get_applications);
 }
 
+
+function set_default(optionList, dataArray, ind) {
+
+	if (ind === undefined || ind === null) {
+		ind = 0;
+	}
+	if (dataArray.length > 0) {
+	    // special handling for threads value (want to display "Mean" by default)
+	    optionList.active = dataArray[ind];
+	    
+		/* change "active" */
+	    //optionList.ul.find(".active").removeClass("active");
+	    $( "li" ).eq(ind).addClass("active");
+
+	    /* call user callback */
+	    optionList.cb_click(optionList);
+    }
+}
+
 function cb_get_applications(json) {
     var app;
     var data = new Array;
@@ -248,7 +286,12 @@ function cb_get_applications(json) {
     	      cb_get_trials);
 
     });
+	set_default(app, data);
+
     app.fill("div#application");
+
+	//console.dir(app.active);
+	
 }
 
 function cb_get_trials(json) {
@@ -257,49 +300,29 @@ function cb_get_trials(json) {
     var app = $("div#application .OptionList").data("OptionList");
 
     $.each(json, function(index, value) {
-	data.push(
-	    {
-		id: index,
-		value: value,
-	    }
-	);
+		data.push(
+	  	  {
+			id: index,
+			value: value,
+	  	  }
+		);
     });
     
+
     trial = new OptionList("Trial", data, function() {
 	$.get("ajax/get_metrics.php",
     	      {
     		  "trialId": trial.active.id,
     	      },
     	      cb_get_metrics);
-	$.get("ajax/get_threads.php",
-    	      {
-    		  "trialId": trial.active.id,
-    	      },
-    	      cb_get_threads);
-	$.get("ajax/get_metadata.php",
-    	      {
-    		  "trialId": trial.active.id,
-    	      },
-    	      cb_get_metadata);
-
     });
 
+    set_default(trial, data);
     trial.fill("div#trial");
 
     app.adopt(trial);
 }
 
-function cb_get_metadata(json) {
-    var metadata = $("<table></table>");
-
-    metadata.append("<tr><th>Key</th><th>Value</th></tr");
-
-    $.each(json, function(name, value) {
-	metadata.append("<tr><td>" + name + "</td><td>" + value + "</td></tr>");
-    });
-
-    $("div#metadata").html(metadata);
-}
 
 function cb_get_metrics(json) {
     var metric;
@@ -315,18 +338,15 @@ function cb_get_metrics(json) {
 	);
     });
 
+    
     metric = new OptionList("Metric", data, function() {
-	var thread = $("div#thread .OptionList").data("OptionList");
-	if ((metric.active != undefined) && (thread.active != undefined)) {
-	    $.get("ajax/get_timers.php",
-    		  {
-		      "metricId": metric.active.id,
-		      "threadId": thread.active.id,
-		      "type"    : "exclusive",
-    		  },
-    		  cb_get_timers);
-	}
+	$.get("ajax/get_threads.php",
+    	      {
+    		  "trialId": trial.active.id,
+    	      },
+    	      cb_get_threads);
     });
+	set_default(metric, data);
 
     metric.fill("div#metric");
 
@@ -339,30 +359,55 @@ function cb_get_threads(json) {
     var trial = $("div#trial .OptionList").data("OptionList");
 
     $.each(json, function(index, value) {
-	data.push(
-	    {
-		id: index,
-		value: value,
-	    }
-	);
+		data.push(
+		    {
+			id: index,
+			value: value,
+		    }
+		);
     });
 
+ 	
     thread = new OptionList("Thread", data, function() {
-	var metric = $("div#metric .OptionList").data("OptionList");
-	if ((metric.active != undefined) && (thread.active != undefined)) {
-	    $.get("ajax/get_timers.php",
-    		  {
-		      "metricId": metric.active.id,
-		      "threadId": thread.active.id,
-		      "type"    : "exclusive",
-    		  },
-    		  cb_get_timers);
-	}
+    	$.get("ajax/get_metadata.php",
+    	      {
+    		  "trialId": trial.active.id,
+    	      },
+    	      cb_get_metadata);
     });
+
+    // TODO: this doesn't quite work yet
+    set_default(thread,data,get_index(data,"Mean"));
 
     thread.fill("div#thread");
-
     trial.adopt(thread);
+}
+
+function cb_get_metadata(json) {
+
+	var metric = $("div#metric .OptionList").data("OptionList");
+	var thread = $("div#thread .OptionList").data("OptionList");
+
+	if ((metric.active != undefined) && (thread.active != undefined)) {
+
+		$.get("ajax/get_timers.php",
+	    	{
+			    "metricId": metric.active.id,
+			    "threadId": thread.active.id,
+			    "type"    : "exclusive",
+	    	},
+	    	cb_get_timers);
+	}
+
+    var metadata = $("<table></table>");
+
+    metadata.append("<tr><th>Key</th><th>Value</th></tr");
+
+    $.each(json, function(name, value) {
+	metadata.append("<tr><td>" + name + "</td><td>" + value + "</td></tr>");
+    });
+
+    $("div#metadata").html(metadata);
 }
 
 function cb_get_timers(json) {
@@ -375,8 +420,19 @@ function cb_get_timers(json) {
 	entry.exclusive_percent = parseFloat(entry.exclusive_percent);
     });
 
+
+    /* show in a table */   
+ 	var head = $("<div id='timerheader'><table width='400px'><tr><td class='head' width='200px'>Name</td><td class='head'>Value</td><td class='head'>Percent</td></tr></table></div>");
+    $("div#timerheader").html(head);
+
+    var timers = $("<div id='timer'><table></table></div>");
+    $("div#timer").html(timers);
+    timer_append(json);
+
     // d3_nodes(json);
     // d3_bubble(json);
+    $("div#graphheader").html($("<div id='graphheader'>Metric Values</div>"));
+
     var bubble = new BubbleChart("timer",
 			     metric.active.id,
 			     thread.active.id,
@@ -384,34 +440,33 @@ function cb_get_timers(json) {
 			     null,
 			     function(d){return d.exclusive_percent;});
     bubble.fill("div#graph");
+    metric.adopt(bubble);
 
+	/*
     var pie = new PieChart("timer",
 			   metric.active.id,
 			   thread.active.id,
 			   json);
     pie.fill("div#pie");
 
-    metric.adopt(bubble);
     metric.adopt(pie);
+    */
 
-    /* show in a table */
-    var timers = $("<table><tr><th>Name</th><th>value</th><th>Percent</th></tr></table");
-    $("div#timer").html(timers);
 
-    timer_append(json);
+ 
 }
 
 function timer_append(json) {
     var timers = $("div#timer table")
     $.each(json, function(index, entry) {
-	timers.append("<tr><td>"+entry.short_name+"</td><td>"
-		      +entry.exclusive_value+"</td><td>"
-		      +entry.exclusive_percent+"</td></tr");
+	timers.append("<tr><td width='200px'>"+entry.short_name+"</td><td>"
+		      +entry.exclusive_value.toPrecision(5)+"</td><td>"
+		      +entry.exclusive_percent.toPrecision(5)+"</td></tr");
     });
 }
 
 function d3_nodes(data) {
-    var width = 400,
+    var width = 350,
 	height = 300,
 	radius = Math.min(width, height) / 2;
 
@@ -477,7 +532,7 @@ var PieChart = function(name, metric, thread, data) {
 
     var self = this;
 
-    this.dia  = 400;
+    this.dia  = 350;
     this.data = data;
 
     this.pie = d3.layout.pie()
@@ -587,7 +642,7 @@ var BubbleChart = function(name, metric, thread, data, cb_get_new_data, cb_get_v
 
     var self = this;
 
-    this.dia  = 400;
+    this.dia  = 350;
     this.data = data;
     this.cb_get_value = cb_get_value;
 

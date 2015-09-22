@@ -4,10 +4,15 @@ html {
 
 body {
      font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+     font-size: 75%;
 }
 
 h1 {
     color: #A7C942;
+}
+ 
+h3#sechead {
+    text-align: center;
 }
 
 table {
@@ -44,9 +49,13 @@ a:hover {
 /* menu bar */
 ul.OptionList {
     list-style-type: none;
-    margin: 0 20px 0 0;
+    margin: 0 10px 0 0;
     padding: 0;
-    overflow: hidden;
+    height: 150px;
+    border-radius: 5px;
+    border: 2px solid #8AC007;
+    padding: 7px;
+    overflow: auto;
 }
 
 ul.OptionList li {
@@ -68,7 +77,7 @@ ul.OptionList li.head {
 }
 
 ul.OptionList li.head input {
-    border-radius: 10px;
+    border-radius: 7px;
     padding: 0 3px 1px 3px;
     min-width: 60px;
     max-width: 300px;
@@ -81,79 +90,103 @@ ul.OptionList li.active {
 }
 
 
-
 div#top {
     overflow: auto;
 }
 
 div#detail {
-    overflow: hidden;
+    clear: both;
     width: 100%;
+    padding: 10px 0;
+    overflow: auto;
 }
 
 div#application {
     float: left;
-    width: 20%;
-    height: 300px;
-    border-radius: 20px;
-    border: 2px solid #8AC007;
-    padding: 5px;
-    overflow: scroll;
+    width: 200px;
 }
 
 div#trial {
     float: left;
-    width: 20%;
-    height: 300px;
-    border-radius: 20px;
-    border: 2px solid #8AC007;
-    padding: 5px;
-    overflow: scroll;
+    width: 200px;
 }
 
-div#metric_thread {
+div#metric {
+    /*clear: both;*/
     float: left;
-    width: 10%;
-    height: 300px;
-    border-radius: 20px;
-    border: 2px solid #8AC007;
-    padding: 5px;
-    overflow: auto;
+    width: 200px;
+}
+
+div#thread {
+    float: left;
+    width: 200px;
 }
 
 div#metadata {
+    clear: both;
     float: left;
-    width: 30%;
-    height: 300px;
-    border-radius: 20px;
-    border: 2px solid #8AC007;
-    padding: 5px;
+    width: 100%;
+    height: 100px;
     overflow: auto;
 }
 
 div#metadata table {
-    width: 500px;
-    height: 300px;
-    border-radius: 20px;
-    border: 2px solid #8AC007;
-    padding: 5px;
-    overflow: auto;
+    clear: both;
+    width: 100%;
+}
+
+
+div#timerheader {
+    clear: both;
+    background-color: #98bf21;
+    width: 400px;
+    float: left;
+}
+
+div#timerheader table, td, tr {
+    border-color: white;
+    border-radius: 7px;
+    padding: 0 3px 1px 3px;
+    border-width: 1px;
+    border-color: white;
+}
+
+div#timerheader td.head {
+    font-weight: bold;
+    font-size: 1.2em;
 }
 
 div#timer {
-    width: 600px;
+    clear:both;
+    width: 400px;
+    max-height: 400px;
+    float: left;
+    overflow: auto;
 }
 
 div#timer table {
     width: 100%;
+    table-layout: fixed;
+}
+
+div#timer tr:nth-child(even) {
+    background-color: #EAF2D3;
+}
+
+div#graphheader {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2em;
 }
 
 div#graph {
+    margin-left: 10px;
+    width: 350px;
     float: left;
 }
 
 div.head {
-    margin: 0 20px 0 0;
+    margin: 5px 20px 0 0;
 }
 
 input {
@@ -180,6 +213,6 @@ input.txt:focus {
 }
 
 canvas {
-    width: 500px;
+    width: 600px;
     height: 400px;
 }
