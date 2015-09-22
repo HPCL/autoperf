@@ -420,9 +420,11 @@ function cb_get_timers(json) {
     var metric = $("div#metric .OptionList").data("OptionList");
     var thread = $("div#thread .OptionList").data("OptionList");
 
+    console.dir(json);
     $.each(json, function(index, entry) {
-	entry.exclusive_value   = parseFloat(entry.exclusive_value);
-	entry.exclusive_percent = parseFloat(entry.exclusive_percent);
+    	entry.short_name = entry.short_name.replace("[SUMMARY] ","");
+		entry.exclusive_value   = parseFloat(entry.exclusive_value);
+		entry.exclusive_percent = parseFloat(entry.exclusive_percent);
     });
 
 
