@@ -271,7 +271,7 @@ input.aptxt {
     border: 1px solid #4CC552;
     margin-right: 5px;
     padding: 3px 5px 3px 5px;
-    width: 150px;
+    width: 155px;
     height: 25px;
     font-size: 15px;
 }
@@ -300,9 +300,14 @@ canvas {
     border: 1px solid transparent; 
     padding: 3px; 
     margin: 0 0;
+    float: right;
+    font-size: 0.8em;
+    font-style: italic;
+    text-decoration: underline;
 }
 
 fieldset { 
+    clear: both;
     padding:0; 
     border:0; 
     margin-top: 3px; 
@@ -322,7 +327,6 @@ div#dbconfig-dialog-form title {
     background-color: #4CC552;
     text-align: left;
     font-weight: bold;
-    font-size: 1.1em;
 }
 
 /* end dialog-specific settings */
