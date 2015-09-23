@@ -77,7 +77,12 @@ var OptionList = function(name, data, cb_click) {
     var ul = $("<ul class='OptionList'></ul>");
     var on_click = this.on_click;
 
-	var default_index = get_index(data, "Mean"); 
+	var default_index = 0;
+    if (name == "Thread")
+        default_index = get_index(data,"Mean (No Null)");
+    else if (name == "Metric")
+        default_index = get_index(data, "TIME");
+
 
     /* add list content, note that "this" will be masked in $.each() */
     $.each(this.data, function(index, entry) {
@@ -163,7 +168,12 @@ var OptionList = function(name, data, cb_click) {
 
 OptionList.prototype.set_default = function(optionList, dataArray) {
 	
-    var ind = get_index(dataArray,"Mean");
+    var ind = 0;
+    if (optionList.name == "Thread")
+        ind = get_index(dataArray,"Mean (No Null)");
+    else if (optionList.name == "Metric")
+        ind = get_index(dataArray, "TIME");
+
 
 	if (dataArray.length > 0) {
 	    
