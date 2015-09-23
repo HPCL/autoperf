@@ -72,7 +72,7 @@ var OptionList = function(name, data, cb_click) {
     this.active   = undefined;
     this.parent   = undefined;
     this.children = [ ];
-    this.head = $("<div class='head'><img class='search' src='images/search.png'/><input class='aptxt' value="+this.name+"></div>");
+    this.head = $("<div class='head'><img class='search' src='css/images/search.png'/><input class='aptxt' value="+this.name+"></div>");
     
     var ul = $("<ul class='OptionList'></ul>");
     var on_click = this.on_click;
