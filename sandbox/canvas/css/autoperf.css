@@ -25,12 +25,6 @@ input.text {
     width:95%; padding: .4em; 
 }
 
-fieldset { 
-    padding:0; 
-    border:0; 
-    margin-top:25px; 
-    background-color: white;
-}
 
 table {
     width: 100%;
@@ -255,10 +249,12 @@ div#graph {
 }
 
 div.head {
-    margin: 5px 20px 0 0;
+    clear: both;
+    margin: 5px 20px 3px 0;
 }
 
 img.search {
+    float: left;
     vertical-align: top;
 }
 
@@ -267,24 +263,24 @@ input {
     outline: 0;
 }
 
-input.txt {
+input.aptxt {
     border-radius: 10px;
     vertical-align: top;
     /* background-color: #98BF21;*/
     background-color: yellow;
     border: 1px solid #4CC552;
     margin-right: 5px;
-    padding: 3px 5px 2px 5px;
-    width: 86%;
+    padding: 3px 5px 3px 5px;
+    width: 150px;
     height: 25px;
     font-size: 15px;
 }
 
-input.txt:hover {
+input.aptxt:hover {
     cursor: pointer;
 }
 
-input.txt:focus {
+input.aptxt:focus {
     background-color: white;
 }
 
@@ -293,14 +289,28 @@ canvas {
     height: 400px;
 }
 
+/* Dialog-specific settings overriding JQuery UI styles */
+
 .ui-dialog .ui-state-error { 
-    padding: .3em; 
+    padding: .1em; 
     background-color: #fff;
 }
 
 .validateTips { 
     border: 1px solid transparent; 
-    padding: 0.3em; 
+    padding: 3px; 
+    margin: 0 0;
+}
+
+fieldset { 
+    padding:0; 
+    border:0; 
+    margin-top: 3px; 
+    background-color: white;
+}
+
+label {
+    font-weight: bold;
 }
 
 div#dbconfig-dialog-form {
@@ -314,3 +324,5 @@ div#dbconfig-dialog-form title {
     font-weight: bold;
     font-size: 1.1em;
 }
+
+/* end dialog-specific settings */

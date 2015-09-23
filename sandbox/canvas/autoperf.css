@@ -16,14 +16,10 @@ h3#sechead {
     text-align: center;
 }
 
-label, input { 
+label { 
     display:block; 
 }
 
-input.text { 
-    margin-bottom:12px; 
-    width:95%; padding: .4em; 
-}
 
 fieldset { 
     padding:0; 
@@ -107,13 +103,35 @@ ul.OptionList li.head {
     background-color: #4CC552;
 }
 
-ul.OptionList li.head input {
+
+
+input.aptxt {
+    background-color: yellow;
+}
+
+input {
+    display: block;
     border-radius: 7px;
     padding: 0 3px 1px 3px;
-    min-width: 60px;
+    background-color: yellow;
+    min-width: 50px;
     max-width: 300px;
-    float: right;
+    border: 1px solid #4CC552;
+    background-color: yellow;
+    margin-right: 5px;
+    width: 86%;
+    height: 25px;
+    font-size: 15px;
 }
+
+.ui-widget ul.OptionList li.head input.aptxt:hover {
+    cursor: pointer;
+}
+
+.ui-widget ul.OptionList li.head  input.aptxt:focus {
+    background-color: white;
+}
+
 
 ul.OptionList li.active {
     color: white;
@@ -260,32 +278,6 @@ div.head {
 
 img.search {
     vertical-align: top;
-}
-
-input {
-    box-sizing: border-box;
-    outline: 0;
-}
-
-input.txt {
-    border-radius: 10px;
-    vertical-align: top;
-    /* background-color: #98BF21;*/
-    background-color: yellow;
-    border: 1px solid #4CC552;
-    margin-right: 5px;
-    padding: 3px 5px 2px 5px;
-    width: 86%;
-    height: 25px;
-    font-size: 15px;
-}
-
-input.txt:hover {
-    cursor: pointer;
-}
-
-input.txt:focus {
-    background-color: white;
 }
 
 canvas {
