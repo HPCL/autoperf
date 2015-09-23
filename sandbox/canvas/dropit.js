@@ -81,7 +81,7 @@
     };
 
     $.fn.dropit.defaults = {
-        action: 'mouseenter', // The open action for the trigger
+        action: 'click', // The open action for the trigger
         submenuEl: 'ul', // The submenu element
         triggerEl: 'a', // The trigger element
         triggerParentEl: 'li', // The trigger parent element
