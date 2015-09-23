@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
@@ -13,9 +14,9 @@
 <script src="autoperf.js"></script>
 <script src="dropit.js"></script>
 
-<link rel="stylesheet" type="text/css" href="autoperf.css">
-<link rel="stylesheet" type="text/css" href="svg.css">
-<link rel="stylesheet" type="text/css" href="dropit.css">
+<link rel="stylesheet" type="text/css" href="css/autoperf.css">
+<link rel="stylesheet" type="text/css" href="css/svg.css">
+<link rel="stylesheet" type="text/css" href="css/dropit.css">
 
 <script>
 $(document).ready(canvas_init);
@@ -29,17 +30,17 @@ $(document).ready(function() {
 
 <body>
 
+
 <div id="top">
 
 <table class="topmenu"><tr>
 <td class="topmenu"><h1>Applications</h1></td>
 <td class="topmenu">
-<ul class="menu">
-    <li>
-        <a href="#"><h2><img width="20px" src="images/config.png" alt="Configure"></h2></a>
+<ul class="menu" id="menu2">
+    <li><a href="#" class="btn"><img width="20px" src="images/config.png" alt="Configure"></a>
         <ul class="dropit-submenu">
-            <li><a href="#">Database</a></li>
-            <li><a href="#">Help</a></li>
+            <li><a href="#" id="dbconfig">Database</a></li>
+            <li><a href="#" id="help" onclick="help()">Help</a></li>
         </ul>
     </li>
 </ul>
@@ -62,6 +63,25 @@ $(document).ready(function() {
 </div>
 <div id="metadataheader"></div>
 <div id="metadata"></div>
+</div>
+
+<!-- Various modal dialogs -->
+<div id="dbconfig-dialog-form" title="Configure Database">
+  <p class="validateTips">All form fields are required.</p>
+  <form>
+    <fieldset>
+      <label for="hostname">Hostname</label>
+      <input type="text" name="hostname" id="hostname" value="brix.d.cs.uoregon.edu" class="text ui-widget-content ui-corner-all">
+      <label for="dbname">Database name</label>
+      <input type="text" name="dbname" id="dbname" value="autoperfdb" class="text ui-widget-content ui-corner-all">
+      <label for="dbusername">Username</label>
+      <input type="text" name="dbusername" id="dbusername" value="autoperf_user" class="text ui-widget-content ui-corner-all">
+      <label for="password">Password</label>
+      <input type="password" name="password" id="password" value="xxxxxxx" class="text ui-widget-content ui-corner-all">
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+  </form>
 </div>
 
 </body>

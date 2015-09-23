@@ -261,10 +261,91 @@ OptionList.prototype.hide = function(speed) {
 // }
 
 function canvas_init() {
+    top_menu_init();
     /* get application list */
     $.get("ajax/get_applications.php", cb_get_applications);
 }
 
+
+function top_menu_init() {
+    // DB Config
+    var dialog, form,
+      hostnameRegex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$",
+      hostname = $( "#hostname" ),
+      dbname = $( "#dbname" ),
+      dbuser = $( "#dbusername"),
+      password = $( "#password" ),
+      allFields = $( [] ).add( hostname ).add( dbname ).add( dbuser ).add( password ),
+      tips = $( ".validateTips" );
+      dialog = $( "#dbconfig-dialog-form" ).dialog({
+        autoOpen: false,
+        height: 300,
+        width: 350,
+        modal: true,
+        buttons: {
+          "Configure Database": setup_database,
+            Cancel: function() {
+            dialog.dialog( "close" );
+            }
+        },
+        close: function() {
+            form[ 0 ].reset();
+            allFields.removeClass( "ui-state-error" );
+        }
+        });
+
+    function setup_database() {
+      var valid = true;
+      allFields.removeClass( "ui-state-error" );
+      console.dir(allFields);
+ 
+ /*
+      valid = valid && checkLength( name, "username", 3, 16 );
+      valid = valid && checkLength( email, "email", 6, 80 );
+      valid = valid && checkLength( password, "password", 5, 16 );
+ 
+      valid = valid && checkRegexp( name, /^[a-z]([0-9a-z_\s])+$/i, "Username may consist of a-z, 0-9, underscores, spaces and must begin with a letter." );
+      valid = valid && checkRegexp( email, emailRegex, "eg. ui@jquery.com" );
+      valid = valid && checkRegexp( password, /^([0-9a-zA-Z])+$/, "Password field only allow : a-z 0-9" );
+ */
+      if ( valid ) {
+        // TODO: get applications from new db
+        //$.get("ajax/get_applications.php", cb_get_applications);
+        dialog.dialog( "close" );
+      }
+      return valid;
+    }
+
+    dialog = $( "#dbconfig-dialog-form" ).dialog({
+      autoOpen: false,
+      height: 300,
+      width: 350,
+      modal: true,
+      buttons: {
+        "Configure Database": setup_database,
+        Cancel: function() {
+          dialog.dialog( "close" );
+        }
+      },
+      close: function() {
+        form[ 0 ].reset();
+        allFields.removeClass( "ui-state-error" );
+      }
+    });
+ 
+    form = dialog.find( "form" ).on( "submit", function( event ) {
+      event.preventDefault();
+      setup_database();
+    });
+ 
+    $( "#dbconfig" ).click(function() {
+      dialog.dialog( "open" );
+    });
+}
+
+function help() {
+    // TODO
+}
 
 function cb_get_applications(json) {
     var app;
