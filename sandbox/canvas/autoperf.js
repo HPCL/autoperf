@@ -77,11 +77,15 @@ var OptionList = function(name, data, cb_click) {
     var ul = $("<ul class='OptionList'></ul>");
     var on_click = this.on_click;
 
+
+    // Default values for the different options
 	var default_index = 0;
     if (name == "Thread")
         default_index = get_index(data,"Mean (No Null)");
     else if (name == "Metric")
         default_index = get_index(data, "TIME");
+        if (default_index == 0) 
+            default_index = get_index(data, "P_WALLCLOCK_TIME");
 
 
     /* add list content, note that "this" will be masked in $.each() */

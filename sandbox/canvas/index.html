@@ -8,14 +8,20 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
 <script src="please.js"></script>
 <script src="autoperf.js"></script>
+<script src="dropit.js"></script>
 
 <link rel="stylesheet" type="text/css" href="autoperf.css">
 <link rel="stylesheet" type="text/css" href="svg.css">
+<link rel="stylesheet" type="text/css" href="dropit.css">
 
 <script>
 $(document).ready(canvas_init);
+$(document).ready(function() {
+    $('.menu').dropit();
+});
 </script>
 
 <title>Geant 4 Dataset</title>
@@ -23,9 +29,22 @@ $(document).ready(canvas_init);
 
 <body>
 
-<h1>Applications</h1>
-
 <div id="top">
+
+<table class="topmenu"><tr>
+<td class="topmenu"><h1>Applications</h1></td>
+<td class="topmenu">
+<ul class="menu">
+    <li>
+        <a href="#"><h2><img width="20px" src="images/config.png" alt="Configure"></h2></a>
+        <ul class="dropit-submenu">
+            <li><a href="#">Database</a></li>
+            <li><a href="#">Help</a></li>
+        </ul>
+    </li>
+</ul>
+</td>
+</tr></table>
 
 <div id="application"></div>
 <div id="trial"></div>

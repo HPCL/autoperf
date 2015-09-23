@@ -28,6 +28,19 @@ table, th, td {
     word-wrap: break-word;
 }
 
+
+table.topmenu {
+    width: auto;
+    text-align: left;
+    white-space:nowrap
+    overflow: auto;
+    border-style: none;
+}
+
+td.topmenu {
+    border-style: none;
+}
+
 th {
     background-color: #4CC552;
     color: white;
