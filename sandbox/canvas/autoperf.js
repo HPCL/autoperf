@@ -78,7 +78,6 @@ var OptionList = function(name, data, cb_click) {
     var on_click = this.on_click;
 
 	var default_index = get_index(data, "Mean"); 
-	if (default_index < 0) default_index = 0;
 
     /* add list content, note that "this" will be masked in $.each() */
     $.each(this.data, function(index, entry) {
@@ -162,28 +161,17 @@ var OptionList = function(name, data, cb_click) {
     this.ul.data("OptionList", this);
 }
 
-OptionList.prototype.set_default = function(optionList, dataArray, ind) {
-
-	//console.dir(optionList.ul.find(".active"));
-	if (optionList.ul.find(".active").value != undefined) {
-		optionList.cb_click(optionList);
-		return;
-	}
+OptionList.prototype.set_default = function(optionList, dataArray) {
 	
-	if (ind === undefined || ind === null) {
-		ind = 0;
-	}
+    var ind = get_index(dataArray,"Mean");
+
 	if (dataArray.length > 0) {
-	    // special handling for threads value (want to display "Mean" by default)
-	    optionList.active = dataArray[ind];
 	    
-		/* change "active" */
-	    $( "li" ).first().removeClass("active");
-	    $( "li" ).eq(ind).addClass("active");
-	    // TODO: scroll into view not working yet, fix
-	    //scrollIntoView(optionList.ul.find(".active"));
+	    //optionList.ul.find(".active").removeClass("active");
+        $("#" + optionList.name.toLowerCase() + " li").eq(ind).addClass("active");
 
 	    /* call user callback */
+        optionList.active = dataArray[ind];
 	    optionList.cb_click(optionList);
     }
 }
@@ -276,16 +264,20 @@ function cb_get_applications(json) {
 	    }
 	);
     });
+
+    
     
     app = new OptionList("Application", data, function() {
-	$.get("ajax/get_trials.php",
+        if (! app.active) app.active = data[0];
+	   $.get("ajax/get_trials.php",
     	      {
     		  "appName": app.active.value,
     	      },
     	      cb_get_trials);
 
     });
-	app.set_default(app, data, 0);
+
+	app.set_default(app, data);
 
     app.fill("div#application");
 
@@ -316,8 +308,8 @@ function cb_get_trials(json) {
     	      cb_get_metrics);
     });
 
-    trial.set_default(trial, data, 0);
     trial.fill("div#trial");
+    trial.set_default(trial, data);
 
     app.adopt(trial);
 }
@@ -345,9 +337,9 @@ function cb_get_metrics(json) {
     	      },
     	      cb_get_threads);
     });
-	metric.set_default(metric, data, 0);
 
     metric.fill("div#metric");
+    metric.set_default(metric, data);
 
     trial.adopt(metric);
 }
@@ -375,11 +367,9 @@ function cb_get_threads(json) {
     	      cb_get_metadata);
     });
 
-    // TODO: this doesn't quite work yet
-    //thread.set_default(thread,data,get_index(data,"Mean"));
-    thread.set_default(thread,data,0);
-
     thread.fill("div#thread");
+    thread.set_default(thread,data);
+
     trial.adopt(thread);
 }
 
@@ -418,7 +408,7 @@ function cb_get_timers(json) {
     var metric = $("div#metric .OptionList").data("OptionList");
     var thread = $("div#thread .OptionList").data("OptionList");
 
-    console.dir(json);
+    //console.dir(json);
     $.each(json, function(index, entry) {
     	entry.short_name = entry.short_name.replace("[SUMMARY] ","");
 		entry.exclusive_value   = parseFloat(entry.exclusive_value);
@@ -538,7 +528,7 @@ function get_index(dataArray, val) {
 			return i;
 		}
 	}
-	return -1;
+	return 0;
 }
 
 function scrollIntoView(eleID) {
