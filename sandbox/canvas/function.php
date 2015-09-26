@@ -1,9 +1,19 @@
 <?php
 
 function taudb_connect() {
+    //var_dump($_POST['dbinfo']);
+    //if ( ! $_POST['dbinfo']) 
     include "config_local.php";
+
+
+    // $dbinfo = json_decode($_POST['dbinfo']);
+    // var_dump($dbinfo);
+    // $dbhost = $dbinfo["hostname"];
+    // $dbname = $dbinfo["dbname"];
+    // $dbuser = $dbinfo["dbuser"];
+    // $dbpass = $dbinfo["password"];
     return pg_connect("host={$dbhost} dbname={$dbname} user={$dbuser} password='{$dbpass}'");
-}
+ }
 
 function taudb_close($conn) {
     pg_close($conn);

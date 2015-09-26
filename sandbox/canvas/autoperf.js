@@ -269,6 +269,24 @@ function canvas_init() {
 
 function top_menu_init() {
     // DB Config
+    var dbconfig_html = '  <p class="validateTips">All form fields are required.</p> \
+  <form> \
+    <fieldset> \
+      <label for="hostname">Hostname</label> \
+      <input type="text" name="hostname" id="hostname" value="brix.d.cs.uoregon.edu" class="text ui-widget-content ui-corner-all"> \
+      <label for="dbname">Database name</label> \
+      <input type="text" name="dbname" id="dbname" value="autoperfdb" class="text ui-widget-content ui-corner-all"> \
+      <label for="dbusername">Username</label> \
+      <input type="text" name="dbusername" id="dbusername" value="autoperf_user" class="text ui-widget-content ui-corner-all"> \
+      <label for="password">Password</label> \
+      <input type="password" name="password" id="password" value="xxxxxxx" class="text ui-widget-content ui-corner-all"> \
+      <!-- Allow form submission with keyboard without duplicating the dialog button --> \
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px"> \
+    </fieldset> \
+  </form>';
+
+    $( "div#dbconfig-dialog-form" ).html(dbconfig_html);
+
     var dialog, form,
       hostnameRegex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$",
       hostname = $( "#hostname" ),
@@ -297,7 +315,6 @@ function top_menu_init() {
     function setup_database() {
       var valid = true;
       allFields.removeClass( "ui-state-error" );
-      console.dir(allFields);
  
  /*
       valid = valid && checkLength( name, "username", 3, 16 );
@@ -312,13 +329,19 @@ function top_menu_init() {
         // TODO: get applications from new db
         //$.get("ajax/get_applications.php", cb_get_applications);
         dialog.dialog( "close" );
+      
+
+        //console.dir(allFields);
+        //console.dir(dbinfo);
+        //$.each(function(index) {console.log( index + ": " + $( this ).value ); });
+        //$.get("ajax/get_applications.php", cb_get_applications);
       }
       return valid;
     }
 
     dialog = $( "#dbconfig-dialog-form" ).dialog({
       autoOpen: false,
-      height: 300,
+      height: 350,
       width: 350,
       modal: true,
       buttons: {
@@ -341,6 +364,7 @@ function top_menu_init() {
     $( "#dbconfig" ).click(function() {
       dialog.dialog( "open" );
     });
+
 }
 
 function help() {
