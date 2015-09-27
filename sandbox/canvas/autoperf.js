@@ -1,3 +1,4 @@
+
 var ElementBlock = function(name) {
     this.name     = name;
     this.parent   = null;
@@ -263,7 +264,12 @@ OptionList.prototype.hide = function(speed) {
 function canvas_init() {
     top_menu_init();
     /* get application list */
-    $.get("ajax/get_applications.php", cb_get_applications);
+
+    defaultdb = ["brix.d.cs.uoregon.edu","autoperfdb","autoperf_user"];
+    $.get("ajax/get_applications.php", 
+        { dbhost : defaultdb[0], dbname : defaultdb[1], dbuser : defaultdb[2] },
+        cb_get_applications);
+    update_dbinfo(defaultdb[0],defaultdb[1],defaultdb[2]);
 }
 
 
@@ -326,15 +332,15 @@ function top_menu_init() {
       valid = valid && checkRegexp( password, /^([0-9a-zA-Z])+$/, "Password field only allow : a-z 0-9" );
  */
       if ( valid ) {
-        // TODO: get applications from new db
-        //$.get("ajax/get_applications.php", cb_get_applications);
-        dialog.dialog( "close" );
-      
 
         //console.dir(allFields);
-        //console.dir(dbinfo);
-        //$.each(function(index) {console.log( index + ": " + $( this ).value ); });
-        //$.get("ajax/get_applications.php", cb_get_applications);
+        $.get("ajax/get_applications.php", 
+            { dbhost : allFields[0].value, dbname : allFields[1].value, dbuser : allFields[2].value, dbpass : allFields[3].value},
+            cb_get_applications);
+
+        update_dbinfo(allFields[0].value,allFields[1].value,allFields[2].value);
+        dialog.dialog( "close" );
+        
       }
       return valid;
     }
@@ -369,6 +375,10 @@ function top_menu_init() {
 
 function help() {
     // TODO
+}
+
+function update_dbinfo(hostname, dbname, dbuser) {
+    $( ".dbinfo #database" ).html(hostname + ', ' + dbuser + '@' + dbname);
 }
 
 function cb_get_applications(json) {

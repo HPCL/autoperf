@@ -41,15 +41,28 @@ table, th, td {
 
 
 table.topmenu {
-    width: auto;
+    width: 90%;
+    max-width: 800px;
     text-align: left;
-    white-space:nowrap
-    overflow: auto;
+    white-space:nowrap;
     border-style: none;
 }
 
 td.topmenu {
     border-style: none;
+    width:auto;
+}
+
+td.dbinfo {
+    text-align: right;
+    border-style: none;    
+    font-style: italic;
+    text-align: right;
+}
+
+div#database {
+    display: inline;
+    color: green;
 }
 
 th {
