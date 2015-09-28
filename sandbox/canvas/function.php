@@ -1,9 +1,21 @@
 <?php
 
 function taudb_connect() {
-    include "config_local.php";
+    //var_dump($_POST['dbinfo']);
+    //if ( ! $_POST['dbinfo']) 
+
+    $dbhost = $_GET['dbhost'];
+    $dbname = $_GET['dbname'];
+    $dbuser = $_GET['dbuser'];
+    $dbpass = $_GET['dbpass'];
+
+    if (! $dbhost ) $dbhost = "brix.d.cs.uoregon.edu";
+    if (! $dbname ) $dbname = "autoperfdb";
+    if (! $dbuser ) $dbuser = "autoperf_user";
+    if (! $dbpass ) $dbpass = "autoperf_pwd";
+
     return pg_connect("host={$dbhost} dbname={$dbname} user={$dbuser} password='{$dbpass}'");
-}
+ }
 
 function taudb_close($conn) {
     pg_close($conn);
