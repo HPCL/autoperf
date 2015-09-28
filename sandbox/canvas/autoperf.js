@@ -265,7 +265,7 @@ function canvas_init() {
     top_menu_init();
     /* get application list */
 
-    defaultdb = ["brix.d.cs.uoregon.edu","autoperfdb","autoperf_user"];
+    defaultdb = ["brix.d.cs.uoregon.edu","geant4","geant4_collaborator"];
     $.get("ajax/get_applications.php", 
         { dbhost : defaultdb[0], dbname : defaultdb[1], dbuser : defaultdb[2] },
         cb_get_applications);

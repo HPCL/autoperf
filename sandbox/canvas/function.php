@@ -10,9 +10,9 @@ function taudb_connect() {
     $dbpass = $_GET['dbpass'];
 
     if (! $dbhost ) $dbhost = "brix.d.cs.uoregon.edu";
-    if (! $dbname ) $dbname = "autoperfdb";
-    if (! $dbuser ) $dbuser = "autoperf_user";
-    if (! $dbpass ) $dbpass = "autoperf_pwd";
+    if (! $dbname ) $dbname = "geant4";
+    if (! $dbuser ) $dbuser = "geant4_collaborator";
+    if (! $dbpass ) $dbpass = "Geant4 collaborator TAUdb";
 
     return pg_connect("host={$dbhost} dbname={$dbname} user={$dbuser} password='{$dbpass}'");
  }
