@@ -1,0 +1,412 @@
+/* app css stylesheet */
+
+/* ------- The very top of page -- title, etc. -------- */
+div#background {
+  margin:0;
+  padding:0;
+  height: 50px;
+  width: 100%;
+  background: transparent url("images/green-wavy-bg.png") repeat-x top left;
+}
+
+.pagetitle table{
+    width: auto;
+    text-align: left;
+    white-space:nowrap
+    overflow: auto;
+    border-style: none;
+}
+
+.pagetitle td {
+    border-style: none;
+}
+
+.menu {
+  list-style: none;
+}
+
+div#pagefooter {
+  clear:both;
+  position: fixed;
+  bottom: 0;
+  text-indent: 800px;
+  text-align: right;
+}
+
+/* ------- end The very top of page -- title, etc. -------- */
+
+/* ------ Navigation bar ------------*/
+.navmenu {
+  margin:0;
+  padding: 0;
+  list-style: none;
+  position: inherit;
+  display: block;
+  height: 36px;
+  width: auto;
+  text-transform:uppercase;
+  font-size:12px;font-weight:bold;
+  font-family:Helvetica,Arial,Verdana,sans-serif;
+  /* border-top: 8px #4CC552; */
+  background:transparent url("images/bgOFF.gif") repeat-x top left;
+  /*border-top:1px solid #C0E2D4;*/
+}
+
+.navmenu #spacer {
+  background:transparent url("images/bgOFF.gif") repeat-x top left;
+}
+
+.border {
+  float: left;
+  width: 100%;
+  height: 10px;
+  background: transparent url("images/ui-bg_green-wave_500x100.png") repeat-x top left;
+}
+
+.navmenu > ul {
+  padding-top: 20px;
+}
+.navmenu > li {
+  display: block;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+
+.navmenu li a {
+  display:block;
+  float:left;
+  color:#874B46;
+  text-decoration:none;
+  padding:12px 20px 0 20px;
+  height:24px;
+  background:transparent url("images/bgDIVIDER.gif") no-repeat top right;
+}
+
+.navmenu li a:hover {
+  background:transparent url("images/bgHOVER.gif") no-repeat top right;
+}
+
+.navmenu li a.current, ul#saturday li a.current:hover {
+  color:#fff;
+  background:transparent url("images/bgON.gif") no-repeat top right;
+}
+
+/* ------ end Navigation bar ------------*/
+
+/* ------ contents container -------------*/
+
+div#container {
+  display: block;
+  float: left;
+  margin: 20px 10px 20px 10px;
+}
+
+/* General styles */
+
+html {
+  overflow-y: scroll;
+}
+
+/* Recycled from older style, revise as needed */
+body {
+     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+     font-size: 80%;
+     background-image: url("images/background.jpg");
+}
+
+h1 {
+  margin:0;
+  padding: 10px 10px 10px 10px;
+  /*color: #4CC552;*/
+  color: yellow;
+}
+ 
+h3#sechead {
+    text-align: center;
+}
+
+label { 
+    display:block; 
+}
+
+
+fieldset { 
+    padding:0; 
+    border:0; 
+    margin-top:25px; 
+    background-color: white;
+}
+
+table {
+    width: 100%;
+    /* table-layout: fixed; */
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #4CC552;
+    padding: 3px 7px 2px 7px;
+    word-wrap: break-word;
+}
+
+
+
+th {
+    background-color: #4CC552;
+    /*color: white;*/
+    border-style: none;
+}
+
+.alt {
+    background-color: #EAF2D3;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #FF704D;
+    text-decoration: underline;
+}
+
+/* menu bar */
+ul.OptionList {
+    list-style-type: none;
+    background-color: white;
+    margin: 0 10px 0 0;
+    padding: 0;
+    height: 150px;
+    border-radius: 5px;
+    border: 2px solid #4CC552;
+    padding: 7px;
+    overflow: auto;
+}
+
+ul.OptionList li {
+    padding: 3px 7px 2px 7px;
+}
+
+ul.OptionList li:not(.head):hover {
+    color: white;
+    background-color: green;
+    cursor: pointer;
+}
+
+ul.OptionList li.head:hover {
+    cursor: pointer;
+}
+
+ul.OptionList li.head {
+    background-color: #4CC552;
+}
+
+
+
+input.aptxt {
+    background-color: yellow;
+}
+
+input {
+    display: block;
+    border-radius: 7px;
+    padding: 0 3px 1px 3px;
+    background-color: yellow;
+    min-width: 50px;
+    max-width: 300px;
+    border: 1px solid #4CC552;
+    background-color: yellow;
+    margin-right: 5px;
+    width: 86%;
+    height: 25px;
+    font-size: 15px;
+}
+
+.ui-widget ul.OptionList li.head input.aptxt:hover {
+    cursor: pointer;
+}
+
+.ui-widget ul.OptionList li.head  input.aptxt:focus {
+    background-color: white;
+}
+
+
+ul.OptionList li.active {
+    color: white;
+    background-color: green;
+}
+
+
+div#top {
+    overflow: auto;
+}
+
+div#detail {
+    clear: both;
+    width: 100%;
+    padding: 10px 0;
+    overflow: auto;
+}
+
+div#application {
+    float: left;
+    width: 200px;
+}
+
+div#trial {
+    float: left;
+    width: 200px;
+}
+
+div#metric {
+    /*clear: both;*/
+    float: left;
+    width: 200px;
+}
+
+div#thread {
+    float: left;
+    width: 200px;
+}
+
+div#metadata {
+    clear: both;
+    float: left;
+    width: 800px;
+    height: 100px;
+    /* box borders and scrollbar */
+    border-radius: 5px;
+    border: 2px solid #4CC552;
+    padding: 7px;
+    background-color: white;
+    overflow: auto;
+}
+
+
+div#metadataheader {
+    background-color: #4CC552;
+    width: 818px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+div#metadataheader table, td, tr {
+    border-color: white;
+    border-radius: 7px;
+    padding: 0 3px 1px 3px;
+    border-width: 1px;
+    border-color: white;
+}
+
+div#metadata table {
+    clear: both;
+    width: 100%;
+    table-layout: fixed;
+}
+
+div#metadataheader td.first {
+    width: 250px;
+}
+div#metadata td.first {
+    width: 250px;
+}
+
+div#metadata tr:nth-child(even) {
+    background-color: #EAF2D3;
+}
+
+div#timerheader {
+    clear: both;
+    background-color: #4CC552;
+    width: 418px;
+    float: left;
+}
+
+div#timerheader table, td, tr {
+    border-color: white;
+    border-radius: 7px;
+    padding: 0 3px 1px 3px;
+    border-width: 1px;
+    border-color: white;
+}
+
+div#timerheader td.head {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+div#timer {
+    clear: both;
+    background-color: white;
+    width: 400px;
+    max-height: 320px;
+    border-radius: 5px;
+    border: 2px solid #4CC552;
+    padding: 10px;
+    float: left;
+    overflow: auto;
+}
+
+div#timer table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+div#timer tr:nth-child(even) {
+    background-color: #EAF2D3;
+}
+
+div#graphheader {
+    text-indent: 130px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+div#graph {
+    margin-left: 10px;
+    width: 350px;
+    float: left;
+}
+
+div.head {
+    margin: 5px 20px 0 0;
+}
+
+img.search {
+    vertical-align: top;
+}
+
+canvas {
+    width: 600px;
+    height: 400px;
+}
+
+.ui-dialog .ui-state-error { 
+    padding: .3em; 
+    background-color: #fff;
+}
+
+.validateTips { 
+    border: 1px solid transparent; 
+    padding: 0.3em; 
+}
+
+div#dbconfig-dialog-form {
+    display: block;
+    background-color: white;
+}
+
+div#dbconfig-dialog-form title {
+    background-color: #4CC552;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+div#database {
+  color: #4CC552;
+}

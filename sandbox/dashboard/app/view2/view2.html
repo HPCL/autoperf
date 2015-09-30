@@ -1,0 +1,38 @@
+<!-- <p>This is the partial for view 2.</p>
+<p>
+  Showing of 'interpolate' filter:
+  {{ 'Current version is v%VERSION%.' | interpolate }}
+</p>
+-->
+
+<script>
+$(document).ready(canvas_init);
+$(document).ready(function() {
+    $('.menu').dropit();
+});
+</script>
+
+<div id="container">
+
+	<div id="application"></div>
+	<div id="trial"></div>
+	<div id="metric_thread">
+	    <div id="metric"></div>
+	    <div id="thread"></div>
+	</div>
+
+	<div id="detail">
+	  <div id="timerheader"></div>
+	  <div id="timer"></div>
+	  <div id="graphheader"></div>
+	  <div id="graph"></div>
+	  <div id="pie"></div>
+	</div>
+	<div id="metadataheader"></div>
+	<div id="metadata"></div>
+	</div>
+
+	<!-- Various modal dialogs -->
+	<div id="dbconfig-dialog-form" title="Configure Database"></div>
+
+</div>

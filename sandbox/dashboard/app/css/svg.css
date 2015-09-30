@@ -1,0 +1,31 @@
+.pie path {
+    stroke: #fff;
+    stroke-width: 2;
+}
+
+.pie path.other {
+    stroke: red;
+}
+
+.pie path:hover {
+    cursor: pointer;
+    fill: yellow;
+}
+
+.bubble circle:hover {
+    cursor: pointer;
+}
+
+.bubble circle {
+    fill: white;
+}
+
+.bubble circle.all:hover {
+    cursor: auto;
+}
+
+.bubble circle.other {
+    fill: orange;
+    stroke: red;
+    stroke-width: 2;
+}
