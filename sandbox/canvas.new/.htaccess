@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteBase /~ender/canvas/
+RewriteRule api/(.*)$ api/api.php?request=$1 [QSA,NC,L]
+</IfModule>
