@@ -1141,8 +1141,9 @@ Canvas.View = Backbone.View.extend({
 //
 // Router
 
-/* Not used yet
+// Not used yet
 Canvas.Router = Backbone.Router.extend({
+    /*
     routes: {
 	"tab/:name": "switchTab",
     },
@@ -1156,5 +1157,5 @@ Canvas.Router = Backbone.Router.extend({
 	$(".tab-body.active").toggleClass("active");
 	$(".tab-body#tab-"+name).toggleClass("active");
     },
+    */
 });
-*/
