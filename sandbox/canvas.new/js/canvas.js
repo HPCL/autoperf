@@ -422,28 +422,25 @@ Canvas.DSModel = Backbone.Model.extend({
 
     // save cached parameter for current session
     putCache: function() {
+	var curApp    = this.get("curApp");
+	var curTrial  = this.get("curTrial");
+	var curMetric = this.get("curMetric");
+	var curThread = this.get("curThread");
+
+	var appName  = this.get("apps").at(curApp).get("name");
+	var trialId  = this.get("trials").at(curTrial).get("id");
+	var metricId = this.get("metrics").at(curMetric).get("id");
+	var threadId = this.get("threads").at(curThread).get("id");
+
+	this.set("appName",  appName);
+	this.set("trialId",  trialId);
+	this.set("metricId", metricId);
+	this.set("threadId", threadId);
+
 	// get active session name
 	var active = JSON.parse(localStorage.getItem('active'));
 
 	if (active) {
-	    var curApp    = this.get("curApp");
-	    var curTrial  = this.get("curTrial");
-	    var curMetric = this.get("curMetric");
-	    var curThread = this.get("curThread");
-
-	    var appName  = this.get("apps").at(curApp).get("name");
-	    var trialId  = this.get("trials").at(curTrial).get("id");
-	    var metricId = this.get("metrics").at(curMetric).get("id");
-	    var threadId = this.get("threads").at(curThread).get("id");
-
-	    this.set("appName",  appName);
-	    this.set("trialId",  trialId);
-	    this.set("metricId", metricId);
-	    this.set("threadId", threadId);
-
-	    this.set("valid", true);
-	    this.trigger("ready");
-
 	    this.cache[active] = {
 		appName: appName,
 		trialId: trialId,
@@ -453,6 +450,9 @@ Canvas.DSModel = Backbone.Model.extend({
 
 	    localStorage.setItem('dscache', JSON.stringify(this.cache));
 	}
+
+	this.set("valid", true);
+	this.trigger("ready");
     },
 
     fetch: function() {
