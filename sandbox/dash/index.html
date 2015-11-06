@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Canvas</title>
+
+    <!-- Bootstrap -->
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <!-- D3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+
+    <!-- gridster -->
+    <link rel="stylesheet" type="text/css" href="css/jquery.gridster.css">
+    
+    <!-- customize -->
+    <link rel="stylesheet" href="css/canvas.css">
+
+
+    <script src="js/underscore-min.js"></script>
+    <script src="js/backbone-min.js"></script>
+    <script src="js/jquery.gridster.js"></script>
+
+    <script src="js/canvas.js"></script>
+
+    <script>
+      $(document).ready(canvas_init);
+    </script>
+  </head>
+
+  <body>
+
+    <!-- BEGIN: Underscore Template Definition. -->
+    <script type="text/template" class="template" id="loader-template">
+      <div class="loader">
+	<div class="cube c1"></div>
+	<div class="cube c2"></div>
+	<div class="cube c4"></div>
+	<div class="cube c3"></div>
+      </div>
+    </script>
+
+    <!-- template for data source list -->
+    <script type="text/template" class="template" id="ds-template">
+      <div class="list-group">
+      <% _.each(data, function(item, idx) { %>
+      <a href="#" value=<%- idx %> class="list-group-item"><%- item.get("name") %></a>
+      <% }); %>
+      </div>
+    </script>
+
+    <!-- template for session dropdown list -->
+    <script type="text/template" class="template" id="session-dropdown-template">
+      <% for (var name in data) { %>
+      <%   if (data.hasOwnProperty(name)) { %>
+      <li>
+	<a href="#">
+	  <button type="button" class="close"><span>&times;</span></button>
+	  <span><%- name %></span>
+	</a>
+      </li>
+      <%   } %>
+      <% } %>
+    </script>
+
+    <!-- template for metadata table -->
+    <script type="text/template" class="template" id="metadata-table-template">
+      <table class="table table-striped table-hover">
+	<thead>
+	  <tr>
+	    <th>Name</th>
+	    <th>Value</th>
+	  </tr>
+	</thead>
+
+	<tbody>
+	  <% data.each(function(item) { %>
+	  <tr>
+	    <td><%- item.get("name") %></td>
+	    <td><%- item.get("value") %></td>
+	  </tr>
+	  <% }); %>
+	</tbody>
+      </table>
+    </script>
+
+    <!-- template for profile table -->
+    <script type="text/template" class="template" id="profile-table-template">
+      <table class="table table-striped table-hover">
+	<thead>
+	  <tr>
+	    <th>Name</th>
+	    <th>Inclusive Value</th>
+	    <th>Inclusive Percent</th>
+	    <th>Exclusive Value</th>
+	    <th>Exclusive Percent</th>
+	  </tr>
+	</thead>
+
+	<tbody>
+	  <% data.each(function(item) { %>
+	  <tr>
+	    <td><%- item.get("short_name") %></td>
+	    <td><%- item.get("inclusive_value") %></td>
+	    <td><%- parseFloat(item.get("inclusive_percent")).toFixed(4) %></td>
+	    <td><%- item.get("exclusive_value") %></td>
+	    <td><%- parseFloat(item.get("exclusive_percent")).toFixed(4) %></td>
+	  </tr>
+	  <% }); %>
+	</tbody>
+      </table>
+    </script>
+
+    <!-- END: Underscore Template Definition. -->
+
+    <!-- fixed header -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+	<div class="navbar-header">
+	  <a class="navbar-brand" href="#">Canvas</a>
+	</div>
+
+	<ul class="nav navbar-nav navbar-right">
+	  <li>
+	    <p class="navbar-text"></p>
+	  </li>
+	  <li>
+	    <button type="button" class="btn btn-primary navbar-btn" id="logout">Logout</button>
+	  </li>
+	</ul>
+      </div>
+    </nav>
+
+    <!-- Left sidebar and major contents -->
+    <div class="container">
+      <div class="row">
+
+	<!-- Right Content -->
+	<div class="col-sm-9 main">
+
+	  <!-- Nav tabs -->
+	  <ul class="nav nav-tabs" role="tablist">
+	    <li role="presentation" class="active">
+	      <a href="#metadata" role="tab" data-toggle="tab">Metadata</a>
+	    </li>
+	    <li role="presentation">
+	      <a href="#profile" role="tab" data-toggle="tab">Profile</a>
+	    </li>
+	    <li role="presentation" class="dropdown">
+	    	<a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">DashBoard <span class="caret"></span>
+    		</a>
+    		<!-- nav dropdown menu -->
+    		<ul class="dropdown-menu">
+    			<li>
+    				<a role="tab" data-toggle="tab" href="#dashboard">Bubble Chart</a>
+    			</li>
+    			<li>
+    				<a role="tab" data-toggle="tab" href="#">Pie Chart</a>
+    			</li>
+    			<li>
+    				<a role="tab" data-toggle="tab" href="#">Other Charts</a>
+    			</li>
+    		</ul>
+	    </li>
+	  </ul>
+
+	  <!-- Tab panes -->
+	  <div class="tab-content">
+	    <div role="tabpanel" class="tab-pane active" id="metadata">
+	      <div class="loader">
+		<div class="cube c1"></div>
+		<div class="cube c2"></div>
+		<div class="cube c4"></div>
+		<div class="cube c3"></div>
+	      </div>
+	    </div>
+	    <div role="tabpanel" class="tab-pane" id="profile">
+	      <div class="loader">
+		<div class="cube c1"></div>
+		<div class="cube c2"></div>
+		<div class="cube c4"></div>
+		<div class="cube c3"></div>
+	      </div>
+	    </div>
+	    <div role="tabpanel" class="tab-pane" id="dashboard">
+	      <!-- gridster -->
+	      <div class="gridster" id="chart">
+          <ul></ul>
+          </div>
+          <!-- End gridster -->
+	    </div>
+	    <!-- End tab-pane chart -->
+	  </div>
+
+	</div> <!-- /col-sm-9 -->
+
+	<!-- affix -->
+	<div class="col-md-3">
+	  <div class="panel panel-success"  data-spy="affix" data-offset-top="0">
+	    <div class="panel-heading" data-toggle="collapse" data-target="#status">
+	      Data Source
+	    </div>
+
+	    <div class="panel-collapse collapse in" id="status">
+	      <div class="list-group">
+		<div class="list-group-item">
+		  <h5 class="list-group-item-heading">Application</h5>
+		  <p class="list-group-item-text">...</p>
+		</div>
+		<div class="list-group-item">
+		  <h5 class="list-group-item-heading">Trial</h5>
+		  <p class="list-group-item-text">...</p>
+		</div>
+		<div class="list-group-item">
+		  <h5 class="list-group-item-heading">Metric</h5>
+		  <p class="list-group-item-text">...</p>
+		</div>
+		<div class="list-group-item">
+		  <h5 class="list-group-item-heading">Thread</h5>
+		  <p class="list-group-item-text">...</p>
+		</div>
+		<a href="#" class="list-group-item active" data-toggle="modal" data-target="#dsModal">
+		  Change...
+		</a>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	
+      </div> <!-- /row -->
+    </div>  <!-- /container -->
+
+
+    <!-- login modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-sm" role="document">
+	<div class="modal-content">
+	  <div class="modal-body">
+
+	    <div class="container-fluid" id="loginForm">
+	      <div class="row">
+		<div class="col-md-12">
+		  <form class="form-horizontal">
+		    <!-- Session Selection -->
+		    <div class="form-group input-group" id="sessions">
+		      <span class="input-group-addon"><i class="glyphicon glyphicon-heart"></i></span>
+		      <input type="text" class="form-control" name="name" placeholder="Session Name (Optional)">
+		      <div class="dropdown input-group-btn">
+			<button type="button" id="session-picker" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+			  <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu dropdown-menu-right">
+			</ul>
+		      </div>
+		    </div>
+		    <!-- TAUdb Host Name -->
+		    <div class="form-group input-group">
+		      <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
+		      <input type="text" class="form-control" name="dbhost" placeholder="TAUdb Host Name">
+		    </div>
+		    <!-- TAUdb Database Name -->
+		    <div class="form-group input-group">
+		      <span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
+		      <input type="text" class="form-control" name="dbname" placeholder="TAUdb Database Name">
+		    </div>
+		    <!-- TAUdb User Name -->
+		    <div class="form-group input-group">
+		      <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+		      <input type="text" class="form-control" name="dbuser" placeholder="TAUdb User Name">
+		    </div>
+		    <!-- TAUdb User Password -->
+		    <div class="form-group input-group">
+		      <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+		      <input type="password" class="form-control" name="dbpass" placeholder="TAUdb User Password">
+		    </div>
+		    <!-- Submit -->
+		    <div class="form-group">
+		      <button type="submit" class="btn btn-danger btn-block">Connect</button>
+		    </div>
+		    <div id="info"></div>
+		  </form>
+		</div>
+	      </div>
+	    </div>
+
+	  </div>
+	</div>
+      </div>
+    </div>
+
+    <!-- Data Source Modal -->
+    <div class="modal fade" id="dsModal">
+      <div class="modal-dialog">
+	<div class="modal-content">
+
+	  <div class="modal-header">
+            <h4 class="modal-title">Data Source</h4>
+	  </div>
+
+	  <div class="modal-body">
+	    <!-- Filter input -->
+	    <div class="form-group">
+              <div class="form-group has-feedback">
+                <input type="text" class="form-control" placeholder="Search"/>
+                <span class="glyphicon glyphicon-search form-control-feedback"></span>
+              </div>
+            </div>
+
+	    <!-- Panel Group -->
+	    <div class="panel-group" id="accordion" role="tablist">
+
+	      <!-- Application -->
+	      <div class="panel panel-default disabled">
+		<div class="panel-heading" data-toggle="custom" data-parent="#accordion" data-target="#collapseApp">
+		  <h6>Application<span class="badge"></span></h6>
+		  <h4></h4>
+		</div>
+
+		<div id="collapseApp" class="panel-collapse collapse" role="tabpanel">
+		</div>
+	      </div>
+
+	      <!-- Trial -->
+	      <div class="panel panel-default disabled">
+		<div class="panel-heading" data-toggle="custom" data-parent="#accordion" data-target="#collapseTrial">
+		  <h6>Trial<span class="badge"></span></h6>
+		  <h4></h4>
+		</div>
+
+		<div id="collapseTrial" class="panel-collapse collapse" role="tabpanel">
+		</div>
+	      </div>
+
+	      <!-- Metric -->
+	      <div class="panel panel-default disabled">
+		<div class="panel-heading" data-toggle="custom" data-parent="#accordion" data-target="#collapseMetric">
+		  <h6>Metric<span class="badge"></span></h6>
+		  <h4></h4>
+		</div>
+
+		<div id="collapseMetric" class="panel-collapse collapse" role="tabpanel">
+		</div>
+	      </div>
+
+	      <!-- Thread -->
+	      <div class="panel panel-default disabled">
+		<div class="panel-heading" data-toggle="custom" data-parent="#accordion" data-target="#collapseThread">
+		  <h6>Thread<span class="badge"></span></h6>
+		  <h4></h4>
+		</div>
+
+		<div id="collapseThread" class="panel-collapse collapse" role="tabpanel">
+		</div>
+	      </div>
+
+	    </div>
+	  </div>
+
+	  <div class="modal-footer">
+	    <button type="button" class="btn btn-default hidden" data-dismiss="modal" id="dsCancel">Cancel</button>	
+            <button type="button" class="btn btn-primary" data-dismiss="modal" id="dsReady" disabled>Confirm</button>
+	  </div>
+
+	</div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    
+  </body>
+</html>
