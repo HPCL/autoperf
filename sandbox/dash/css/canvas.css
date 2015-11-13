@@ -197,7 +197,7 @@ body {
     margin: 30px 30px;
 }*/   
 
-.gridster ul {
+.gridster > ul {
     position: initial;
     list-style-type: none;
     background-color: #FFFFFF;
@@ -227,7 +227,7 @@ body {
 }
 
 .gridster .gs-w {
-    background: #f7f7f7;
+    background: #F5F5F5;
     cursor: pointer;
 }
 
@@ -242,9 +242,54 @@ body {
 }
 
 /*
- *
+ * customized widget dropdown button
  */
 .inWigBtn{
-    float: right;
+    height: 30px;
+    background-color: #D3EACA;
+    margin-bottom: 8px;
 }
+
+.btnLeft{
+    float:left;
+    margin: 5px 5px 5px 10px;
+}
+
+.btnRight{
+    float:right;
+    margin: 5px 10px 5px 5px;
+}
+
+.inWigBtn ul.dropdown-menu{
+    min-width: 20px;
+    z-index: 999;
+}
+
+/*
+ * placeholder to locate button
+ *
+*/
+.pie{
+
+}
+.bubble{
+
+}
+.donut{
+    
+}
+
+/*
+ * adjust z-index of four widgets
+ *
+*/
+.front{
+    z-index: 10 !important;
+}
+
+.behind{
+    z-index: 2 !important;
+}
+
+
 

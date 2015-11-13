@@ -947,11 +947,12 @@ Canvas.ProfileView = Backbone.View.extend({
     },
 });
 
+
 /////////////////////////
 //
 // D3 Bubble Chart View
 
-Canvas.BubbleView = Backbone.View.extend({
+/*Canvas.BubbleView = Backbone.View.extend({
     dia: 320,
 
     initialize: function() {
@@ -1051,8 +1052,250 @@ Canvas.PieChartView = Backbone.View.extend({
 	}
 
 });
+*/
+//newnewnew
+//function to draw bubble chart
+//sel: 	 selector
+//model: data source
+//attri: attribute to retrive from data source
+Canvas.drawBubble = function(sel, model, attri){
+
+	var dia = 320;
+	//clear the content specified by selector
+	$("#"+sel).html("");
+
+	var bubble = d3.layout.pack()
+	    		   .sort(null)
+	    		   .size([dia-4, dia-4])
+	     		   .padding(1.5)
+	               .value(function(d) {
+						return d.get(attri);//exclusive_percent
+	    			});
+
+	var svg = d3.select(document.createElement("div"))
+	    		.append("svg")
+	    		.attr("width", dia)
+	    		.attr("height", dia);
+
+	$("#"+sel).html(svg.node());
+
+	var color = d3.scale.category20c();
+	// Packed Data
+	var data = bubble.nodes({
+	    children: model,
+	});
+
+	// Data join
+	var nodes = svg.selectAll("circle").data(data);
+
+	// ENTER
+	nodes.enter().append("circle");
+
+	// EXIT
+	nodes.exit().remove();
+
+	// UPDATE + ENTER
+	// Appending to the enter selection expands the update selection to include
+	// entering elements; so, operations on the update selection after appending to
+	// the enter selection will apply to both entering and updating nodes.
+	nodes.transition().duration(500)
+	    .attr("r", function(d) {return d.r;})
+	    .attr("cx", function(d) {return d.x;})
+	    .attr("cy", function(d) {return d.y;})
+	    .style("fill", function(d) { return color(d.value); });
 
 
+};
+
+//function to draw pie chart
+Canvas.drawPie = function(sel, model, attri){
+
+	var width = 320;
+	var height = 320;
+	var radius = Math.min(width, height) / 2;
+	$("#" + sel).html("");
+	var svg = d3.select("#" + sel)
+  					.append('svg')
+  					.attr('width', width)
+  					.attr('height', height)
+  					.append('g')
+  					.attr('transform', 'translate(' + (width / 2) +  ',' + (height / 2) + ')');
+
+
+  	var arc = d3.svg.arc().outerRadius(radius);
+  	var pie = d3.layout.pie()
+  				.value(function(d) { return d.get(attri); })
+  				.sort(null);
+  	var color = d3.scale.category20b();
+	var path = svg.selectAll('path')
+  				   .data(pie(model))
+  				   .enter()
+ 				   .append('path')
+  				   .attr('d', arc)
+  				   .attr('fill', function(d, i) { 
+                       	return color(d.data.id);
+ 					});
+
+ 		
+
+};
+
+//function to draw donut chart
+Canvas.drawDonut = function(sel, model, attri){
+
+	var width = 320;
+    var height = 320;
+    var radius = Math.min(width, height) / 2;
+    var donutWidth = 50;                            
+
+    var color = d3.scale.category20b();
+    $("#" + sel).html("");
+    var svg = d3.select('#'+sel)
+      			.append('svg')
+			    .attr('width', width)
+			    .attr('height', height)
+			    .append('g')
+			    .attr('transform', 'translate(' + (width / 2) + ',' + (height / 2) + ')');
+
+    var arc = d3.svg.arc()
+			    .innerRadius(radius - donutWidth)             
+			    .outerRadius(radius);
+      
+    var pie = d3.layout.pie()
+		        .value(function(d) { return d.get(attri); })
+		        .sort(null);
+
+    var path = svg.selectAll('path')
+			      .data(pie(model))
+			      .enter()
+			      .append('path')
+			      .attr('d', arc)
+			      .attr('fill', function(d, i) { 
+			        return color(d.data.id);
+			      });
+
+
+}
+
+/////////////////////////
+//newnewnew
+// widget one view
+Canvas.WidgetOneView = Backbone.View.extend({
+
+	events: {
+		"click .pie" 	: "draw",
+		"click .bubble" : "draw",
+		"click .donut"	: "draw"
+	},
+
+	draw: function(e){
+		var className = e.target.className;
+
+		if(className == "pie"){
+			Canvas.drawPie("w1", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "bubble"){
+			Canvas.drawBubble("w1", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "donut"){
+			Canvas.drawDonut("w1", this.model.models, "exclusive_percent");
+		}
+		
+	},
+
+});
+
+/////////////////////////
+//
+// widget two view
+Canvas.WidgetTwoView = Backbone.View.extend({
+
+	events: {
+		"click .pie" 	: "draw",
+		"click .bubble" : "draw",
+		"click .donut"  : "draw"
+	},
+
+	draw: function(e){
+		var className = e.target.className;
+
+		if(className == "pie"){
+			Canvas.drawPie("w2", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "bubble"){
+			Canvas.drawBubble("w2", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "donut"){
+			Canvas.drawDonut("w2", this.model.models, "exclusive_percent");
+		}
+	},
+
+});
+
+/////////////////////////
+//
+// widget three view
+Canvas.WidgetThreeView = Backbone.View.extend({
+
+	events: {
+		"click .pie" 	: "draw",
+		"click .bubble" : "draw",
+		"click .donut"  : "draw"
+	},
+
+	draw: function(e){
+		var className = e.target.className;
+
+		if(className == "pie"){
+			Canvas.drawPie("w3", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "bubble"){
+			Canvas.drawBubble("w3", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "donut"){
+			Canvas.drawDonut("w3", this.model.models, "exclusive_percent");
+		}
+		
+	},
+
+});
+
+
+/////////////////////////
+//
+// widget four view
+Canvas.WidgetFourView = Backbone.View.extend({
+
+	events: {
+		"click .pie" 	: "draw",
+		"click .bubble" : "draw",
+		"click .donut"  : "draw"
+	},
+
+	draw: function(e){
+		var className = e.target.className;
+
+		if(className == "pie"){
+			Canvas.drawPie("w4", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "bubble"){
+			Canvas.drawBubble("w4", this.model.models, "exclusive_percent");
+		}
+
+		if(className == "donut"){
+			Canvas.drawDonut("w4", this.model.models, "exclusive_percent");
+		}
+		
+	},
+
+});
 
 /////////////////////
 //
@@ -1153,22 +1396,34 @@ Canvas.View = Backbone.View.extend({
         max_rows: 2
     }).data('gridster');
 
-    var btndrop = "<div class='btn-group'>"
+	//add dropdown button in widget
+	//hardcoded might be improved maybe template
+    var btnLeft = "<div class='btn-group btnLeft'>"
   					+ "<button class='btn btn-default btn-sm dropdown-toggle' type='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>"
     				+ "Chart Type <span class='caret'></span>"
   					+ "</button>"
   					+ "<ul class='dropdown-menu'>"
-    				+ "<li><a href='#'>Pie Chart</a></li>"
-    				+ "<li><a href='#'>Bubble Chart</a></li>"
+    				+ "<li><a href='#' class='pie'>Pie Chart</a></li>"
+    				+ "<li><a href='#' class='bubble'>Bubble Chart</a></li>"
+    				+ "<li><a href='#' class='donut'>Donut Chart</a></li>"
   					+ "</ul></div>";
 
-  	var panel = "<div class='panel panel-default'><div class='panel-body inWigBtn'>"+ btndrop + "</div></div>";
+  	var btnRight = "<div class='btn-group btnRight'>"
+  					+ "<button class='btn btn-default btn-sm dropdown-toggle' type='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>"
+    				+ "Metrics <span class='caret'></span>"
+  					+ "</button>"
+  					+ "<ul class='dropdown-menu'>"
+    				+ "<li><a href='#'>example1</a></li>"
+    				+ "<li><a href='#'>example2</a></li>"
+  					+ "</ul></div>";
+
+  	var panel = "<div class='inWigBtn'>"+ btnLeft + btnRight + "</div>";
 
     var widgets = [
-       ['<li>'+ panel + '<div id="w1"></div></li>', 1, 1, 1, 1],
-       ['<li>'+ panel + '<div id="w2"></div></li>', 1, 1, 2, 1],
-       ['<li>'+ panel + '<div id="w3"></div></li>', 1, 1, 1, 2],
-       ['<li>'+ panel + '<div id="w4"></div></li>', 1, 1, 2, 2],
+       ["<li id='widgetOne' class='front'>"+ panel + '<div id="w1"></div></li>', 1, 1, 1, 1],
+       ["<li id='widgetTwo' class='behind'>"+ panel + '<div id="w2"></div></li>', 1, 1, 2, 1],
+       ["<li id='widgetThree' class='front'>"+ panel + '<div id="w3"></div></li>', 1, 1, 1, 2],
+       ["<li id='widgetFour' class='behind'>"+ panel + '<div id="w4"></div></li>', 1, 1, 2, 2],
     ];
     
     $.each(widgets, function(i, widget){
@@ -1200,8 +1455,9 @@ Canvas.View = Backbone.View.extend({
 	});
 
 	// view for D3 bubble Chart
+	/*
 	this.bubbleView = new Canvas.BubbleView({
-	    el: "#w1",
+	    el: "#w2",
 	    model: this.model.get("profile"),
 	});
 	
@@ -1209,6 +1465,27 @@ Canvas.View = Backbone.View.extend({
 	this.pieChartView = new Canvas.PieChartView({
 	    el: "#w2",
 	    model: this.model.get("profile"),
+	});
+	*/
+
+	this.widgetOneView = new Canvas.WidgetOneView({
+		el: "#widgetOne",
+		model: this.model.get("profile"),
+	});
+
+	this.widgetTwoView = new Canvas.WidgetTwoView({
+		el: "#widgetTwo",
+		model: this.model.get("profile"),
+	});
+
+	this.widgetThreeView = new Canvas.WidgetThreeView({
+		el: "#widgetThree",
+		model: this.model.get("profile"),
+	});
+
+	this.widgetFourView = new Canvas.WidgetFourView({
+		el: "#widgetFour",
+		model: this.model.get("profile"),
 	});
 
 	/*
