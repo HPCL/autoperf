@@ -577,6 +577,12 @@ Canvas.DSModel = Backbone.Model.extend({
 	var curThread = this.get("curThread");
 
 	if (curMetric >= 0 && curThread >= 0) {
+
+		var metricId = this.get("metrics").at(curMetric).get("id");
+		var threadId = this.get("threads").at(curThread).get("id");
+		this.set("metricId", metricId);
+		this.set("threadId", threadId);
+
 	    this.set("ready", true);
 
 	    if (this.get("valid") === undefined) {
@@ -585,6 +591,11 @@ Canvas.DSModel = Backbone.Model.extend({
 		// parameter as valid and ready.
 		this.set("valid", true);
 		this.trigger("ready");
+	    }
+
+	    //if profile info updates then trigger an event to sync profile collection
+	    if(this.get("valid")){
+	    	this.trigger("ready");
 	    }
 	} else {
 	    this.set("ready", false);
@@ -952,7 +963,7 @@ Canvas.ProfileView = Backbone.View.extend({
 //
 // D3 Bubble Chart View
 
-/*Canvas.BubbleView = Backbone.View.extend({
+Canvas.BubbleView = Backbone.View.extend({
     dia: 320,
 
     initialize: function() {
@@ -1052,8 +1063,7 @@ Canvas.PieChartView = Backbone.View.extend({
 	}
 
 });
-*/
-//newnewnew
+
 //function to draw bubble chart
 //sel: 	 selector
 //model: data source
@@ -1178,147 +1188,118 @@ Canvas.drawDonut = function(sel, model, attri){
 }
 
 /////////////////////////
-//newnewnew
-// widget one view
-Canvas.WidgetOneView = Backbone.View.extend({
+//
+// widget chart view
+Canvas.WidgetChartView = Backbone.View.extend({
 
 	events: {
-		"click .pie" 	: "draw",
-		"click .bubble" : "draw",
-		"click .donut"	: "draw"
+		"click .pie" 	: "parser",
+		"click .bubble" : "parser",
+		"click .donut"	: "parser"
 	},
 
-	draw: function(e){
-		var className = e.target.className;
+	//chart type
+	charType: undefined,
+	//widget ID
+	wid: undefined,
 
-		if(className == "pie"){
-			Canvas.drawPie("w1", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "bubble"){
-			Canvas.drawBubble("w1", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "donut"){
-			Canvas.drawDonut("w1", this.model.models, "exclusive_percent");
-		}
-		
-	},
-
-});
-
-/////////////////////////
-//
-// widget two view
-Canvas.WidgetTwoView = Backbone.View.extend({
-
-	events: {
-		"click .pie" 	: "draw",
-		"click .bubble" : "draw",
-		"click .donut"  : "draw"
-	},
-
-	draw: function(e){
-		var className = e.target.className;
-
-		if(className == "pie"){
-			Canvas.drawPie("w2", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "bubble"){
-			Canvas.drawBubble("w2", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "donut"){
-			Canvas.drawDonut("w2", this.model.models, "exclusive_percent");
-		}
-	},
-
-});
-
-/////////////////////////
-//
-// widget three view
-Canvas.WidgetThreeView = Backbone.View.extend({
-
-	events: {
-		"click .pie" 	: "draw",
-		"click .bubble" : "draw",
-		"click .donut"  : "draw"
-	},
-
-	draw: function(e){
-		var className = e.target.className;
-
-		if(className == "pie"){
-			Canvas.drawPie("w3", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "bubble"){
-			Canvas.drawBubble("w3", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "donut"){
-			Canvas.drawDonut("w3", this.model.models, "exclusive_percent");
-		}
-		
-	},
-
-});
-
-
-/////////////////////////
-//
-// widget four view
-Canvas.WidgetFourView = Backbone.View.extend({
-
-	events: {
-		"click .pie" 	: "draw",
-		"click .bubble" : "draw",
-		"click .donut"  : "draw"
-	},
-
-	draw: function(e){
-		var className = e.target.className;
-
-		if(className == "pie"){
-			Canvas.drawPie("w4", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "bubble"){
-			Canvas.drawBubble("w4", this.model.models, "exclusive_percent");
-		}
-
-		if(className == "donut"){
-			Canvas.drawDonut("w4", this.model.models, "exclusive_percent");
-		}
-		
-	},
-
-});
-
-/////////////////////
-//
-// Dashboard view
-
-/*
-Canvas.DashboardView = Backbone.View.extend({
-
-		
 	initialize: function(){
 
-		// view for D3 Chart
-		this.d3View = new Canvas.D3View({
-	    	el: "#chart",
-	    	model: this.model.get("profile"),
-		});
+  		this.listenTo(this.model, "ready", this.repaint);
+	},
 
-	}
+	parser: function(e){
+		var className = e.target.className;
+		this.charType = className;
+		var id = $("#"+this.el.id+" > :nth-child(2)").attr("id");
+		this.wid = id;
+		this.draw(className, id);
+	},
 
+	draw: function(className, id){
+		
+		if(className == "pie"){
+			Canvas.drawPie(id, this.model.models, "exclusive_percent");
+		}
+
+		if(className == "bubble"){
+			Canvas.drawBubble(id, this.model.models, "exclusive_percent");
+		}
+
+		if(className == "donut"){
+			Canvas.drawDonut(id, this.model.models, "exclusive_percent");
+		}
+		
+	},
+
+	repaint: function(){
+		if(this.charType != undefined && this.wid != undefined){
+				this.draw(this.charType, this.wid);
+		}
+	},
 
 });
-*/
 
+
+
+
+//Metric dropdown list on widgets
+Canvas.MetricDropdownView = Backbone.View.extend({
+
+	events: {
+		"click li a" : "updateMetric"
+	},
+
+	initialize: function(){
+		this.render();
+		this.listenTo(this.model, "ready:metrics", this.render);
+	},
+
+	render: function(){
+		var models = this.model.get("metrics").models;
+		var dropdown = $(this.el);
+		var template = _.template($("#widget-metric-template").html());
+		dropdown.each(function(){
+			$(this).html(template(models));
+		});
+
+	},
+
+	updateMetric: function(evt){
+		idx = evt.target.attributes[1].nodeValue;
+		this.model.set("curMetric", idx);
+
+	},
+
+});
+
+//thread dropdown list on widgets
+Canvas.ThreadDropdownView = Backbone.View.extend({
+
+	events: {
+		"click li a" : "updateThread"
+	},
+
+	initialize: function(){
+		this.render();
+		this.listenTo(this.model, "ready:threads", this.render);
+	},
+
+	render: function(){
+		var models = this.model.get("threads").models;
+		var dropdown = $(this.el);
+		var template = _.template($("#widget-thread-template").html());
+		dropdown.each(function(){
+			$(this).html(template(models));
+		});
+
+	},
+
+	updateThread: function(evt){
+		idx = evt.target.attributes[1].nodeValue;
+		this.model.set("curThread", idx);
+	},
+});
 
 /////////////////////
 //
@@ -1387,6 +1368,7 @@ Canvas.View = Backbone.View.extend({
     initialize: function(options) {
 
     //initialize gridster
+    //could be improved by using underscore.js
 	var gridster = this.$(".gridster ul").gridster({
         widget_margins: [3, 3],
         widget_base_dimensions: [360, 380],
@@ -1397,8 +1379,8 @@ Canvas.View = Backbone.View.extend({
     }).data('gridster');
 
 	//add dropdown button in widget
-	//hardcoded might be improved maybe template
-    var btnLeft = "<div class='btn-group btnLeft'>"
+	//hardcoded might be improved using template
+    var btnChart = "<div class='btn-group btnChart'>"
   					+ "<button class='btn btn-default btn-sm dropdown-toggle' type='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>"
     				+ "Chart Type <span class='caret'></span>"
   					+ "</button>"
@@ -1408,16 +1390,21 @@ Canvas.View = Backbone.View.extend({
     				+ "<li><a href='#' class='donut'>Donut Chart</a></li>"
   					+ "</ul></div>";
 
-  	var btnRight = "<div class='btn-group btnRight'>"
+  	var btnMetric = "<div class='btn-group btnMetric'>"
   					+ "<button class='btn btn-default btn-sm dropdown-toggle' type='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>"
     				+ "Metrics <span class='caret'></span>"
   					+ "</button>"
-  					+ "<ul class='dropdown-menu'>"
-    				+ "<li><a href='#'>example1</a></li>"
-    				+ "<li><a href='#'>example2</a></li>"
-  					+ "</ul></div>";
+  					+ "<ul class='dropdown-menu'>" 				
+    			  	+ "</ul></div>";
 
-  	var panel = "<div class='inWigBtn'>"+ btnLeft + btnRight + "</div>";
+    var btnThread = "<div class='btn-group btnThread'>"
+  					+ "<button class='btn btn-default btn-sm dropdown-toggle' type='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>"
+    				+ "Thread <span class='caret'></span>"
+  					+ "</button>"
+  					+ "<ul class='dropdown-menu'>" 				
+    			  	+ "</ul></div>";		  	
+
+  	var panel = "<div class='inWigBtn'>"+ btnChart + btnThread + btnMetric + "</div>";
 
     var widgets = [
        ["<li id='widgetOne' class='front'>"+ panel + '<div id="w1"></div></li>', 1, 1, 1, 1],
@@ -1468,32 +1455,69 @@ Canvas.View = Backbone.View.extend({
 	});
 	*/
 
-	this.widgetOneView = new Canvas.WidgetOneView({
+	//views for widgets
+	//four instances of each view class
+	this.widgetOneView = new Canvas.WidgetChartView({
 		el: "#widgetOne",
 		model: this.model.get("profile"),
 	});
 
-	this.widgetTwoView = new Canvas.WidgetTwoView({
+	this.widgetTwoView = new Canvas.WidgetChartView({
 		el: "#widgetTwo",
 		model: this.model.get("profile"),
 	});
 
-	this.widgetThreeView = new Canvas.WidgetThreeView({
+	this.widgetThreeView = new Canvas.WidgetChartView({
 		el: "#widgetThree",
 		model: this.model.get("profile"),
 	});
 
-	this.widgetFourView = new Canvas.WidgetFourView({
+	this.widgetFourView = new Canvas.WidgetChartView({
 		el: "#widgetFour",
 		model: this.model.get("profile"),
 	});
 
-	/*
-	//view for dashboard
-	this.dashboardView = new Canvas.DashboardView({
-		el: ".main .tab-pane#dashboard"
+	//metric dropdown list views
+	this.widgetMetricViewOne = new Canvas.MetricDropdownView({
+		el: "#widgetOne .btnMetric .dropdown-menu",
+		model: this.model.get("ds"),
 	});
-	*/
+
+	this.widgetMetricViewTwo = new Canvas.MetricDropdownView({
+		el: "#widgetTwo .btnMetric .dropdown-menu",
+		model: this.model.get("ds"),
+	});
+
+	this.widgetMetricViewThree = new Canvas.MetricDropdownView({
+		el: "#widgetThree .btnMetric .dropdown-menu",
+		model: this.model.get("ds"),
+	});
+
+	this.widgetMetricViewFour = new Canvas.MetricDropdownView({
+		el: "#widgetFour .btnMetric .dropdown-menu",
+		model: this.model.get("ds"),
+	});
+
+	//thread dropdown list views
+	this.widgetThreadViewOne = new Canvas.ThreadDropdownView({
+		el: "#widgetOne .btnThread .dropdown-menu",
+		model: this.model.get("ds"),
+	});
+
+	this.widgetThreadViewTwo = new Canvas.ThreadDropdownView({
+		el: "#widgetTwo .btnThread .dropdown-menu",
+		model: this.model.get("ds"),
+	});
+	
+	this.widgetThreadViewThree = new Canvas.ThreadDropdownView({
+		el: "#widgetThree .btnThread .dropdown-menu",
+		model: this.model.get("ds"),
+	});
+
+	this.widgetThreadViewFour = new Canvas.ThreadDropdownView({
+		el: "#widgetFour .btnThread .dropdown-menu",
+		model: this.model.get("ds"),
+	});
 
 
 	this.listenTo(this.model.get("login"), "ready", this.renderHeading);

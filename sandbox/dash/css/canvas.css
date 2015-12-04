@@ -227,7 +227,7 @@ body {
 }
 
 .gridster .gs-w {
-    background: #F5F5F5;
+    background: #f7f7f7;
     cursor: pointer;
 }
 
@@ -246,18 +246,23 @@ body {
  */
 .inWigBtn{
     height: 30px;
-    background-color: #D3EACA;
+    background-color: #CCC9C9;
     margin-bottom: 8px;
 }
 
-.btnLeft{
+.btnChart{
     float:left;
     margin: 5px 5px 5px 10px;
 }
 
-.btnRight{
+.btnMetric{
     float:right;
-    margin: 5px 10px 5px 5px;
+    margin: 5px 2px 5px 5px;
+}
+
+.btnThread{
+    float:right;
+    margin: 5px 5px 5px 2px;
 }
 
 .inWigBtn ul.dropdown-menu{

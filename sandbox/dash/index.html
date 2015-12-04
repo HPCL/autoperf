@@ -125,6 +125,20 @@
       </table>
     </script>
 
+    <!-- template for widget metric dropdown list -->
+    <script type="text/template" id="widget-metric-template">
+    	<% _.each(data, function(item, idx){ %>
+    	<li><a href="#" value= <%- idx %> ><%- item.get("name")%></a></li>
+    	<% })%>
+    </script>
+
+    <!-- template for widget thread dropdown list -->
+    <script type="text/template" id="widget-thread-template">
+    	<% _.each(data, function(item, idx){ %>
+    	<li><a href="#" value= <%- idx %> ><%- item.get("name")%></a></li>
+    	<% })%>
+    </script>
+
     <!-- END: Underscore Template Definition. -->
 
     <!-- fixed header -->
