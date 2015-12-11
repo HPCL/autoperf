@@ -393,6 +393,8 @@ Canvas.DSModel = Backbone.Model.extend({
 	valid: undefined,
     },
 
+    flag: true,
+
     initialize: function() {
 	this.on({
 	    "change:curApp":    this.updateAppInfo,
@@ -495,6 +497,7 @@ Canvas.DSModel = Backbone.Model.extend({
 	    // get trial list for selected app
 	    trials.update(appName).done(function() {
 		self.trigger("ready:trials");
+		
 
 		if (self.get("valid")) {
 		    return;
@@ -507,9 +510,10 @@ Canvas.DSModel = Backbone.Model.extend({
 			return;
 		    }
 		}
-
+	
 		self.set("valid", false);
 	    });
+
 	} else {
 	    trials.reset();
 	}
@@ -533,6 +537,7 @@ Canvas.DSModel = Backbone.Model.extend({
 		self.trigger("ready:metrics");
 
 		if (self.get("valid")) {
+			self.trigger("ready:widgets");
 		    return;
 		}
 
@@ -1219,15 +1224,15 @@ Canvas.WidgetChartView = Backbone.View.extend({
 	draw: function(className, id){
 		
 		if(className == "pie"){
-			Canvas.drawPie(id, this.model.models, "exclusive_percent");
+			Canvas.drawPie(id, this.collection.models, "exclusive_percent");
 		}
 
 		if(className == "bubble"){
-			Canvas.drawBubble(id, this.model.models, "exclusive_percent");
+			Canvas.drawBubble(id, this.collection.models, "exclusive_percent");
 		}
 
 		if(className == "donut"){
-			Canvas.drawDonut(id, this.model.models, "exclusive_percent");
+			Canvas.drawDonut(id, this.collection.models, "exclusive_percent");
 		}
 		
 	},
@@ -1251,8 +1256,8 @@ Canvas.MetricDropdownView = Backbone.View.extend({
 	},
 
 	initialize: function(){
-		this.render();
-		this.listenTo(this.model, "ready:metrics", this.render);
+		this.model.fetch();	
+		this.listenTo(this.model, "widget:metrics", this.render);
 	},
 
 	render: function(){
@@ -1281,8 +1286,8 @@ Canvas.ThreadDropdownView = Backbone.View.extend({
 	},
 
 	initialize: function(){
-		this.render();
-		this.listenTo(this.model, "ready:threads", this.render);
+		//this.render();
+		this.listenTo(this.model, "widget:threads", this.render);
 	},
 
 	render: function(){
@@ -1300,6 +1305,294 @@ Canvas.ThreadDropdownView = Backbone.View.extend({
 		this.model.set("curThread", idx);
 	},
 });
+
+////////////////////////
+//
+// Widget Model
+
+//Retrieve profile data for each widget
+//similar to DSModel
+Canvas.WidgetModel = Backbone.Model.extend({
+	defaults: {
+	// container for available items
+	apps:    new Canvas.AppCollection(),
+	trials:  new Canvas.TrialCollection(),
+	metrics: new Canvas.MetricCollection(),
+	threads: new Canvas.ThreadCollection(),
+	//this is the combined data source for 
+	//generating chart
+	profile: new Canvas.ProfileCollection(),
+
+	// index of selected items
+	curApp:    -1,
+	curTrial:  -1,
+	curMetric: -1,
+	curThread: -1,
+
+	// above 4 items are all selected
+	ready: false,
+
+	// parameters in effect
+	appName: undefined,
+	trialId: undefined,
+	metricId: undefined,
+	threadId: undefined,
+
+	// parameters above are actually valid
+	valid: undefined,
+    },
+
+    initialize: function() {
+
+	this.on({
+	    "change:curApp":    this.updateAppInfo,
+	    "change:curTrial":  this.updateTrialInfo,
+	    "change:curMetric": this.updateProfileInfo,
+	    "change:curThread": this.updateProfileInfo,
+	}, this);
+
+    },    
+
+    fetch: function() {
+	var self = this;
+	var apps = this.get("apps");
+
+	apps.fetch().done(function() {
+	    //self.trigger("widget:apps");
+
+	    if (self.get("valid")) {
+		return;
+	    }
+
+	    self.updateAppInfo();
+
+	    //self.set("valid", false);
+	});
+    },
+
+    updateAppInfo: function() {
+	var self = this;
+	var trials = this.get("trials");
+	var curApp = this.get("curApp");
+
+	if (curApp >= 0) {
+	    var appName = this.get("apps").at(curApp).get("name");
+
+	    // get trial list for selected app
+	    trials.update(appName).done(function() {
+
+		if (self.get("valid")) {
+		    return;
+		}
+
+		self.updateTrialInfo();
+
+		//self.set("valid", false);
+	    });
+	} else {
+	    trials.reset();
+	}
+    },
+
+    updateTrialInfo: function() {
+	var self = this;
+	var metrics = this.get("metrics");
+	var threads = this.get("threads");
+	var curTrial = this.get("curTrial");
+
+	// clear metric / thread selection
+	this.set("curMetric", -1);
+	this.set("curThread", -1);
+
+	if (curTrial >= 0) {
+	    var trialId = this.get("trials").at(curTrial).get("id");
+
+	    // get metric list for selected trial
+	    metrics.update(trialId).done(function() {
+		self.trigger("widget:metrics");
+
+		if (self.get("valid")) {
+		    return;
+		}
+
+		/*
+		// validate the parameter and select it if it's valid
+		for (var i=0; i<metrics.models.length; i++) {
+		    if (metrics.models[i].get("id") == self.get("metricId")) {
+			self.set("curMetric", i);
+			return;
+		    }
+		}
+		*/
+
+		//self.set("valid", false);
+	    });
+
+	    // get thread list for selected trial
+	    threads.update(trialId).done(function() {
+		self.trigger("widget:threads");
+
+		if (self.get("valid")) {
+		    return;
+		}
+
+		/*
+		// validate the parameter and select it if it's valid
+		for (var i=0; i<threads.models.length; i++) {
+		    if (threads.models[i].get("id") == self.get("threadId")) {
+			self.set("curThread", i);
+			return;
+		    }
+		}
+		*/
+
+		//self.set("valid", false);
+	    });
+	} else {
+	    this.get("metrics").reset();
+	    this.get("threads").reset();
+	}
+
+    },
+
+    updateProfileInfo: function() {
+	var curMetric = this.get("curMetric");
+	var curThread = this.get("curThread");
+
+	if (curMetric >= 0 && curThread >= 0) {
+
+		var metricId = this.get("metrics").at(curMetric).get("id");
+		var threadId = this.get("threads").at(curThread).get("id");
+		this.set("metricId", metricId);
+		this.set("threadId", threadId);
+
+	    this.set("ready", true);
+
+	    if (this.get("valid") === undefined) {
+		// The only situation we can get here is to use cached
+		// parameter, i.e. auto-login. So we can claim the
+		// parameter as valid and ready.
+		this.set("valid", true);
+		//this.trigger("ready");
+	    }
+
+	    //if profile info updates then sync profile collection
+	   	this.get("profile").update(threadId, metricId);
+	    
+	} else {
+	    this.set("ready", false);
+	}
+    },
+});
+
+////////////////////////
+//
+// Widget Manager view
+
+//Widget manager view
+//retrive "App" and "Trial"
+//information from DS model and update 
+//corresponding parameters in its child views
+Canvas.WidgetMgrView = Backbone.View.extend({
+
+	initialize: function(){
+
+		var app 	= this.model.get("curApp");
+		var trial 	= this.model.get("curTrial");
+
+		//data source for each widget view
+		//different instances to separate
+		this.dsOne 		= new Canvas.WidgetModel({curApp: app, curTrial: trial});
+		this.dsTwo 		= new Canvas.WidgetModel({curApp: app, curTrial: trial});
+		this.dsThree	= new Canvas.WidgetModel({curApp: app, curTrial: trial});
+		this.dsFour		= new Canvas.WidgetModel({curApp: app, curTrial: trial});
+
+		//views for widgets
+		//four instances of each view class
+		this.widgetOneView = new Canvas.WidgetChartView({
+			el: "#widgetOne",
+			collection: this.dsOne.get("profile"),
+		});
+
+		this.widgetTwoView = new Canvas.WidgetChartView({
+			el: "#widgetTwo",
+			collection: this.dsTwo.get("profile"),
+		});
+
+		this.widgetThreeView = new Canvas.WidgetChartView({
+			el: "#widgetThree",
+			collection: this.dsThree.get("profile"),
+		});
+
+		this.widgetFourView = new Canvas.WidgetChartView({
+			el: "#widgetFour",
+			collection: this.dsFour.get("profile"),
+		});
+
+		//metric dropdown list views
+		this.widgetMetricViewOne = new Canvas.MetricDropdownView({
+			el: "#widgetOne .btnMetric .dropdown-menu",
+			model: this.dsOne,
+		});
+
+		this.widgetMetricViewTwo = new Canvas.MetricDropdownView({
+			el: "#widgetTwo .btnMetric .dropdown-menu",
+			model: this.dsTwo,
+		});
+
+		this.widgetMetricViewThree = new Canvas.MetricDropdownView({
+			el: "#widgetThree .btnMetric .dropdown-menu",
+			model: this.dsThree,
+		});
+
+		this.widgetMetricViewFour = new Canvas.MetricDropdownView({
+			el: "#widgetFour .btnMetric .dropdown-menu",
+			model: this.dsFour,
+		});
+
+		//thread dropdown list views
+		this.widgetThreadViewOne = new Canvas.ThreadDropdownView({
+			el: "#widgetOne .btnThread .dropdown-menu",
+			model: this.dsOne,
+		});
+
+		this.widgetThreadViewTwo = new Canvas.ThreadDropdownView({
+			el: "#widgetTwo .btnThread .dropdown-menu",
+			model: this.dsTwo,
+		});
+		
+		this.widgetThreadViewThree = new Canvas.ThreadDropdownView({
+			el: "#widgetThree .btnThread .dropdown-menu",
+			model: this.dsThree,
+		});
+
+		this.widgetThreadViewFour = new Canvas.ThreadDropdownView({
+			el: "#widgetFour .btnThread .dropdown-menu",
+			model: this.dsFour,
+		});
+
+		this.listenTo(this.model, "ready:widgets", this.update);
+	},
+
+
+	update: function(){
+		var app 	= this.model.get("curApp");
+		var trial 	= this.model.get("curTrial");
+
+		//update curApp & curTrial in each model
+		//TODO: solve sync problem
+		this.dsOne.set("curApp", app);
+		this.dsTwo.set("curApp", app);
+		this.dsThree.set("curApp", app);
+		this.dsFour.set("curApp", app);
+		this.dsOne.set("curTrial", trial);
+		this.dsTwo.set("curTrial", trial);
+		this.dsThree.set("curTrial", trial);
+		this.dsFour.set("curTrial", trial);
+	}
+
+});
+
 
 /////////////////////
 //
@@ -1360,6 +1653,11 @@ Canvas.Model = Backbone.Model.extend({
 
 Canvas.View = Backbone.View.extend({
     el: "body",
+
+    //flag for initial widget manager view
+    //when flag is true, initialize it
+    //otherwise do nothing
+    flag: true,
 
     events: {
 	"click #logout": "logout",
@@ -1441,87 +1739,10 @@ Canvas.View = Backbone.View.extend({
 	    collection: this.model.get("profile"),
 	});
 
-	// view for D3 bubble Chart
-	/*
-	this.bubbleView = new Canvas.BubbleView({
-	    el: "#w2",
-	    model: this.model.get("profile"),
-	});
-	
-	//view for pie chart
-	this.pieChartView = new Canvas.PieChartView({
-	    el: "#w2",
-	    model: this.model.get("profile"),
-	});
-	*/
-
-	//views for widgets
-	//four instances of each view class
-	this.widgetOneView = new Canvas.WidgetChartView({
-		el: "#widgetOne",
-		model: this.model.get("profile"),
-	});
-
-	this.widgetTwoView = new Canvas.WidgetChartView({
-		el: "#widgetTwo",
-		model: this.model.get("profile"),
-	});
-
-	this.widgetThreeView = new Canvas.WidgetChartView({
-		el: "#widgetThree",
-		model: this.model.get("profile"),
-	});
-
-	this.widgetFourView = new Canvas.WidgetChartView({
-		el: "#widgetFour",
-		model: this.model.get("profile"),
-	});
-
-	//metric dropdown list views
-	this.widgetMetricViewOne = new Canvas.MetricDropdownView({
-		el: "#widgetOne .btnMetric .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
-	this.widgetMetricViewTwo = new Canvas.MetricDropdownView({
-		el: "#widgetTwo .btnMetric .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
-	this.widgetMetricViewThree = new Canvas.MetricDropdownView({
-		el: "#widgetThree .btnMetric .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
-	this.widgetMetricViewFour = new Canvas.MetricDropdownView({
-		el: "#widgetFour .btnMetric .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
-	//thread dropdown list views
-	this.widgetThreadViewOne = new Canvas.ThreadDropdownView({
-		el: "#widgetOne .btnThread .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
-	this.widgetThreadViewTwo = new Canvas.ThreadDropdownView({
-		el: "#widgetTwo .btnThread .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-	
-	this.widgetThreadViewThree = new Canvas.ThreadDropdownView({
-		el: "#widgetThree .btnThread .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
-	this.widgetThreadViewFour = new Canvas.ThreadDropdownView({
-		el: "#widgetFour .btnThread .dropdown-menu",
-		model: this.model.get("ds"),
-	});
-
 
 	this.listenTo(this.model.get("login"), "ready", this.renderHeading);
 	this.listenTo(this.model.get("ds"), "ready", this.renderStatus);
+
     },
 
     logout: function() {
@@ -1543,18 +1764,28 @@ Canvas.View = Backbone.View.extend({
     },
 
     renderStatus: function() {
-	var ds = this.model.get("ds");
-	var ps = $("#status", this.$el).find("p");
 
-	var appName = ds.get("apps").at(ds.get("curApp")).get("name");
-	var trialName = ds.get("trials").at(ds.get("curTrial")).get("name");
-	var metricName = ds.get("metrics").at(ds.get("curMetric")).get("name");
-	var threadName = ds.get("threads").at(ds.get("curThread")).get("name");
+    	if(this.flag){
+    		//view for dashboard
+			this.widgetMgrView = new Canvas.WidgetMgrView({
+				el: "#dashboard",
+				model: this.model.get("ds"),
+			});
+			this.flag = false;
+    	}
 
-	ps.eq(0).html(appName);
-	ps.eq(1).html(trialName);
-	ps.eq(2).html(metricName);
-	ps.eq(3).html(threadName);
+		var ds = this.model.get("ds");
+		var ps = $("#status", this.$el).find("p");
+
+		var appName = ds.get("apps").at(ds.get("curApp")).get("name");
+		var trialName = ds.get("trials").at(ds.get("curTrial")).get("name");
+		var metricName = ds.get("metrics").at(ds.get("curMetric")).get("name");
+		var threadName = ds.get("threads").at(ds.get("curThread")).get("name");
+
+		ps.eq(0).html(appName);
+		ps.eq(1).html(trialName);
+		ps.eq(2).html(metricName);
+		ps.eq(3).html(threadName);
     },
 
 });

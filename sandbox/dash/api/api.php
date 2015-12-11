@@ -326,14 +326,14 @@ EOT;
     }
 
     /**
-     * @$args[0]:  thread ID
-     * @$args[1]:  metric ID
+     * @$args[0]:  thread ID (optional, default "Mean")
+     * @$args[1]:  metric ID (optional, default "TIME")
      * @$args[2]:  offset (optional, default 0)
      * @$args[3]:  limit  (optional, default 100)
      */
     protected function profile($args) {
-	$threadId = array_shift($args);
-	$metricId = array_shift($args);
+	$threadId = array_shift($args) ?: "Mean";
+	$metricId = array_shift($args) ?: "TIME";
 	$offset   = array_shift($args) ?: 0;
 	$limit    = array_shift($args) ?: 100;
 
