@@ -6,7 +6,7 @@ CUDA    = os.getenv('CUDA')
 PAPI    = os.getenv('PAPI', '/usr/local/packages/papi/5.0.1')
 
 INCLUDE_DIRS  = [PAPI    + '/include']
-LIBRARY_DIRS  = [PAPI    + '/lib']
+LIBRARY_DIRS  = [PAPI    + '/lib', PAPI + '/lib64']
 LIBRARIES     = ['papi']
 DEFINE_MACROS = [('EXT_PYTHON', None)]
 
