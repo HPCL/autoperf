@@ -3,7 +3,8 @@ from distutils.core import setup, Extension
 
 # where to find headers/libraries to compile the extension
 CUDA    = os.getenv('CUDA')
-PAPI    = os.getenv('PAPI', '/usr/local/packages/papi/5.0.1')
+#PAPI    = os.getenv('PAPI', '/usr/local/packages/papi/5.0.1')
+PAPI    = os.getenv('PAPI', '/opt/cray/papi/5.0.1/perf_events/no-cuda')
 
 INCLUDE_DIRS  = [PAPI    + '/include']
 LIBRARY_DIRS  = [PAPI    + '/lib', PAPI + '/lib64']
