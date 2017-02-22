@@ -5,6 +5,10 @@ import ConfigParser
 from .interface import AbstractPlatform
 from ..utils import config
 
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+logging.debug('This is a log message.')
+
 class Platform(AbstractPlatform):
     name          = "generic"
     launcher      = ""
@@ -13,7 +17,10 @@ class Platform(AbstractPlatform):
     def __init__(self, experiment):
         self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
+	logging.info("self longname = %s", self.longname)	
+	logging.info("self experiment = %s", self.longname)
 
+	print("self longname = %s", self.longname);	
         if self.launcher == "":
             self.launcher = config.get("%s.launcher" % experiment.longname, "")
 
