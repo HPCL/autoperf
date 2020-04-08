@@ -6,6 +6,8 @@ import subprocess
 import shutil, shlex, errno
 import configparser
 
+from importlib import import_module
+
 from .                import logger as rootLogger
 from .utils           import config
 from .utils.logger    import MyLogger
@@ -39,10 +41,10 @@ class Experiment:
 
 
         # get some basic config values
-        self.platform_name  = config.get("%s.Platform"   % self.longname, "generic")
-        self.tool_name      = config.get("%s.Tool"       % self.longname, "tau")
-        self.datastore_name = config.get("%s.Datastore"  % self.longname, "nop")
-        self.analyses_name  = config.get("%s.Analyses"   % self.longname).split()
+        self.platform_name  = config.get("%s.Platform"   % self.longname, "generic").split(';')[0].rstrip()
+        self.tool_name      = config.get("%s.Tool"       % self.longname, "tau").split(';')[0].rstrip()
+        self.datastore_name = config.get("%s.Datastore"  % self.longname, "nop").split(';')[0].rstrip()
+        self.analyses_names  = [x.rstrip() for x in (config.get("%s.Analyses"   % self.longname).split(';')[0]).split()]
 
         self.cwd            = os.getcwd()
         self.rootdir        = config.get("%s.rootdir" % self.longname, self.cwd)
@@ -77,31 +79,19 @@ class Experiment:
         self.logger_init()
 
         # import submodules based on config options
-        _module = __import__("platforms.%s" % self.platform_name,
-                             globals(),
-                             fromlist=["Platform"],
-                             level=1)
+        _module = import_module(".%s" % self.platform_name, package="autoperf.platforms")
         self.platform = _module.Platform(self)
 
-        _module = __import__("tools.%s" % self.tool_name,
-                             globals(),
-                             fromlist=["Tool"],
-                             level=1)
+        _module = import_module(".%s" % self.tool_name, package="autoperf.tools")
         self.tool = _module.Tool(self)
 
-        _module = __import__("datastores.%s" % self.datastore_name,
-                             globals(),
-                             fromlist=["Datastore"],
-                             level=1)
+        _module = import_module(".%s" % self.datastore_name, package="autoperf.datastores")
         self.datastore = _module.Datastore(self)
 
         self.analyses = dict()
-        for analysis in self.analyses_name:
-            _module = __import__("analyses.%s" % analysis,
-                                 globals(),
-                                 fromlist=["Analysis"],
-                                 level=1)
-            self.analyses[analysis] = _module.Analysis(self)
+        for analysis_name in self.analyses_names:
+            _module = import_module(".%s" % analysis_name, package="autoperf.analyses")
+            self.analyses[analysis_name] = _module.Analysis(self)
 
         self.logger.info("");
 
@@ -139,7 +129,7 @@ class Experiment:
         self.logger.info("Name     : %s", self.name)
         self.logger.info("Platform : %s", self.platform_name)
         self.logger.info("Tool     : %s", self.tool_name)
-        self.logger.info("Analyses : %s", self.analyses_name)
+        self.logger.info("Analyses : %s", self.analyses_names)
         self.logger.info("Rootdir  : %s", self.rootdir)
         self.logger.info("MPI      : %s", self.is_mpi)
         self.logger.info("CUPTI    : %s", self.is_cupti)
