@@ -99,12 +99,12 @@ def parse_config():
         try:
             config.parse(cfgfile)
         except:
-            print "invalid, trying next option..."
+            print ("*** Invalid config file %s, trying next option..." % cfgfile)
         else:
             break
 
     if not config.done:
-        print "*** Can not find any valid config file. Abort"
+        print ("*** Can't find any valid config file (looked for %s). Abort" % str(cfgfiles))
         exit(1)
 
     # handle cmdline option override
@@ -200,9 +200,9 @@ def get_overall_status(instance):
 def check_experiments(insnames):
     fmtstr = "{0:20} {1:30} {2:15} {3:10}"
 
-    print "*** Experiment status:"
-    print fmtstr.format("Experiment", "Instance", "Job ID", "Status")
-    print "----------------------------------------------------------------------------"
+    print ("--- Experiment status:")
+    print (fmtstr.format("Experiment", "Instance", "Job ID", "Status"))
+    print ("----------------------------------------------------------------------------")
 
     exps = get_experiment_list(False)
     for exp in exps:
@@ -214,12 +214,12 @@ def check_experiments(insnames):
 
             status = get_overall_status(instance)
             if status != 'Running':
-                print fmtstr.format(expname, insname, "-", status)
+                print (fmtstr.format(expname, insname, "-", status))
             else:
                 for iteration in instance:
-                    print fmtstr.format(expname, insname,
+                    print (fmtstr.format(expname, insname,
                                         iteration['jobid'],
-                                        iteration['status'])
+                                        iteration['status']))
                     # don't bother show expname and insname for
                     # the following iterations
                     expname = ""
@@ -242,13 +242,13 @@ def analyze_an_experiment(expname, insnames):
     for instance in check_an_experiment(expname, insnames):
         insname = instance[0]['insname']
         if get_overall_status(instance) == "Finished":
-            print "*** Analyzing %s %s ..." % (expname, insname)
+            print ("--- Analyzing %s %s ..." % (expname, insname))
             experiment = Experiment(expname, insname)
             experiment.setup()
             experiment.analyze()
             experiment.cleanup()
         else:
-            print "*** Experiment %s %s is not finished yet, ignore" % (expname, insname)
+            print ("--- Experiment %s %s is not finished yet, ignore" % (expname, insname))
 
 def analyze_experiments(insnames):
     exps = get_experiment_list(False)
