@@ -167,10 +167,10 @@ def get_list(secname):
             else:
                 if 'threads' in locals().keys() and isinstance(threads,list):
                     for t in threads: 
-			name = m.group(1) + '.' + str(t)
- 			newlist.append(name)
-			#print ("set: Experiments.%s.threads" % name, t)
-			set("Experiments.%s.threads" % name, t)
+                        name = m.group(1) + '.' + str(t)
+                        newlist.append(name)
+                        #print ("set: Experiments.%s.threads" % name, t)
+                        set("Experiments.%s.threads" % name, t)
                 else:
                     newlist.append(exp)
     return newlist
