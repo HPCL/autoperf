@@ -1053,29 +1053,26 @@ py_partitioner(PyObject *self, PyObject *args)
 		break;
 	    }
 
-	    if (!PyString_Check(_event)) {
+	    //if (!PyString_Check(_event)) {
+	    const char* event_name = PyBytes_AsString(_event);
+	    if (!event_name) {
 		PyErr_SetString(PyExc_TypeError, "String or String List needed");
 		return NULL;
 	    }
 
-	    events.push_back(string(PyString_AS_STRING(_event)));
+	    events.push_back(event_name);
 	}
-    } else if (PyString_Check(_events)) {
-	split_events(PyString_AS_STRING(_events), events);
+    } else if (PyBytes_AsString(_events)) {
+	split_events(PyBytes_AsString(_events), events);
     } else {
 	PyErr_SetString(PyExc_TypeError, "String or String List needed");
 	return NULL;
     }
 
-    if (PyBool_Check(_fashion)) {
-	if (_fashion == Py_True) {
-	    fashion = true;
-	} else {
-	    fashion = false;
-	}
+    if (PyObject_IsTrue(_fashion)) {
+        fashion = true;
     } else {
-	PyErr_SetString(PyExc_TypeError, "Bool needed");
-	return NULL;
+        fashion = false;
     }
 
     parts = partitioner(dbfile, events, algo, fashion);
@@ -1087,7 +1084,7 @@ py_partitioner(PyObject *self, PyObject *args)
     list  = PyList_New(nparts);
 
     for (i=0; i<nparts; i++) {
-	PyList_SetItem(list, i, PyString_FromString(parts->at(i).c_str()));
+	PyList_SetItem(list, i, PyUnicode_FromString(parts->at(i).c_str()));
     }
 
     delete parts;
@@ -1098,16 +1095,17 @@ py_partitioner(PyObject *self, PyObject *args)
 static PyMethodDef PartMethods[] = {
     {
 	"partitioner",
-	py_partitioner,
+	(PyCFunction) py_partitioner,
 	METH_VARARGS,
-	"Partition the given events.",
+	"Partitions the given events to minimize number of runs required.",
     },
 
     {NULL, NULL, 0, NULL}
 };
 
+
 PyMODINIT_FUNC
-initpartitioner(void)
+PyInit_partitioner(void)
 {
     PyObject *m;
 
@@ -1123,14 +1121,25 @@ initpartitioner(void)
     cuda_get_avail_events(cuda_avail_events);
 #endif // WITH_CUPTI
 
-    m = Py_InitModule("partitioner", PartMethods);
+    //m = Py_InitModule("partitioner", PartMethods);
+
+    static struct PyModuleDef PartModule =
+    {
+        PyModuleDef_HEAD_INIT,
+        "partitioner", /* name of module */
+        "",          /* module documentation, may be NULL */
+        -1,          /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+        PartMethods
+    };
+    m = PyModule_Create( &PartModule );
     if (m == NULL) {
-	return;
+	return m;
     }
 
     PartError = PyErr_NewException("partitioner.error", NULL, NULL);
     Py_INCREF(PartError);
     PyModule_AddObject(m, "error", PartError);
+    return m;
 }
 
 #endif
