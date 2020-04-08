@@ -26,7 +26,7 @@ def dump(result):
         for event in events:
             for metric in metrics:
                 data = result.getDataPoint(thread, event, metric, result.EXCLUSIVE)
-                print "%s : %s : %s : %s" % (thread, event, metric, data)
+                print ("%s : %s : %s : %s" % (thread, event, metric, data))
 
 if __name__ == '__main__':
     derived_metrics = {derived_metrics}

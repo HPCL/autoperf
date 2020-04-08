@@ -50,7 +50,7 @@ if __name__ == "__main__":
     if is_exist(TAUDB, TRIAL):
         pass
     else:
-        print "*** Loading trial %s to TAUdb ..." % TRIAL
+        print ("--- Loading trial %s to TAUdb ..." % TRIAL)
         subprocess.call(["%s/bin/taudb_loadtrial" % TAUROOT,
                          "-f",
                          FILETYPE,

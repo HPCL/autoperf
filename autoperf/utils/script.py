@@ -34,7 +34,7 @@ def run(template, script, **kwargs):
     with open(script, 'w') as f:
         f.write(content)
 
-    os.chmod(script, 0755)
+    os.chmod(script, 0x755)
 
     logger.info("Running the helper script (%s)", script)
     logger.cmd(os.path.relpath(script))

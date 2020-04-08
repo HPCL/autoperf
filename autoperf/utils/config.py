@@ -16,7 +16,7 @@ def parse(config_file):
     # option name is case sensitive
     cfg_parser.optionxform = str
 
-    print "*** Parsing config files (%s)..." % config_file,
+    print ("--- Parsing config files (%s)..." % config_file)
     parsed = cfg_parser.read(config_file)
     if len(parsed) == 0:
         raise ConfigParser.Error('Can not find config file')
@@ -27,7 +27,7 @@ def parse(config_file):
     for section in cfg_parser.sections():
         params[section] = dict(cfg_parser.items(section))
 
-    print "done"
+    print ("done")
     sys.stdout.flush()
 
     done = True
@@ -162,14 +162,14 @@ def get_list(secname):
             try:
                 exec(m.group(2))
             except:
-                print "Invalid expression in experiment list: %s" % m.group(2)
+                print ("Invalid expression in experiment list: %s" % m.group(2))
                 exit(1)
             else:
                 if 'threads' in locals().keys() and isinstance(threads,list):
                     for t in threads: 
 			name = m.group(1) + '.' + str(t)
  			newlist.append(name)
-			#print "set: Experiments.%s.threads" % name, t
+			#print ("set: Experiments.%s.threads" % name, t)
 			set("Experiments.%s.threads" % name, t)
                 else:
                     newlist.append(exp)
@@ -177,4 +177,4 @@ def get_list(secname):
 
 if __name__ == '__main__':
     parse(sys.argv[1])
-    print repr(getint(sys.argv[2]))
+    print( repr(getint(sys.argv[2])))

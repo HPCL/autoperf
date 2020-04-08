@@ -33,7 +33,7 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
     def get_status(self, idstr):
         queue, colon, pid = idstr.partition(":")
         if queue != "serial":
-            print "queue: %s" % queue
+            print ("queue: %s" % queue)
             raise Exception("Fatal error: job queue mismatch!")
 
         # sending signal 0 to a pid will raise OSError if the pid is
@@ -67,9 +67,9 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
         with open(script_name, "w") as script:
             script.write(content)
 
-        os.chmod(script_name, 0755)
+        os.chmod(script_name, 0o755)
 
-        print "*** Submitting serial job ..."
+        print ("--- Submitting serial job ...")
 
         self.logger.info("Running the serial job script")
         self.logger.cmd("./%s\n", script_name)

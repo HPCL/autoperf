@@ -670,7 +670,7 @@ class PPK:
             self._writeInt(thread.contextId)
             self._writeInt(thread.threadId)
 
-            print "Handle thread %d ..." % thread.threadId
+            print( "Handle thread %d ..." % thread.threadId)
 
             # write function profiles
             fpNum = len(thread.functionProfiles.keys())
@@ -846,7 +846,7 @@ class PPK:
                           threads[t].\
                           aggProfiles[self.aggEvents[e]].\
                           exclusive[self.metrics[m]]
-            except KeyError, IndexError:
+            except (KeyError, IndexError) as e:
                 excData = 0
             finally:
                 self.aggExcArray[PPK.AGG][n,c,t,e,m] = excData
@@ -857,7 +857,7 @@ class PPK:
                           threads[t].\
                           aggProfiles[self.aggEvents[e]].\
                           inclusive[self.metrics[m]]
-            except KeyError, IndexError:
+            except (KeyError, IndexError) as e:
                 incData = 0
             finally:
                 self.aggIncArray[PPK.AGG][n,c,t,e,m] = incData

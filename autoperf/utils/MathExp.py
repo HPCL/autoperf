@@ -328,7 +328,7 @@ class MathExp:
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print "Usage: python MathExp.py <input_file>"
+        print ("Usage: python MathExp.py <input_file>")
         exit(1)
 
     symtab = {'pi': math.pi, 'e': math.e}
@@ -345,8 +345,8 @@ if __name__ == '__main__':
             if line[0] is '#':
                 continue
 
-            print line
+            print (line)
             exp = MathExp(line)
             rv = exp.eval(symtab)
 
-    print "rv = %f" % rv
+    print ("rv = %f" % rv)

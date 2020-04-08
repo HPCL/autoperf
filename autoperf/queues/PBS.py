@@ -83,7 +83,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
             with open(os.devnull, "w") as FNULL:
                 subprocess.check_call(["qdel", jobid], stdout=FNULL, stderr=FNULL)
         except:
-            print "Failed to cancel PBS job %s..." % jobid
+            print ("Failed to cancel PBS job %s..." % jobid)
 
         # update marker
         with open(iteration["marker"], "w+") as fp:
@@ -117,7 +117,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         script.flush()
         script.seek(0)
 
-        print "*** Submitting PBS job",
+        print ("--- Submitting PBS job",)
 
         self.logger.info("Submitting the PBS job script")
         self.logger.cmd("qsub %s\n", script_name)
@@ -131,7 +131,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
 
         self.job_id = out.rstrip()
 
-        print "%s %s ... done" % (self.experiment.insname, self.job_id)
+        print ("%s %s ... done" % (self.experiment.insname, self.job_id))
 
         script.close()
 
@@ -143,7 +143,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
                                                self.job_id))
 
         if block:
-            print "*** Waiting for the task to be finished...",
+            print ("--- Waiting for the task to be finished...",)
             sys.stdout.flush()
 
             while not self.done:
@@ -151,7 +151,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
                 sys.stdout.write('.')
                 sys.stdout.flush()
 
-            print " done"
+            print (" done")
 
             # reset the flag
             self.done = False

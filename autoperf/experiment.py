@@ -134,7 +134,7 @@ class Experiment:
 
         rootLogger.setLevel(loglvl)
 
-        self.logger.info("********** EXPERIMENT START **********")
+        self.logger.info("########## EXPERIMENT START ##########")
         self.logger.info("")
         self.logger.info("Name     : %s", self.name)
         self.logger.info("Platform : %s", self.platform_name)
@@ -343,7 +343,7 @@ class Experiment:
 
         self.logger.info("Linking necessary files")
         for item in items:
-            print "Linking %s ..." % item
+            print ("Linking %s ..." % item)
             item      = os.path.normpath(item)
             item      = os.path.expanduser(item)
             link_name = os.path.basename(item)
@@ -366,7 +366,7 @@ class Experiment:
 
         self.logger.info("Copying necessary files")
         for item in items:
-            print "Copying %s ..." % item
+            print ("Copying %s ..." % item)
             item = os.path.expanduser(item)
             self.logger.cmd("cp -r %s .", item)
             try:
@@ -389,7 +389,7 @@ class Experiment:
         Returns:
           None
         """
-        print "*** Preparing to run %s" % self.name
+        print ("--- Preparing to run %s" % self.name)
 
         self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
@@ -505,7 +505,7 @@ class Experiment:
         os.chdir(self.cwd)
 
         self.logger.info("")
-        self.logger.info("********** EXPERIMENT END   **********")
+        self.logger.info("########## EXPERIMENT END   ##########")
         self.logger.newline()
 
         rootLogger.removeHandler(self.logHandler)

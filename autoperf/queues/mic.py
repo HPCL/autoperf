@@ -108,7 +108,7 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
     def get_status(self, idstr):
         queue, colon, pid = idstr.partition(":")
         if queue != "mic":
-            print "queue: %s" % queue
+            print( "queue: %s" % queue)
             raise Exception("Fatal error: job queue mismatch!")
 
         # FIXME: need a way to know whether the job is killed or not
@@ -138,9 +138,9 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
         with open(script_name, "w") as script:
             script.write(content)
 
-        os.chmod(script_name, 0755)
+        os.chmod(script_name, 0o755)
 
-        print "*** Submitting MIC native job ..."
+        print ("*** Submitting MIC native job ...")
 
         self.logger.info("Running the MIC native job script")
         self.logger.cmd("ssh %s %s\n", self.target, script_name)

@@ -135,7 +135,7 @@ def load_result(taudbCfg, trialName, trialDir):
     cfg = os.path.expanduser("~/.ParaProf/perfdmf.cfg.%s" % taudbCfg)
 
     if os.path.isfile(ppk) is False:
-        print "*** Exporting trial %s from taudb ..." % trialName,
+        print ("--- Exporting trial %s from taudb ..." % trialName,)
 
         # connect to TAUdb
         db = TAUdbDatabaseAPI()
@@ -155,14 +155,14 @@ def load_result(taudbCfg, trialName, trialDir):
 
         DataSourceExport.writePacked(data, File(ppk))
 
-        print "Done"
+        print ("done")
 
-    print "*** Loading trial %s ..." % trialName
+    print ("--- Loading trial %s ..." % trialName)
     result = DataSourceResult(DataSourceResult.PPK,
                               [ppk],
                               False)
     result.setIgnoreWarnings(True)
-    print "*** Done"
+    print ("done")
 
     return result
 

@@ -124,4 +124,4 @@ def get_sys_info():
 if __name__ == "__main__":
     info = get_sys_info()
     for key in info:
-        print "{0:20}: {1}".format(key, info[key])
+        print ("{0:20}: {1}".format(key, info[key]))
