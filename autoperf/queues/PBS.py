@@ -1,6 +1,6 @@
 import os, sys
 import signal, time, socket, tempfile, subprocess
-import ConfigParser
+import configparser
 import logging
 
 from ..utils import config

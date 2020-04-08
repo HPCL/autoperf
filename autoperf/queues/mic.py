@@ -91,7 +91,7 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
         """
         env = {'SINK_LD_LIBRARY_PATH': self.sinkpath}
         output = subprocess.check_output(["micnativeloadex", app, "-l"],
-                                         env=dict(os.environ.items()+env.items()))
+                                         env=dict(list(os.environ.items())+list(env.items())))
         depends = [ ]
         found = False;
         for line in map(str.strip, output.splitlines()):

@@ -1,7 +1,7 @@
 import os
 import logging
 import subprocess
-import ConfigParser
+import configparser
 
 from ..utils import config
 from .interface  import *

@@ -8,9 +8,9 @@ import subprocess
 from struct    import *
 from itertools import product
 
-from MathExp   import MathExp
-from MetricSet import MetricSet
-from metadata  import *
+from .MathExp   import MathExp
+from .MetricSet import MetricSet
+from .metadata  import *
 
 class _Error(Exception):
     """Base class for exceptions in this module"""
@@ -251,7 +251,7 @@ class Node:
         self.contexts = { }     # contextId -> Context
 
     def addContext(self, contextId):
-        if contextId not in self.contexts.keys():
+        if contextId not in list(self.contexts.keys()):
             self.contexts[contextId] = Context(self.ppk, self.nodeId, contextId)
             self.ppk.contexts.append(self.contexts[contextId])
 
@@ -266,7 +266,7 @@ class Context:
         self.threads   = { }    # threadId -> Thread
 
     def addThread(self, threadId):
-        if threadId not in self.threads.keys():
+        if threadId not in list(self.threads.keys()):
             self.threads[threadId] = Thread(self.ppk, self.nodeId, \
                                             self.contextId, threadId)
             self.ppk.threads.append(self.threads[threadId])
@@ -311,7 +311,7 @@ class Thread:
         self.userEventProfiles[name] = profile
 
     def getDataPoint(self, event, metric, flavor):
-        if event not in self.functionProfiles.keys():
+        if event not in list(self.functionProfiles.keys()):
             raise NoSuchEventError(event)
 
         profile = self.functionProfiles[event]
@@ -377,16 +377,16 @@ class Profile:
           ms (object): MetricSet
           meta (map) : a map of system metadata
         """
-        excSymtab = dict(self.exclusive.items() + meta.items())
-        incSymtab = dict(self.inclusive.items() + meta.items())
+        excSymtab = dict(list(self.exclusive.items()) + list(meta.items()))
+        incSymtab = dict(list(self.inclusive.items()) + list(meta.items()))
 
         excVals = ms.eval(excSymtab)
         incVals = ms.eval(incSymtab)
 
-        for (name, value) in excVals.items():
+        for (name, value) in list(excVals.items()):
             self.exclusive[name] = value
 
-        for (name, value) in incVals.items():
+        for (name, value) in list(incVals.items()):
             self.inclusive[name] = value
 
 class FunctionProfile(Profile):
@@ -616,8 +616,8 @@ class PPK:
             self._writePad(self.bytesToSkip)
 
             # process metadata
-            self._writeInt(len(self.metadata.keys()))
-            for name, value in self.metadata.items():
+            self._writeInt(len(list(self.metadata.keys())))
+            for name, value in list(self.metadata.items()):
                 self._writeUTF(name)
                 self._writeUTF(value)
 
@@ -628,8 +628,8 @@ class PPK:
                 self._writeInt(thread.contextId)
                 self._writeInt(thread.threadId)
 
-                self._writeInt(len(thread.metadata.keys()))
-                for name, value in thread.metadata.items():
+                self._writeInt(len(list(thread.metadata.keys())))
+                for name, value in list(thread.metadata.items()):
                     self._writeUTF(name)
                     self._writeUTF(value)
         else:
@@ -673,7 +673,7 @@ class PPK:
             print( "Handle thread %d ..." % thread.threadId)
 
             # write function profiles
-            fpNum = len(thread.functionProfiles.keys())
+            fpNum = len(list(thread.functionProfiles.keys()))
             self._writeInt(fpNum)
             for profile in self.functionProfiles[fpBegin:fpBegin+fpNum]:
                 self._writeInt(profile.functionId)
@@ -686,7 +686,7 @@ class PPK:
             fpBegin += fpNum
 
             # write user event profiles
-            upNum = len(thread.userEventProfiles.keys())
+            upNum = len(list(thread.userEventProfiles.keys()))
             self._writeInt(upNum)
             for profile in self.userEventProfiles[upBegin:upBegin+upNum]:
                 self._writeInt(profile.userEventId)
@@ -818,7 +818,7 @@ class PPK:
 
         # handle aggregated data
         for thread in self.threads:
-            for profile in thread.aggProfiles.itervalues():
+            for profile in thread.aggProfiles.values():
                 profile.updateDerivedMetric(ms, metaSym)
 
     def populateAggData(self):
@@ -830,7 +830,7 @@ class PPK:
         dimE = len(self.aggEvents)
         dimM = len(self.metrics)
 
-        for n in self.nodes.itervalues():
+        for n in self.nodes.values():
             dimC = max(dimC, len(n.contexts))
 
         for c in self.contexts:
@@ -838,8 +838,8 @@ class PPK:
         
         self.aggExcArray[PPK.AGG] = np.zeros([dimN, dimC, dimT, dimE, dimM])
         self.aggIncArray[PPK.AGG] = np.zeros([dimN, dimC, dimT, dimE, dimM])
-        for n,c,t,e,m in product(range(dimN), range(dimC), \
-                                 range(dimT), range(dimE), range(dimM)):
+        for n,c,t,e,m in product(list(range(dimN)), list(range(dimC)), \
+                                 list(range(dimT)), list(range(dimE)), list(range(dimM))):
             try:
                 excData = self.nodes[n].\
                           contexts[c].\

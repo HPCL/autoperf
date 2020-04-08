@@ -195,10 +195,10 @@ class MathExp:
         if token == ',':
             return MathExp.COMMA
 
-        if token in self.operators.keys():
+        if token in list(self.operators.keys()):
             return MathExp.OP
 
-        if token in self.functions.keys():
+        if token in list(self.functions.keys()):
             return MathExp.FUNC
 
         try:
@@ -238,7 +238,7 @@ class MathExp:
         if token[0] == MathExp.NUM:
             return float(token[1])
         elif token[0] == MathExp.VAR:
-            if token[1] in symtab.keys():
+            if token[1] in list(symtab.keys()):
                 return symtab[token[1]]
             else:
                 raise UnresolvedSymbolError(token[1])

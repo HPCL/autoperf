@@ -213,15 +213,15 @@ def compare(aResult, bResult, metric):
 
     # prepare for the filter
     if mode == "absolute":
-        diff = absDiff.items()
+        diff = list(absDiff.items())
     else:
-        diff = relDiff.items()
+        diff = list(relDiff.items())
 
     # apply the throttle
     def throttle_filter(item):
         event = item[0]
         return (aData[event] >= throttle) or (bData[event] >= throttle)
-    diff = filter(throttle_filter, diff)
+    diff = list(filter(throttle_filter, diff))
 
     # apply the threshold
     diff.sort(key=lambda item: -item[1])

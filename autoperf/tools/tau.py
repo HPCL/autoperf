@@ -1,6 +1,6 @@
 import os
 import logging
-import ConfigParser
+import configparser
 import subprocess
 
 from glob import glob
@@ -48,7 +48,7 @@ class Tool(AbstractTool):
 
     def get_tau_bindings(self):
         """ Get available TAU bindings combination """
-        makefiles = map(os.path.basename, glob("%s/lib/Makefile.tau-*" % self.experiment.tauroot))
+        makefiles = list(map(os.path.basename, glob("%s/lib/Makefile.tau-*" % self.experiment.tauroot)))
         return [str.split(s, '-')[1:] for s in makefiles]
 
     def get_tau_vars(self):

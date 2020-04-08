@@ -35,6 +35,6 @@ if __name__ == '__main__':
 
     dump(result)
 
-    for name, metric in derived_metrics.items():
+    for name, metric in list(derived_metrics.items()):
         d_result = DeriveMetricEquation(result, metric, name).processData()
-        map(dump, d_result)
+        list(map(dump, d_result))

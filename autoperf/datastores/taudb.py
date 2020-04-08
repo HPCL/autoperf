@@ -1,6 +1,6 @@
 import os
 import logging
-import ConfigParser
+import configparser
 
 from ..utils import config
 from ..utils import script
@@ -17,7 +17,7 @@ class Datastore(AbstractDatastore):
 
         try:
             self.appname = config.get("%s.appname" % self.longname)
-        except ConfigParser.Error:
+        except configparser.Error:
             self.appname = config.get("%s.execmd" % experiment.longname)
             self.appname = os.path.basename(self.appname)
 

@@ -124,15 +124,15 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
                 relDiff[event] = absDiff[event] / aData[event]
 
         if self.mode == "absolute":
-            diff = absDiff.items()
+            diff = list(absDiff.items())
         else:
-            diff = relDiff.items()
+            diff = list(relDiff.items())
 
         # apply the throttle
         def throttle_filter(item):
             event = item[0]
             return (aData[event] >= self.throttle) and (bData[event] >= self.throttle)
-        diff = filter(throttle_filter, diff)
+        diff = list(filter(throttle_filter, diff))
 
 
         # apply the threshold

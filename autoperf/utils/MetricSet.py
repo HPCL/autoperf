@@ -1,7 +1,7 @@
 import os
 import os.path
 
-from MathExp import MathExp
+from .MathExp import MathExp
 
 class MetricSet:
     def __init__(self, spec_dirs):
@@ -66,7 +66,7 @@ class MetricSet:
 
             variables = [v for v in exp.variables if self.is_derived(v)]
 
-            map(self.add, variables)
+            list(map(self.add, variables))
             exps.append(exp)
 
             metrics = [v for v in exp.variables if not self.is_derived(v)]

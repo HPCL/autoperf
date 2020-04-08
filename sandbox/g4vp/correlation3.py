@@ -105,7 +105,7 @@ class Analysis(AbstractAnalysis):
 
         ############ add annotation ##############
 
-        index = range(len(ea))
+        index = list(range(len(ea)))
         index = [y for (x,y) in sorted(zip(dma, index), reverse=True)]
         index = index[:5]       # top 5
 

@@ -1,6 +1,6 @@
 import os
 import logging
-import ConfigParser
+import configparser
 
 from .interface import AbstractPlatform
 from ..utils import config
@@ -56,7 +56,7 @@ class Platform(AbstractPlatform):
         """
         env = { }
 
-        env = dict(env.items() + self.tool.build_env().items())
+        env = dict(list(env.items()) + list(self.tool.build_env().items()))
 
         return env
 

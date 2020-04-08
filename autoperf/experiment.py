@@ -4,7 +4,7 @@ import logging
 import datetime
 import subprocess
 import shutil, shlex, errno
-import ConfigParser
+import configparser
 
 from .                import logger as rootLogger
 from .utils           import config
@@ -63,7 +63,7 @@ class Experiment:
         self.ppkname        = config.get("%s.ppkname" % self.longname, "data")
 
         self.specdirs       = config.get("%s.specdirs" % self.longname, "").split()
-        self.specdirs       = map(os.path.expanduser, self.specdirs)
+        self.specdirs       = list(map(os.path.expanduser, self.specdirs))
         self.specdirs       = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
 
         self.metric_set = MetricSet(self.specdirs)
@@ -286,7 +286,7 @@ class Experiment:
         try:
             builder = config.get("%s.builder" % self.longname)
             builder = os.path.expanduser(builder)
-        except ConfigParser.Error:
+        except configparser.Error:
             self.logger.verb("No builder found, bypass\n")
             return
 
@@ -296,15 +296,15 @@ class Experiment:
             'AP_TOOL': self.tool_name,
             }
 
-        env = dict(env.items() + self.platform.build_env().items())
+        env = dict(list(env.items()) + list(self.platform.build_env().items()))
 
         self.logger.info("Building the application")
-        for key, val in env.items():
+        for key, val in list(env.items()):
             self.logger.cmd("export %s='%s'", key, val)
         self.logger.cmd(builder)
 
         process = subprocess.Popen(shlex.split(builder),
-                                   env=dict(os.environ.items()+env.items()))
+                                   env=dict(list(os.environ.items())+list(env.items())))
 
         for key in env:
             self.logger.cmd("unset %s", key)
@@ -323,11 +323,11 @@ class Experiment:
         self.tool.setup()
         self.datastore.setup()
 
-        for a in self.analyses.itervalues():
+        for a in self.analyses.values():
             a.setup()
 
         # now populate the metric set we need to measure
-        for a in self.analyses.itervalues():
+        for a in self.analyses.values():
             for m in a.longmetrics:
                 self.metric_set.add(m)
 
@@ -337,7 +337,7 @@ class Experiment:
         """
         try:
             items = config.get("%s.link" % self.longname).split()
-        except ConfigParser.Error:
+        except configparser.Error:
             self.logger.verb("Nothing to link, bypass\n")
             return
 
@@ -360,7 +360,7 @@ class Experiment:
         """
         try:
             items = config.get("%s.copy" % self.longname).split()
-        except ConfigParser.Error:
+        except configparser.Error:
             self.logger.verb("Nothing to copy, bypass\n")
             return
 
@@ -491,7 +491,7 @@ class Experiment:
 
         # run the analyses
         self.logger.info("Running the analyses:")
-        for analysis in self.analyses.values():
+        for analysis in list(self.analyses.values()):
             analysis.run()
 
         # logger

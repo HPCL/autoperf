@@ -119,7 +119,7 @@ def get_sys_info():
     cpu    = _get_cpu_info()
     memory = _get_memory_info()
 
-    return dict(cpu.items() + memory.items())
+    return dict(list(cpu.items()) + list(memory.items()))
 
 if __name__ == "__main__":
     info = get_sys_info()

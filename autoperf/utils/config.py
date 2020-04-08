@@ -1,5 +1,5 @@
 import sys
-import ConfigParser
+import configparser
 
 done = False
 
@@ -11,7 +11,7 @@ def parse(config_file):
     global params
     global cfg_parser
 
-    cfg_parser = ConfigParser.ConfigParser()
+    cfg_parser = configparser.ConfigParser()
 
     # option name is case sensitive
     cfg_parser.optionxform = str
@@ -19,7 +19,7 @@ def parse(config_file):
     print ("--- Parsing config files (%s)..." % config_file)
     parsed = cfg_parser.read(config_file)
     if len(parsed) == 0:
-        raise ConfigParser.Error('Can not find config file')
+        raise configparser.Error('Can not find config file')
     
     params = dict()
 
@@ -45,7 +45,7 @@ def _find(section, option):
     # fall through to the supper section
     super_section = section.rpartition('.')[0]
     if super_section is '':
-        raise ConfigParser.Error("Can not find option '%s' under section '%s'"
+        raise configparser.Error("Can not find option '%s' under section '%s'"
                                  % (option, section))
     else:
         return _find(super_section, option)
@@ -58,12 +58,12 @@ def _unpack_spec(spec):
     global cfg_parser
 
     if cfg_parser.has_section(spec):
-        raise ConfigParser.Error("Can not find option '%s'" % spec)
+        raise configparser.Error("Can not find option '%s'" % spec)
     
     section, dot, option = spec.rpartition('.')
 
     if section is '':
-        raise ConfigParser.Error("Can not find option '%s'" % spec)
+        raise configparser.Error("Can not find option '%s'" % spec)
     else:
         return _find(section, option)
 
@@ -118,8 +118,8 @@ def get(spec, default=None, datatype=None):
         elif datatype is "boolean":
             return cfg_parser.getboolean(section, option)
         else:
-            raise ConfigParser.Error("invalid data type")
-    except ConfigParser.Error:
+            raise configparser.Error("invalid data type")
+    except configparser.Error:
         if default is None:
             raise
         else:
@@ -165,7 +165,7 @@ def get_list(secname):
                 print ("Invalid expression in experiment list: %s" % m.group(2))
                 exit(1)
             else:
-                if 'threads' in locals().keys() and isinstance(threads,list):
+                if 'threads' in list(locals().keys()) and isinstance(threads,list):
                     for t in threads: 
                         name = m.group(1) + '.' + str(t)
                         newlist.append(name)
