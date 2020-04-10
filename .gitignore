@@ -13,3 +13,8 @@
 
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
+/.idea/autoperf.iml
+/.idea/modules.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
