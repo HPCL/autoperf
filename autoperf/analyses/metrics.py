@@ -3,8 +3,12 @@ from ..utils import config
 
 from .interface import AbstractAnalysis
 
-class Analysis(AbstractAnalysis):
 
+class Analysis(AbstractAnalysis):
+    '''
+    This analysis top-level class relies on TAU's Jython analysis interface to
+    the PerfExplorer Java analysis framework.
+    '''
     def __init__(self, experiment):
         self.name       = "metrics"
         self.longname   = "Analyses.%s.%s" % (self.name, experiment.name)
@@ -28,7 +32,7 @@ class Analysis(AbstractAnalysis):
             pass
 
     def run(self):
-        return # comment this line to run script below
+        # return # comment this line to run script below
         self.run_script("%s.py" % self.name,
                         TAULIB          = "%s/lib"      % self.experiment.tauroot,
                         ppk             = "%s/data.ppk" % self.experiment.insname,
