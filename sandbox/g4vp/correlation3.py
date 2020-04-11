@@ -157,7 +157,7 @@ class Analysis(AbstractAnalysis):
         os.chdir(self.bDir)
 
         for m, n in self.pairs:
-            print "cor3 for %s and %s" % (m, n)
+            print("cor3 for %s and %s" % (m, n))
             self.correlation(m, n, False)
             self.correlation(m, n, True)
 

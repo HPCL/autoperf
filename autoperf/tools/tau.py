@@ -22,7 +22,8 @@ class Tool(AbstractTool):
 
         options = self.get_tau_bindings()
 
-        self.binding = "serial" if not 'mpi' in options  # default, should always work
+        if not 'mpi' in options:
+            self.binding = "serial"   # default, should always work
 
         #self.binding = "papi,pdt"
         #options = [b for b in options if 'papi' in b]

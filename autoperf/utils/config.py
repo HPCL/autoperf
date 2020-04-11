@@ -120,7 +120,7 @@ class Config:
             items = []
 
         super_section = section.rpartition('.')[0]
-        if super_section is '':
+        if super_section == '':
             return items
         else:
             return self.get_section(super_section) + items
