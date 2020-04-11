@@ -107,7 +107,7 @@ class FunctionName:
             self.lineno   = None
 
         # get function signature
-        if self.type is "INSTRU":
+        if self.type == "INSTRU":
             # <signature> [{filename} {num}-{num}]
             match = re.search(r"^(.*?)(\[\{.*?\} .*?\])*$", name)
             self.signature = match.group(1).strip()
@@ -480,7 +480,7 @@ class PPK:
         cookie2 = self._readChar()
         cookie3 = self._readChar()
 
-        if not (cookie1 is 'P' and cookie2 is 'P' and cookie3 is 'K'):
+        if not (cookie1 == 'P' and cookie2 == 'P' and cookie3 == 'K'):
             raise InvalidPPKError(filename)
 
         self.version    = self._readInt()

@@ -130,7 +130,7 @@ class Analysis(AbstractAnalysis):
                              fontsize=8)
             except ValueError:
                 # this event is not in ppk "b", ignore it
-                print "Ender: %s not in b" % event
+                print( "Ender: %s not in b" % event)
                 pass
             
         plt.savefig(filename)

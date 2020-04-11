@@ -43,7 +43,7 @@ class MetricSet:
                         continue
 
                     # ignore comments
-                    if line[0] is '#':
+                    if line[0] == '#':
                         continue
 
                     contents.append(line)
@@ -85,7 +85,7 @@ class MetricSet:
         p = lmetric.partition('@')
 
         metric = p[0]
-        if p[2] is '':
+        if p[2] == '':
             interval = 1000
         else:
             interval = p[2]

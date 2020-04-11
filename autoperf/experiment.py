@@ -406,8 +406,8 @@ class Experiment:
         if False:
             # partition the metrics
             from ..ext import partitioner
-            dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
-            algo = config.get("Partitioner.%s.algo" % self.name, "greedy")
+            dbfile = self.config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
+            algo = self.config.get("Partitioner.%s.algo" % self.name, "greedy")
             self.parted_metrics = partitioner(dbfile, list(self.metric_set.nmetrics), algo, False)
 
             # logger

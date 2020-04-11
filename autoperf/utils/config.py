@@ -93,7 +93,7 @@ class Config:
 
         section, dot, option = spec.rpartition('.')
 
-        if section is '':
+        if section == '':
             raise configparser.Error("Can not find option '%s'" % spec)
         else:
             return self._find(section, option)
@@ -147,11 +147,11 @@ class Config:
             section, option = self._unpack_spec(spec)
             if datatype is None:
                 return self._strip_comments(self.cfg_parser.get(section, option))
-            elif datatype is "int":
+            elif datatype == "int":
                 return self._strip_comments(self.cfg_parser.getint(section, option))
-            elif datatype is "float":
+            elif datatype == "float":
                 return self._strip_comments(self.cfg_parser.getfloat(section, option))
-            elif datatype is "boolean":
+            elif datatype == "boolean":
                 return self._strip_comments(self.cfg_parser.getboolean(section, option))
             else:
                 raise configparser.Error("invalid data type")

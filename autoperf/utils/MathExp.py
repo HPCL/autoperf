@@ -259,7 +259,7 @@ class MathExp:
             argv.insert(0, stack.pop())
 
         # resolve argv[0]
-        if op is '=':
+        if op == '=':
             # special treatment for op=
             if argv[0][0] != MathExp.VAR:
                 raise Exception("Syntax error")
@@ -275,14 +275,14 @@ class MathExp:
 
         # FIXME: avoid divide-by-zero exception. Should we do it here?
         # Or should we even do it?
-        if op is '/' and argv[1] == 0:
+        if op == '/' and argv[1] == 0:
             argv[1] = 1
 
         # apply the operation and update the stack
         stack.append((MathExp.NUM, oper(*argv)))
 
         # update symbal table for op=
-        if op is '=':
+        if op == '=':
             symtab[argv[0]] = argv[1]
 
     def apply_function(self, symtab, stack, f):
@@ -342,7 +342,7 @@ if __name__ == '__main__':
                 continue
 
             # ignore comments
-            if line[0] is '#':
+            if line[0] == '#':
                 continue
 
             print (line)
