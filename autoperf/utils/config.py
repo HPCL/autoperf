@@ -1,4 +1,5 @@
 import sys
+import os
 import configparser
 import logging
 
@@ -50,15 +51,18 @@ class Config:
 
         self.logger.info("--- Done parsing config files (%s)..." % config_file)
 
-        #sys.stdout.flush()
-
-        # handle cmdline option overrides
-        for cfgoption in options.cfgoptions:
-            spec, equal, value = cfgoption.partition('=')
-            self.cfg_parser.set(spec, value)
-
         return self
 
+    def _strip_comments(self, line):
+        """
+        Strip the comment from the end of the line
+        """
+        for c in [';','#']:
+            if line.find(c) > 0:
+                return line.split(c)[0].rstrip()
+            else:
+                continue
+        return line
 
     def _find(self, section, option):
         """
@@ -90,7 +94,7 @@ class Config:
         if section is '':
             raise configparser.Error("Can not find option '%s'" % spec)
         else:
-            return _find(section, option)
+            return self._find(section, option)
 
 
     def set(self, spec, value):
@@ -140,13 +144,13 @@ class Config:
         try:
             section, option = self._unpack_spec(spec)
             if datatype is None:
-                return self.cfg_parser.get(section, option)
+                return self._strip_comments(self.cfg_parser.get(section, option))
             elif datatype is "int":
-                return self.cfg_parser.getint(section, option)
+                return self._strip_comments(self.cfg_parser.getint(section, option))
             elif datatype is "float":
-                return self.cfg_parser.getfloat(section, option)
+                return self._strip_comments(self.cfg_parser.getfloat(section, option))
             elif datatype is "boolean":
-                return self.cfg_parser.getboolean(section, option)
+                return self._strip_comments(self.cfg_parser.getboolean(section, option))
             else:
                 raise configparser.Error("invalid data type")
         except configparser.Error:
@@ -179,7 +183,7 @@ class Config:
 
     import re
 
-    exp_code_re = re.compile('^\s*([\w_]+){(.*)}$')
+    exp_code_re = re.compile(r'^\s*([\w_]+){(.*)}$')
 
 
     def get_list(secname):
@@ -197,7 +201,7 @@ class Config:
                 try:
                     exec(m.group(2))
                 except:
-                    raice configparser.Error("Invalid expression in experiment list: %s" % m.group(2))
+                    raise configparser.Error("Invalid expression in experiment list: %s" % m.group(2))
             else:
                 if 'threads' in list(locals().keys()) and isinstance(threads, list):
                     for t in threads:
