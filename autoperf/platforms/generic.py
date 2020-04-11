@@ -1,5 +1,5 @@
-import logging
 import os
+from importlib import import_module
 
 from .interface import AbstractPlatform
 from ..utils import config
@@ -14,7 +14,6 @@ class Platform(AbstractPlatform):
         self.longname = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
-
         if self.launcher == "":
             self.launcher = self.experiment.config.get("%s.launcher" % experiment.longname, "")
 
@@ -22,10 +21,10 @@ class Platform(AbstractPlatform):
 
         _queue = self.experiment.config.get("%s.Queue" % self.longname, "serial")
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = self.experiment.logger
         self.logger.info("Queue    : %s", _queue)
 
-        _module = __import__("queues.%s" % _queue, globals(), fromlist=["Queue"], level=2)
+        _module = import_module(".%s" % _queue, package="autoperf.queues")
         self.queue = _module.Queue(self.experiment)
 
     def setup(self):
@@ -62,14 +61,14 @@ class Platform(AbstractPlatform):
         return env
 
     def wrap_command(self, _execmd, _exeopt):
-        execmd, exeopt = self.queue.wrap_command(_execmd, _exeopt)
-        execmd, exeopt = self.tool.wrap_command(execmd, exeopt)
+        exe_cmd, exe_opts = self.queue.wrap_command(_execmd, _exeopt)
+        exe_cmd, exe_opts = self.tool.wrap_command(exe_cmd, exe_opts)
 
         # ignore launcher and launcher option if they are not specified
         if self.launcher == "":
-            cmd = "%s %s" % (execmd, exeopt)
+            cmd = "%s %s" % (exe_cmd, exe_opts)
         else:
-            cmd = "%s %s %s %s" % (self.launcher, self.launcher_opts, execmd, exeopt)
+            cmd = "%s %s %s %s" % (self.launcher, self.launcher_opts, exe_cmd, exe_opts)
 
         cmd = cmd.strip()
 
@@ -78,7 +77,7 @@ class Platform(AbstractPlatform):
 
         self.logger.debug("Application command:")
         self.logger.debug("  Original: %s %s", _execmd, _exeopt)
-        self.logger.debug("  ToolWrap: %s %s", execmd, exeopt)
+        self.logger.debug("  ToolWrap: %s %s", exe_cmd, exe_opts)
 
         return cmd
 
@@ -87,8 +86,8 @@ class Platform(AbstractPlatform):
         Run an application on this platform.
 
         Args:
-          execmd (string): the command going to run
-          exeopt (string): the cmdline option for `execmd`
+          _execmd (string): the command going to run
+          _exeopt (string): the cmdline option for `_execmd`
           block  (bool)  : block until application exit?
 
         Returns:

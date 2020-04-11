@@ -92,7 +92,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         # update marker
         with open(iteration["marker"], "w+") as fp:
             fp.write("%s %s %s Cancelled" % (
-                iteration["expname"],
+                iteration["exp_name"],
                 iteration["insname"],
                 iteration["jobid"]))
 

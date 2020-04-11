@@ -199,7 +199,7 @@ class Experiment:
                 with open(marker, 'r') as fp:
                     content = fp.read().split()
                     stat["marker"] = marker
-                    stat["expname"] = content[0]
+                    stat["exp_name"] = content[0]
                     stat["insname"] = content[1]
                     stat["jobid"] = content[2]
                     stat["status"] = content[3]
@@ -207,7 +207,7 @@ class Experiment:
             else:
                 # small chance that job stat marker is not placed yet
                 stat["marker"] = marker
-                stat["expname"] = expname
+                stat["exp_name"] = expname
                 stat["insname"] = os.path.basename(dirname)
                 stat["jobid"] = "Unknown"
                 stat["status"] = "Unknown"

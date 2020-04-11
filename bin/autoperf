@@ -2,17 +2,17 @@
 
 import argparse
 import distutils.sysconfig
+import logging
 import os
 import sys
-import logging
-
 from importlib import import_module
 
+from autoperf.experiment import Experiment
 from autoperf.utils.config import Config
+
 
 # include autoperf in the Python's search path
 
-from autoperf.experiment import Experiment
 
 class Autoperf:
     """
@@ -118,30 +118,27 @@ class Autoperf:
 
         return config
 
-
     def get_experiment_list(self, allow_dup=True):
         """
         Get the list of experiment we need to concern with
         """
-        global options
         if self.options.exps is None:
             return self.config.get_list("Main.Experiments")
         else:
             exps = []
-            for expnum in self.options.exps:
+            for exp_num in self.options.exps:
                 try:
-                    exp, num = expnum.split('@')
+                    exp, num = exp_num.split('@')
                     if not allow_dup:
                         num = 1
                 except ValueError:
-                    exp = expnum
+                    exp = exp_num
                     num = 1
 
                 for i in range(int(num)):
                     exps.append(exp)
 
             return exps
-
 
     def run_experiments(self):
         exps = self.get_experiment_list()
@@ -155,14 +152,13 @@ class Autoperf:
 
             experiment.cleanup()
 
-
-    def check_an_experiment(self, expname, insnames=None):
+    def check_an_experiment(self, exp_name, insnames=None):
         """
         Check and return the status of all the instances of experiment
-        `expname`. If `insname` is not None, check only those instances
+        `exp_name`. If `insname` is not None, check only those instances
 
         Args:
-          expname (string): Name of an experiment
+          exp_name (string): Name of an experiment
           insnames  (list): List of instances need to check
 
         Returns:
@@ -170,7 +166,7 @@ class Autoperf:
         """
         logging.disable(logging.CRITICAL)
 
-        experiment = Experiment(self.config, expname, "None")
+        experiment = Experiment(self.config, exp_name, "None")
         experiment.setup()
 
         stats = experiment.get_status()
@@ -183,7 +179,6 @@ class Autoperf:
             return stats
         else:
             return [stat for stat in stats if stat[0]['insname'] in insnames]
-
 
     def get_overall_status(self, instance):
         """
@@ -207,7 +202,6 @@ class Autoperf:
 
         return status
 
-
     def check_experiments(self, insnames):
         fmtstr = "{0:20} {1:30} {2:15} {3:10}"
 
@@ -220,22 +214,21 @@ class Autoperf:
             for instance in self.check_an_experiment(exp, insnames):
                 # all iterations of an instance shall have same
                 # experiment name and instance name
-                expname = instance[0]['expname']
+                exp_name = instance[0]['exp_name']
                 insname = instance[0]['insname']
 
                 status = self.get_overall_status(instance)
                 if status != 'Running':
-                    print(fmtstr.format(expname, insname, "-", status))
+                    print(fmtstr.format(exp_name, insname, "-", status))
                 else:
                     for iteration in instance:
-                        print(fmtstr.format(expname, insname,
+                        print(fmtstr.format(exp_name, insname,
                                             iteration['jobid'],
                                             iteration['status']))
-                        # don't bother show expname and insname for
+                        # don't bother show exp_name and insname for
                         # the following iterations
-                        expname = ""
+                        exp_name = ""
                         insname = ""
-
 
     def cancel_experiments(self, insnames):
         exps = self.get_experiment_list(False)
@@ -248,19 +241,17 @@ class Autoperf:
                     if iteration['status'] != 'Finished' and iteration['status'] != 'Cancelled':
                         _module.Queue.cancel(iteration)
 
-
-    def analyze_an_experiment(self, expname, insnames):
-        for instance in self.check_an_experiment(expname, insnames):
+    def analyze_an_experiment(self, exp_name, insnames):
+        for instance in self.check_an_experiment(exp_name, insnames):
             insname = instance[0]['insname']
             if self.get_overall_status(instance) == "Finished":
-                print("--- Analyzing %s %s ..." % (expname, insname))
-                experiment = Experiment(self.config, expname, insname)
+                print("--- Analyzing %s %s ..." % (exp_name, insname))
+                experiment = Experiment(self.config, exp_name, insname)
                 experiment.setup()
                 experiment.analyze()
                 experiment.cleanup()
             else:
-                print("--- Experiment %s %s is not finished yet, ignore" % (expname, insname))
-
+                print("--- Experiment %s %s is not finished yet, ignore" % (exp_name, insname))
 
     def analyze_experiments(self, insnames):
         exps = self.get_experiment_list(False)
@@ -281,6 +272,7 @@ class Autoperf:
 def main():
     autoperf = Autoperf()
     autoperf.run()
+
 
 if __name__ == "__main__":
     main()
