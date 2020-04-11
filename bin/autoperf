@@ -170,7 +170,7 @@ class Autoperf:
         """
         logging.disable(logging.CRITICAL)
 
-        experiment = Experiment(self.config, expname, None)
+        experiment = Experiment(self.config, expname, "None")
         experiment.setup()
 
         stats = experiment.get_status()

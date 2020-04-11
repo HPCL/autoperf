@@ -23,7 +23,7 @@ class Experiment:
     datastore.
     """
 
-    def __init__(self, config : Config, name, insname=None):
+    def __init__(self, config : Config, name, insname='None'):
         """
         Instantiating an experiment. Do the first step of the
         initialization. If `insname` is not given, it will take

@@ -204,7 +204,7 @@ class Config:
                         name = m.group(1) + '.' + str(t)
                         newlist.append(name)
                         # print ("set: Experiments.%s.threads" % name, t)
-                        set("Experiments.%s.threads" % name, t)
+                        self.cfg_parser.set("Experiments.%s.threads" % name, t)
                 else:
                     newlist.append(exp)
         return newlist
