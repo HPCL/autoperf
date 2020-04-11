@@ -14,12 +14,13 @@ class Platform(AbstractPlatform):
         self.longname = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
+
         if self.launcher == "":
-            self.launcher = config.get("%s.launcher" % experiment.longname, "")
+            self.launcher = self.experiment.config.get("%s.launcher" % experiment.longname, "")
 
-        self.launcher_opts += config.get("%s.launcher_opts" % experiment.longname, "")
+        self.launcher_opts += self.experiment.config.get("%s.launcher_opts" % experiment.longname, "")
 
-        _queue = config.get("%s.Queue" % self.longname, "serial")
+        _queue = self.experiment.config.get("%s.Queue" % self.longname, "serial")
 
         self.logger = logging.getLogger(__name__)
         self.logger.info("Queue    : %s", _queue)

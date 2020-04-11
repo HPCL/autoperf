@@ -27,7 +27,7 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
 """
 
     def __init__(self, experiment):
-        super().__init__(experiment)
+        # super().__init__(experiment) -- no! It's an abstract interface
         self.name = "serial"
         self.experiment = experiment
         self.logger = experiment.logger

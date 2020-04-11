@@ -112,7 +112,7 @@ class Autoperf:
         config.parse(self.options)
 
         # handle cmdline option override
-        for cfgoption in options.cfgoptions:
+        for cfgoption in self.options.cfgoptions:
             spec, equal, value = cfgoption.partition('=')
             config.set(spec, value)
 

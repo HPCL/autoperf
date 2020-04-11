@@ -32,7 +32,7 @@ class Tool(AbstractTool):
         if self.experiment.is_mpi:
             self.binding += ",mpi"
             options = [b for b in options if 'mpi' in b]
-        else:
+        elif self.binding.find('serial') < 0:
             self.binding += ",serial"
             options = [b for b in options if 'mpi' not in b]
 

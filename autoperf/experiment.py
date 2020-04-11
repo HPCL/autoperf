@@ -65,10 +65,14 @@ class Experiment:
         self.debug = self.config.getboolean("%s.debug" % self.longname, True)
         self.is_mpi = self.config.getboolean("%s.mpi" % self.longname, False)
         self.is_cupti = self.config.getboolean("%s.cupti" % self.longname, False)
-        self.tauroot = self.config.get("%s.tauroot" % self.longname)
-        self.tauroot = os.path.expanduser(self.tauroot)
-        self.threads = self.config.getint("%s.threads" % self.longname, 1)
+        try:
+            self.tauroot = self.config.get("%s.tauroot" % self.longname)
+            self.tauroot = os.path.expanduser(self.tauroot)
+        except Exception:
+            # TAU is optional
+            self.tauroot = None
 
+        self.threads = self.config.getint("%s.threads" % self.longname, 1)
         self.execmd = self.config.get("%s.execmd" % self.longname)
         self.execmd = os.path.expanduser(self.execmd)
         self.exeopt = self.config.get("%s.exeopt" % self.longname, "")
