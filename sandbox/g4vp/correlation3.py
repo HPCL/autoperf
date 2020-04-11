@@ -3,8 +3,6 @@ import os
 import matplotlib
 import numpy as np
 
-# get rid of "no display name" error
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from math import isnan, isinf
@@ -13,12 +11,15 @@ from autoperf.utils.PPK import PPK
 from autoperf.utils  import config
 from autoperf.analyses.interface  import AbstractAnalysis
 
+# get rid of "no display name" error
+matplotlib.use('Agg')
+
 class Analysis(AbstractAnalysis):
     """Correlation between different metrics for several experiments"""
 
     def __init__(self, experiment):
-        self.name       = "correlation3"
-        self.longname   = "Analyses.%s.%s" % (self.name, experiment.name)
+        self.name = "correlation3"
+        self.longname = "Analyses.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
         # option format:
@@ -30,8 +31,8 @@ class Analysis(AbstractAnalysis):
         self.metrics = list(set(self.metrics))
         self.longmetrics = self.metrics
 
-        self.hotspots  = config.get("%s.hotspots"  % self.longname, "").split()
-        self.instance  = config.get("%s.instance"  % self.longname)
+        self.hotspots = config.get("%s.hotspots" % self.longname, "").split()
+        self.instance = config.get("%s.instance" % self.longname)
 
     def setup(self):
         pass
@@ -103,7 +104,7 @@ class Analysis(AbstractAnalysis):
         plt.scatter(dmb, dnb, c="g", alpha=0.6, s=(dmb/dmb.sum())*area)
 
 
-        ############ add annotation ##############
+        # Add annotation:
 
         index = list(range(len(ea)))
         index = [y for (x,y) in sorted(zip(dma, index), reverse=True)]
@@ -112,7 +113,7 @@ class Analysis(AbstractAnalysis):
         for i in range(len(index)):
             j = index[i]
 
-            #import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
 
             plt.annotate(i, xy=(dma[j], dna[j]), xytext=(-10, 10), 
                          textcoords='offset points', ha='right', va='bottom',
@@ -138,11 +139,11 @@ class Analysis(AbstractAnalysis):
         plt.close()
 
     def run(self):
-        self.aName  = self.instance
-        self.aDir   = os.path.join(os.getcwd(), self.aName)
+        self.aName = self.instance
+        self.aDir = os.path.join(os.getcwd(), self.aName)
 
-        self.bName  = self.experiment.insname
-        self.bDir   = os.path.join(os.getcwd(), self.bName)
+        self.bName = self.experiment.insname
+        self.bDir = os.path.join(os.getcwd(), self.bName)
 
         self.aPPK = PPK("%s/data.ppk" % self.aDir, self.hotspots)
         self.bPPK = PPK("%s/data.ppk" % self.bDir, self.hotspots)

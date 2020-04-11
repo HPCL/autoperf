@@ -23,11 +23,11 @@ class Tool(AbstractTool):
         options = self.get_tau_bindings()
 
         if not 'mpi' in options:
-            self.binding = "serial"   # default, should always work
+            self.binding = "serial"  # default, should always work
 
-        #self.binding = "papi,pdt"
-        #options = [b for b in options if 'papi' in b]
-        #options = [b for b in options if 'pdt' in b]
+        # self.binding = "papi,pdt"
+        # options = [b for b in options if 'papi' in b]
+        # options = [b for b in options if 'pdt' in b]
 
         if self.experiment.is_cupti:
             self.binding += ",cupti"

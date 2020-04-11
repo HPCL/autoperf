@@ -1,13 +1,14 @@
-import os, sys
-import signal, time, socket, tempfile, subprocess
-import configparser
-import logging
+import os
+import signal
+import socket
+import subprocess
+import sys
+import time
 
-from ..utils import config
 from .interface import AbstractQueue
 
-class Queue(AbstractQueue):
 
+class Queue(AbstractQueue):
     pbs_script = """#!/bin/bash
 #
 #PBS -N autoperf.{hostname}.{pid}
@@ -42,19 +43,22 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
 """
 
     def __init__(self, experiment):
-        self.name       = "PBS"
-        self.longname   = "Queue.%s.%s.%s" % (self.name, experiment.platform_name, experiment.name)
+        super().__init__(experiment)
+        self.name = "PBS"
+        self.longname = "Queue.%s.%s.%s" % (self.name, experiment.platform_name, experiment.name)
         self.experiment = experiment
-        self.done       = False
-        self.logger     = logging.getLogger(__name__)
+        self.done = False
+        self.logger = experiment.logger
+        self.platform = self.experiment.platform
+        self.job_id = 'Unknown'
 
-        self.options    = ""
-        for opt in config.get("%s.options" % self.longname, "").splitlines():
+        self.options = ""
+        for opt in self.experiment.config.get("%s.options" % self.longname, "").splitlines():
             self.options += "#PBS %s\n" % opt
 
         signal.signal(signal.SIGUSR1, self._wakeup)
 
-    def _wakeup(self, signum, frame):
+    def _wakeup(self):
         self.done = True
 
     def setup(self):
@@ -82,32 +86,32 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         try:
             with open(os.devnull, "w") as FNULL:
                 subprocess.check_call(["qdel", jobid], stdout=FNULL, stderr=FNULL)
-        except:
-            print ("Failed to cancel PBS job %s..." % jobid)
+        except subprocess.CalledProcessError:
+            print("Failed to cancel PBS job %s..." % jobid)
 
         # update marker
         with open(iteration["marker"], "w+") as fp:
             fp.write("%s %s %s Cancelled" % (
-                    iteration["expname"],
-                    iteration["insname"],
-                    iteration["jobid"]))
+                iteration["expname"],
+                iteration["insname"],
+                iteration["jobid"]))
 
     def submit(self, cmd, block=False):
         datadir = self.experiment.datadirs[self.experiment.iteration]
         jobstat = "%s/.job.stat" % datadir
 
         content = self.pbs_script.format(
-            tau_root     = self.experiment.tauroot,
-            pbs_options  = self.options,
-            exp_name     = self.experiment.name,
-            exp_setup    = self.platform.setup_str(),
-            exp_run      = cmd,
-            datadir      = datadir,
-            pid          = os.getpid(),
-            hostname     = socket.gethostname(),
-            insname      = self.experiment.insname,
-            notify       = "" if block else "# "
-            )
+            tau_root=self.experiment.tauroot,
+            pbs_options=self.options,
+            exp_name=self.experiment.name,
+            exp_setup=self.platform.setup_str(),
+            exp_run=cmd,
+            datadir=datadir,
+            pid=os.getpid(),
+            hostname=socket.gethostname(),
+            insname=self.experiment.insname,
+            notify="" if block else "# "
+        )
 
         self.logger.info("Populating the PBS job script")
 
@@ -117,7 +121,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
         script.flush()
         script.seek(0)
 
-        print ("--- Submitting PBS job",)
+        print("--- Submitting PBS job", )
 
         self.logger.info("Submitting the PBS job script")
         self.logger.cmd("qsub %s\n", script_name)
@@ -131,7 +135,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
 
         self.job_id = out.rstrip()
 
-        print ("%s %s ... done" % (self.experiment.insname, self.job_id))
+        print("%s %s ... done" % (self.experiment.insname, self.job_id))
 
         script.close()
 
@@ -143,7 +147,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
                                                self.job_id))
 
         if block:
-            print ("--- Waiting for the task to be finished...",)
+            print("--- Waiting for the task to be finished...", )
             sys.stdout.flush()
 
             while not self.done:
@@ -151,7 +155,7 @@ echo -n "{exp_name} {insname} PBS:$PBS_JOBID Finished" >{datadir}/.job.stat
                 sys.stdout.write('.')
                 sys.stdout.flush()
 
-            print (" done")
+            print(" done")
 
             # reset the flag
             self.done = False

@@ -1,11 +1,15 @@
 import os
-import logging
 import subprocess
 
-from ..utils import config
 from .interface import AbstractQueue
 
+
 class Queue(AbstractQueue):
+
+    @staticmethod
+    def cancel(iteration):
+        raise NotImplementedError
+
     serial_script = """#!/bin/sh
 export PATH={tau_root}/bin:$PATH
 
@@ -23,9 +27,11 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
 """
 
     def __init__(self, experiment):
-        self.name       = "serial"
+        super().__init__(experiment)
+        self.name = "serial"
         self.experiment = experiment
-        self.logger     = logging.getLogger(__name__)
+        self.logger = experiment.logger
+        self.platform = self.experiment.platform
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -33,7 +39,7 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
     def get_status(self, idstr):
         queue, colon, pid = idstr.partition(":")
         if queue != "serial":
-            print ("queue: %s" % queue)
+            print("queue: %s" % queue)
             raise Exception("Fatal error: job queue mismatch!")
 
         # sending signal 0 to a pid will raise OSError if the pid is
@@ -53,13 +59,13 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
                                                self.experiment.insname))
 
         content = self.serial_script.format(
-            tau_root  = self.experiment.tauroot,
-            insname   = self.experiment.insname,
-            exp_name  = self.experiment.name,
-            exp_setup = self.platform.setup_str(),
-            datadir   = datadir,
-            exp_run   = cmd,
-            )
+            tau_root=self.experiment.tauroot,
+            insname=self.experiment.insname,
+            exp_name=self.experiment.name,
+            exp_setup=self.platform.setup_str(),
+            datadir=datadir,
+            exp_run=cmd,
+        )
 
         script_name = "%s/job.sh" % datadir
 
@@ -69,7 +75,7 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
 
         os.chmod(script_name, 0o755)
 
-        print ("--- Submitting serial job ...")
+        print("--- Submitting serial job ...")
 
         self.logger.info("Running the serial job script")
         self.logger.cmd("./%s\n", script_name)

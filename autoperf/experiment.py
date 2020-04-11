@@ -23,7 +23,7 @@ class Experiment:
     datastore.
     """
 
-    def __init__(self, config : Config, name, insname='None'):
+    def __init__(self, config: Config, name, insname='None'):
         """
         Instantiating an experiment. Do the first step of the
         initialization. If `insname` is not given, it will take
@@ -56,7 +56,7 @@ class Experiment:
         self.platform_name = self.config.get("%s.Platform" % self.longname, "generic").split(';')[0].rstrip()
         self.tool_name = self.config.get("%s.Tool" % self.longname, "tau").split(';')[0].rstrip()
         self.datastore_name = self.config.get("%s.Datastore" % self.longname, "nop").split(';')[0].rstrip()
-        self.analyses_names = [x.rstrip() for x in self.config.get("%s.Analyses" % self.longname, default = '').split()]
+        self.analyses_names = [x.rstrip() for x in self.config.get("%s.Analyses" % self.longname, default='').split()]
 
         self.cwd = os.getcwd()
         self.rootdir = self.config.get("%s.rootdir" % self.longname, self.cwd)
@@ -262,7 +262,7 @@ class Experiment:
 
         instances = []
 
-        rootdir = os.path.expanduser( self.config.get("Experiments.%s.rootdir" % expname, self.cwd) )
+        rootdir = os.path.expanduser(self.config.get("Experiments.%s.rootdir" % expname, self.cwd))
         self.rootdir = os.path.join(self.cwd, rootdir)
 
         dirs = [os.path.join(rootdir, f) for f in os.listdir(rootdir)]
@@ -480,7 +480,7 @@ class Experiment:
             for d in os.listdir(self.insname):
                 if not os.path.isdir("%s/%s" % (self.insname, d)):
                     continue
-                if not re.match("\.iter-\d+$", d):
+                if not re.match(r"\.iter-\d+$", d):
                     continue
                 self.datadirs.append("%s/%s" % (self.insname, d))
             self.datadirs.sort()

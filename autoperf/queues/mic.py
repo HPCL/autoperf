@@ -5,6 +5,7 @@ import subprocess
 from ..utils import config
 from .interface import AbstractQueue
 
+
 class Queue(AbstractQueue):
     mic_script = """#!/bin/sh
 ulimit -s unlimited
@@ -27,14 +28,15 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
 """
 
     def __init__(self, experiment):
-        self.name       = "mic"
-        self.longname   = "Queue.%s.%s.%s" % (self.name, experiment.platform_name, experiment.name)
+        self.name = "mic"
+        self.longname = "Queue.%s.%s.%s" % (self.name, experiment.platform_name, experiment.name)
         self.experiment = experiment
-        self.logger     = logging.getLogger(__name__)
+        self.platform = self.experiment.platform
+        self.logger = experiment.logger
 
         self.target = config.get("%s.target" % self.longname)
 
-        self.nfsmaps    = dict()
+        self.nfsmaps = dict()
         for m in config.get("%s.nfsmaps" % self.longname).split():
             a, b = m.split(":")
             self.nfsmaps[os.path.realpath(a)] = b;
@@ -43,13 +45,12 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
         self.rootdir = self.host2mic(experiment.rootdir)
         self.tauroot = self.host2mic(experiment.tauroot)
 
-        self.sinkpath  = config.get("%s.sinkpath" % self.longname, "/opt/intel/lib/mic")
-        self.depends   = self.get_dependencies(experiment.execmd)
+        self.sinkpath = config.get("%s.sinkpath" % self.longname, "/opt/intel/lib/mic")
+        self.depends = self.get_dependencies(experiment.execmd)
         self.ldlibpath = set()
         for d in self.depends:
             self.ldlibpath.add(os.path.dirname(d))
         self.ldlibpath = ":".join(map(self.host2mic, self.ldlibpath))
-
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -91,8 +92,8 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
         """
         env = {'SINK_LD_LIBRARY_PATH': self.sinkpath}
         output = subprocess.check_output(["micnativeloadex", app, "-l"],
-                                         env=dict(list(os.environ.items())+list(env.items())))
-        depends = [ ]
+                                         env=dict(list(os.environ.items()) + list(env.items())))
+        depends = []
         found = False;
         for line in map(str.strip, output.splitlines()):
             if line.startswith("Dependencies Found:"):
@@ -108,7 +109,7 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
     def get_status(self, idstr):
         queue, colon, pid = idstr.partition(":")
         if queue != "mic":
-            print( "queue: %s" % queue)
+            print("queue: %s" % queue)
             raise Exception("Fatal error: job queue mismatch!")
 
         # FIXME: need a way to know whether the job is killed or not
@@ -123,14 +124,14 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
                                             self.experiment.insname))
 
         content = self.mic_script.format(
-            tau_root  = self.tauroot,
-            ldlibpath = self.ldlibpath,
-            insname   = self.experiment.insname,
-            exp_name  = self.experiment.name,
-            exp_setup = self.platform.setup_str(),
-            datadir   = datadir,
-            exp_run   = cmd,
-            )
+            tau_root=self.tauroot,
+            ldlibpath=self.ldlibpath,
+            insname=self.experiment.insname,
+            exp_name=self.experiment.name,
+            exp_setup=self.platform.setup_str(),
+            datadir=datadir,
+            exp_run=cmd,
+        )
 
         script_name = "%s/job.sh" % datadir
 
@@ -140,7 +141,7 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
 
         os.chmod(script_name, 0o755)
 
-        print ("*** Submitting MIC native job ...")
+        print("*** Submitting MIC native job ...")
 
         self.logger.info("Running the MIC native job script")
         self.logger.cmd("ssh %s %s\n", self.target, script_name)
