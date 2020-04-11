@@ -120,7 +120,7 @@
 
 }));
 
-;(function(root, factory) {
+(function(root, factory) {
 
     if (typeof define === 'function' && define.amd) {
         define('gridster-collision', ['jquery', 'gridster-coords'], factory);
@@ -355,7 +355,7 @@
 
 }));
 
-;(function(window, undefined) {
+(function(window, undefined) {
 
     /* Delay, debounce and throttle functions taken from underscore.js
      *
@@ -428,7 +428,7 @@
 
 })(window);
 
-;(function(root, factory) {
+(function(root, factory) {
 
     if (typeof define === 'function' && define.amd) {
         define('gridster-draggable', ['jquery'], factory);
@@ -466,7 +466,7 @@
     var idCounter = 0;
     var uniqId = function() {
         return ++idCounter + '';
-    }
+    };
 
     /**
     * Basic drag implementation for DOM elements inside a container.
@@ -853,7 +853,7 @@
 
 }));
 
-;(function(root, factory) {
+(function(root, factory) {
 
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'gridster-draggable', 'gridster-collision'], factory);

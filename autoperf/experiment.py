@@ -8,16 +8,22 @@ import configparser
 
 from importlib import import_module
 
-from .                import logger as rootLogger
-from .utils           import config
-from .utils.logger    import MyLogger
+from . import logger as rootLogger
+from .utils import config
+from .utils.logger import MyLogger
 from .utils.MetricSet import MetricSet
 
+
 class Experiment:
-    platform  = None
-    tool      = None
+    """
+    Performance experiment definition. The minimal configuration is using TAU,
+    which will be built on demand, with just time as the metric and local
+    datastore.
+    """
+    platform = None
+    tool = "tau"
     datastore = None
-    analyses  = None
+    analyses = "TIME"
 
     def __init__(self, name, insname=None):
         """
@@ -33,40 +39,39 @@ class Experiment:
         if name not in experiments:
             raise Exception("Unknown experiment: '%s'" % name)
         else:
-            self.name     = name
+            self.name = name
             self.longname = "Experiments.%s" % name
 
-        self.insname  = insname
-        self.datadirs = [ ]
-
+        self.insname = insname
+        self.datadirs = []
 
         # get some basic config values
-        self.platform_name  = config.get("%s.Platform"   % self.longname, "generic").split(';')[0].rstrip()
-        self.tool_name      = config.get("%s.Tool"       % self.longname, "tau").split(';')[0].rstrip()
-        self.datastore_name = config.get("%s.Datastore"  % self.longname, "nop").split(';')[0].rstrip()
-        self.analyses_names  = [x.rstrip() for x in (config.get("%s.Analyses"   % self.longname).split(';')[0]).split()]
+        self.platform_name = config.get("%s.Platform" % self.longname, "generic").split(';')[0].rstrip()
+        self.tool_name = config.get("%s.Tool" % self.longname, "tau").split(';')[0].rstrip()
+        self.datastore_name = config.get("%s.Datastore" % self.longname, "nop").split(';')[0].rstrip()
+        self.analyses_names = [x.rstrip() for x in (config.get("%s.Analyses" % self.longname).split(';')[0], default='').split()]
 
-        self.cwd            = os.getcwd()
-        self.rootdir        = config.get("%s.rootdir" % self.longname, self.cwd)
-        self.rootdir        = os.path.expanduser(self.rootdir)
-        self.rootdir        = os.path.join(self.cwd, self.rootdir)
+        self.cwd = os.getcwd()
+        self.rootdir = config.get("%s.rootdir" % self.longname, self.cwd)
+        self.rootdir = os.path.expanduser(self.rootdir)
+        self.rootdir = os.path.join(self.cwd, self.rootdir)
 
-        self.debug          = config.getboolean("%s.debug" % self.longname, True)
-        self.is_mpi         = config.getboolean("%s.mpi"   % self.longname, False)
-        self.is_cupti       = config.getboolean("%s.cupti" % self.longname, False)
-        self.tauroot        = config.get("%s.tauroot"      % self.longname)
-        self.tauroot        = os.path.expanduser(self.tauroot)
-        self.threads        = config.getint("%s.threads" % self.longname, 1)
+        self.debug = config.getboolean("%s.debug" % self.longname, True)
+        self.is_mpi = config.getboolean("%s.mpi" % self.longname, False)
+        self.is_cupti = config.getboolean("%s.cupti" % self.longname, False)
+        self.tauroot = config.get("%s.tauroot" % self.longname)
+        self.tauroot = os.path.expanduser(self.tauroot)
+        self.threads = config.getint("%s.threads" % self.longname, 1)
 
-        self.execmd         = config.get("%s.execmd" % self.longname)
-        self.execmd         = os.path.expanduser(self.execmd)
-        self.exeopt         = config.get("%s.exeopt" % self.longname, "")
+        self.execmd = config.get("%s.execmd" % self.longname)
+        self.execmd = os.path.expanduser(self.execmd)
+        self.exeopt = config.get("%s.exeopt" % self.longname, "")
 
-        self.ppkname        = config.get("%s.ppkname" % self.longname, "data")
+        self.ppkname = config.get("%s.ppkname" % self.longname, "data")
 
-        self.specdirs       = config.get("%s.specdirs" % self.longname, "").split()
-        self.specdirs       = list(map(os.path.expanduser, self.specdirs))
-        self.specdirs       = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
+        self.specdirs = config.get("%s.specdirs" % self.longname, "").split()
+        self.specdirs = list(map(os.path.expanduser, self.specdirs))
+        self.specdirs = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
 
         self.metric_set = MetricSet(self.specdirs)
 
@@ -103,7 +108,7 @@ class Experiment:
 
         # log destination
         logfile = config.get("Logger.%s.logfile" % self.name,
-                             "%s/autoperf.log"   % self.rootdir)
+                             "%s/autoperf.log" % self.rootdir)
 
         # log formatter
         # formatter = logging.Formatter(fmt="%(asctime)s %(levelname)-7s %(message)s",
@@ -149,7 +154,7 @@ class Experiment:
         Returns:
           list: the status the instance
         """
-        status = [ ]
+        status = []
 
         # `dirname` should be in specific pattern (i.e. timestamp)
         if not re.match(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{6}",
@@ -176,25 +181,25 @@ class Experiment:
             if expname != experiment:
                 continue
 
-            stat   = { }
+            stat = {}
             marker = os.path.realpath("%s/%s" % (dirname, item))
 
             if os.path.isfile(marker):
                 with open(marker, 'r') as fp:
                     content = fp.read().split()
-                    stat["marker"]  = marker
+                    stat["marker"] = marker
                     stat["expname"] = content[0]
                     stat["insname"] = content[1]
-                    stat["jobid"]   = content[2]
-                    stat["status"]  = content[3]
+                    stat["jobid"] = content[2]
+                    stat["status"] = content[3]
 
             else:
                 # small chance that job stat marker is not placed yet
-                stat["marker"]  = marker
+                stat["marker"] = marker
                 stat["expname"] = expname
                 stat["insname"] = os.path.basename(dirname)
-                stat["jobid"]   = "Unknown"
-                stat["status"]  = "Unknown"
+                stat["jobid"] = "Unknown"
+                stat["status"] = "Unknown"
 
             # double check the job status, i.e. qdel? ctrl-c?
             if stat["status"] != "Finished" and stat["status"] != "Unknown":
@@ -226,7 +231,7 @@ class Experiment:
         Returns:
           list: A list of status
         """
-        stats = [ ]
+        stats = []
 
         dirs = [os.path.join(path, f) for f in os.listdir(path)]
         dirs = [d for d in dirs if os.path.isdir(d)]
@@ -251,7 +256,7 @@ class Experiment:
         if expname is None:
             expname = self.name
 
-        instances = [ ]
+        instances = []
 
         rootdir = config.get("Experiments.%s.rootdir" % expname,
                              self.cwd)
@@ -265,7 +270,7 @@ class Experiment:
             if len(stat) != 0:
                 instances.append((os.path.basename(dirname), dirname))
 
-        instances.sort(key = lambda inst: inst[0])
+        instances.sort(key=lambda inst: inst[0])
 
         return instances
 
@@ -284,7 +289,7 @@ class Experiment:
             'AP_ROOTDIR': self.rootdir,
             'AP_PLATFORM': self.platform_name,
             'AP_TOOL': self.tool_name,
-            }
+        }
 
         env = dict(list(env.items()) + list(self.platform.build_env().items()))
 
@@ -294,7 +299,7 @@ class Experiment:
         self.logger.cmd(builder)
 
         process = subprocess.Popen(shlex.split(builder),
-                                   env=dict(list(os.environ.items())+list(env.items())))
+                                   env=dict(list(os.environ.items()) + list(env.items())))
 
         for key in env:
             self.logger.cmd("unset %s", key)
@@ -333,9 +338,9 @@ class Experiment:
 
         self.logger.info("Linking necessary files")
         for item in items:
-            print ("Linking %s ..." % item)
-            item      = os.path.normpath(item)
-            item      = os.path.expanduser(item)
+            print("Linking %s ..." % item)
+            item = os.path.normpath(item)
+            item = os.path.expanduser(item)
             link_name = os.path.basename(item)
             if os.path.islink(link_name) and os.readlink(link_name) == item:
                 # do nothing if the link is already there
@@ -356,7 +361,7 @@ class Experiment:
 
         self.logger.info("Copying necessary files")
         for item in items:
-            print ("Copying %s ..." % item)
+            print("Copying %s ..." % item)
             item = os.path.expanduser(item)
             self.logger.cmd("cp -r %s .", item)
             try:
@@ -379,7 +384,7 @@ class Experiment:
         Returns:
           None
         """
-        print ("--- Preparing to run %s" % self.name)
+        print("--- Preparing to run %s" % self.name)
 
         self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
@@ -398,7 +403,7 @@ class Experiment:
         # partition the metrics
         from partitioner import partitioner
         dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
-        algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
+        algo = config.get("Partitioner.%s.algo" % self.name, "greedy")
         self.parted_metrics = partitioner(dbfile, list(self.metric_set.nmetrics), algo, False)
 
         # logger
@@ -408,10 +413,10 @@ class Experiment:
             # 'cd' actually never happens
             self.logger.cmd("cd %s", self.cwd)
             self.logger.unshift()
-            self.logger.cmd( "}")
+            self.logger.cmd("}")
             raise Exception("Metrics partition failed!")
         for i in range(len(self.parted_metrics)):
-            self.logger.info("  %2d: %s", i+1, self.parted_metrics[i])
+            self.logger.info("  %2d: %s", i + 1, self.parted_metrics[i])
         self.logger.newline()
 
         # populate the data directories
@@ -419,7 +424,7 @@ class Experiment:
         self.logger.cmd("mkdir -p %s/profiles", self.insname)
         os.makedirs("%s/profiles" % self.insname)
 
-        self.datadirs = [ ]
+        self.datadirs = []
         for i in range(len(self.parted_metrics)):
             datadir = "%s/.iter-%02d" % (self.insname, i)
             self.datadirs.append(datadir)
@@ -428,12 +433,12 @@ class Experiment:
             os.makedirs("%s/profiles" % datadir)
 
             # pre-link job log and stat marker
-            target    = os.path.relpath("%s/job.log" % datadir, self.insname)
+            target = os.path.relpath("%s/job.log" % datadir, self.insname)
             link_name = "%s/job-%02d.log" % (self.insname, i)
             self.logger.cmd("ln -s %s %s", target, link_name)
             os.symlink(target, link_name)
-            target    = os.path.relpath("%s/.job.stat" % datadir, self.insname)
-            link_name = "%s/.job-%s-%02d.stat" % (self.insname, self.name , i)
+            target = os.path.relpath("%s/.job.stat" % datadir, self.insname)
+            link_name = "%s/.job-%s-%02d.stat" % (self.insname, self.name, i)
             self.logger.cmd("ln -s %s %s", target, link_name)
             os.symlink(target, link_name)
 
@@ -442,7 +447,7 @@ class Experiment:
         # run the experiment
         for i in range(len(self.parted_metrics)):
             self.logger.info("Running experiment, iteration %d of %d",
-                             i+1, len(self.parted_metrics))
+                             i + 1, len(self.parted_metrics))
             self.iteration = i
             self.platform.run(self.execmd, self.exeopt, block)
             self.logger.newline()
@@ -450,7 +455,7 @@ class Experiment:
         # 'cd' actually happens in cleanup()
         self.logger.cmd("cd %s", self.cwd)
         self.logger.unshift()
-        self.logger.cmd( "}")
+        self.logger.cmd("}")
 
     def analyze(self):
         # sanity check
@@ -489,7 +494,7 @@ class Experiment:
         # 'cd' actually happens in cleanup()
         self.logger.cmd("cd %s", self.cwd)
         self.logger.unshift()
-        self.logger.cmd( "}")
+        self.logger.cmd("}")
 
     def cleanup(self):
         os.chdir(self.cwd)

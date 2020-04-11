@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-import os, sys
-import logging
 import argparse
 import distutils.sysconfig
+import os
+import sys
+
+from autoperf.utils.config import Config
 
 # include autoperf in the Python's search path
 
@@ -77,38 +79,28 @@ parser.add_argument("-b", "--block",
                     "experiment to the batch system, now block until the job "
                     "is finished [default: %(default)s]")
 
-options = parser.parse_args()
+
 
 # now run the experiments
 
-from autoperf.utils      import config
-from autoperf.experiment import *
+from autoperf.experiment import
 
 def parse_config():
-    global options
-    cfgfiles = ['.autoperf.cfg',
-                'autoperf.cfg',
-                os.path.expanduser('~/.autoperf.cfg')]
+    """
+    Parse all available configuration files, including those specified in command-line options
+    Returns: Nothing
+    """
+    options = parser.parse_args()
 
-    if options.cfgfile is not None:
-        cfgfiles.insert(0, options.cfgfile)
-
-    for cfgfile in cfgfiles:
-        try:
-            config.parse(cfgfile)
-        except:
-            print ("*** Invalid config file %s, trying next option..." % cfgfile)
-        else:
-            break
-
-    if not config.done:
-        print ("*** Can't find any valid config file (looked for %s). Abort" % str(cfgfiles))
-        exit(1)
+    config = Config()
+    config.parse(options)
 
     # handle cmdline option override
     for cfgoption in options.cfgoptions:
         spec, equal, value = cfgoption.partition('=')
         config.set(spec, value)
+
+    return
 
 def get_experiment_list(allow_dup=True):
     """
@@ -253,13 +245,18 @@ def analyze_experiments(insnames):
     for exp in exps:
         analyze_an_experiment(exp, insnames)
 
-parse_config()
+def main():
+    parse_config()
 
-if options.mode == 'run':
-    run_experiments()
-elif options.mode == 'check':
-    check_experiments(options.insnames)
-elif options.mode == 'analyze':
-    analyze_experiments(options.insnames)
-elif options.mode == 'cancel':
-    cancel_experiments(options.insnames)
+    if options.mode == 'run':
+        run_experiments()
+    elif options.mode == 'check':
+        check_experiments(options.insnames)
+    elif options.mode == 'analyze':
+        analyze_experiments(options.insnames)
+    elif options.mode == 'cancel':
+        cancel_experiments(options.insnames)
+
+
+if __name__ == "__main__":
+    main()
