@@ -3,12 +3,13 @@ import os.path
 
 from .MathExp import MathExp
 
+
 class MetricSet:
     def __init__(self, spec_dirs):
-        self.nmetrics = set()   # set : name of native metrics we depend on
-        self.interval = { }     # map : nmetric name => sampling interval (for hpctoolkit)
-        self.dmetrics = [ ]     # list: name of derived metric
-        self.rpns     = { }     # map : dmetric name => list of MathExp
+        self.nmetrics = set()  # set : name of native metrics we depend on
+        self.interval = {}  # map : nmetric name => sampling interval (for hpctoolkit)
+        self.dmetrics = []  # list: name of derived metric
+        self.rpns = {}  # map : dmetric name => list of MathExp
 
         this_dir, this_file = os.path.split(__file__)
 
@@ -33,7 +34,7 @@ class MetricSet:
             if not os.path.isfile(spec_file):
                 continue
 
-            contents = [ ]
+            contents = []
             with open(spec_file, "r") as f:
                 for line in f:
                     line = line.strip()
@@ -59,7 +60,7 @@ class MetricSet:
         if not self.is_derived(metric):
             return
 
-        exps = [ ]
+        exps = []
 
         for spec in self.get_metric_spec(metric):
             exp = MathExp(spec)
@@ -101,7 +102,7 @@ class MetricSet:
             self.interval[metric] = interval
 
     def eval(self, symtab):
-        rv = { }                # map: dmetric name => value
+        rv = {}  # map: dmetric name => value
         for metric in self.dmetrics:
             if metric in symtab:
                 val = symtab[metric]
@@ -109,7 +110,7 @@ class MetricSet:
                 for rpn in self.rpns[metric]:
                     val = rpn.eval(symtab)
 
-            rv[metric]     = val
+            rv[metric] = val
             symtab[metric] = val
 
         return rv

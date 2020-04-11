@@ -1,17 +1,17 @@
-import os
 import logging
-import configparser
+import os
 
 from .interface import AbstractPlatform
 from ..utils import config
 
+
 class Platform(AbstractPlatform):
-    name          = "generic"
-    launcher      = ""
+    name = "generic"
+    launcher = ""
     launcher_opts = ""
 
     def __init__(self, experiment):
-        self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
+        self.longname = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
         if self.launcher == "":
@@ -19,7 +19,7 @@ class Platform(AbstractPlatform):
 
         self.launcher_opts += config.get("%s.launcher_opts" % experiment.longname, "")
 
-        _queue  = config.get("%s.Queue" % self.longname, "serial")
+        _queue = config.get("%s.Queue" % self.longname, "serial")
 
         self.logger = logging.getLogger(__name__)
         self.logger.info("Queue    : %s", _queue)
@@ -28,7 +28,7 @@ class Platform(AbstractPlatform):
         self.queue = _module.Queue(self.experiment)
 
     def setup(self):
-        self.tool      = self.experiment.tool
+        self.tool = self.experiment.tool
         self.datastore = self.experiment.datastore
         self.queue.setup()
 
@@ -42,7 +42,7 @@ class Platform(AbstractPlatform):
         for name, value in config.get_section("Env.%s" % self.experiment.name):
             prologue += "export %s='%s'\n" % (name, value)
 
-	#print "NUMBER OF THREADS = %d" % self.experiment.threads
+        # print "NUMBER OF THREADS = %d" % self.experiment.threads
         prologue += "export OMP_NUM_THREADS=%d\n" % (self.experiment.threads)
         prologue += self.tool.setup_str()
 
@@ -54,7 +54,7 @@ class Platform(AbstractPlatform):
           dict: A dict of environment variables which should be set
                 before building any applications on this platform
         """
-        env = { }
+        env = {}
 
         env = dict(list(env.items()) + list(self.tool.build_env().items()))
 

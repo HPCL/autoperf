@@ -3,9 +3,10 @@ import subprocess
 from ..utils import config
 from ..utils.PPK import PPK
 
+
 class AbstractTool:
-    name       = "Abstract"
-    longname   = "Abstract"
+    name = "Abstract"
+    longname = "Abstract"
     experiment = None
 
     def __init__(self, experiment):
@@ -52,7 +53,7 @@ class AbstractTool:
         ppkfile = "%s/%s.ppk" % (self.experiment.insname, self.experiment.ppkname)
         cmd = ["%s/bin/paraprof" % self.experiment.tauroot,
                "--pack",
-               ppkfile, 
+               ppkfile,
                "%s/profiles" % self.experiment.insname]
         self.logger.info("Pack collected data to TAU .ppk package")
         self.logger.cmd(' '.join(cmd))

@@ -10,10 +10,9 @@ import subprocess
 from importlib import import_module
 
 from . import logger as rootLogger
-
-from .utils.config import Config
 from .utils import logger
 from .utils.MetricSet import MetricSet
+from .utils.config import Config
 
 
 class Experiment:
@@ -111,12 +110,12 @@ class Experiment:
         """
         Get logger configurations and set it up.
         """
-        #self.logger = logging.getLogger(__name__)
+        # self.logger = logging.getLogger(__name__)
         self.logger = logger.MyLogger(__name__)
 
         # log destination
         logfile = self.config.get("Logger.%s.logfile" % self.logger.name,
-                             "%s/autoperf.log" % self.rootdir)
+                                  "%s/autoperf.log" % self.rootdir)
 
         # log formatter
         # formatter = logging.Formatter(fmt="%(asctime)s %(levelname)-7s %(message)s",

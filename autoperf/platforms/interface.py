@@ -1,8 +1,8 @@
 class AbstractPlatform:
-    name       = "Abstract"
+    name = "Abstract"
 
     def __init__(self, experiment):
-        self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
+        self.longname = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
     def setup(self):

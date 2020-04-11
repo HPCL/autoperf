@@ -1,9 +1,8 @@
 import os
-import logging
 import subprocess
 
-from ..utils import config
 from .interface import AbstractQueue
+from ..utils import config
 
 
 class Queue(AbstractQueue):

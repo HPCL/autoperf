@@ -1,19 +1,18 @@
-import os, subprocess
-
 from ..utils import script
 
+
 class AbstractAnalysis:
-    name  = "Abstract"
+    name = "Abstract"
 
     def __init__(self, experiment):
-        self.longname    = "Analyses.%s.%s" % (self.name, experiment.name)
-        self.experiment  = experiment
+        self.longname = "Analyses.%s.%s" % (self.name, experiment.name)
+        self.experiment = experiment
 
         # metrics needed for this analysis
-        self.metrics     = [ ]
+        self.metrics = []
 
         # metric names with possible annotation, e.g. "for hpcrun -e"
-        self.longmetrics = [ ]
+        self.longmetrics = []
 
     def setup(self):
         pass

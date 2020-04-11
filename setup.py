@@ -22,30 +22,30 @@ cur_dir = os.getcwd()
 src_dir = os.path.join(cur_dir, 'autoperf')
 for root, dirs, files in os.walk(src_dir, topdown=True):
     if '__init__.py' in files:
-        rel_dir = root[len(cur_dir)+1:]
+        rel_dir = root[len(cur_dir) + 1:]
         dir_names = rel_dir.split(os.sep)
         py_packages.append('.'.join(dir_names))
 
 # partitioner is a python extension written in c++
-partitioner = Extension(name = 'autoperf.partitioner',
-                        sources = ['ext/partitioner.cpp', 'ext/sqlite3.c'],
-                        language = 'c++',
-                        include_dirs = INCLUDE_DIRS,
-                        library_dirs = LIBRARY_DIRS,
-                        libraries = LIBRARIES,
-                        runtime_library_dirs = LIBRARY_DIRS,
-                        define_macros = DEFINE_MACROS,
-                        extra_compile_args = ['-Wall', '-Wno-write-strings'])
+partitioner = Extension(name='autoperf.partitioner',
+                        sources=['ext/partitioner.cpp', 'ext/sqlite3.c'],
+                        language='c++',
+                        include_dirs=INCLUDE_DIRS,
+                        library_dirs=LIBRARY_DIRS,
+                        libraries=LIBRARIES,
+                        runtime_library_dirs=LIBRARY_DIRS,
+                        define_macros=DEFINE_MACROS,
+                        extra_compile_args=['-Wall', '-Wno-write-strings'])
 
-setup(name = "autoperf",
-    version = "0.2.0",
-    author  = "Boyana Norris",
-    author_email = "brnorris03@gmail.com",
-    packages = py_packages,
-    package_data = {"autoperf.utils": ["scripts/*.sh", "scripts/*.py"],
-        "autoperf.utils.metric_spec": ["*"]},
-    scripts = ["bin/autoperf"],
-    ext_modules = [partitioner],
-    license = "BSD",
-    description = "Automation for experiment, perf and analysis",
-    )
+setup(name="autoperf",
+      version="0.2.0",
+      author="Boyana Norris",
+      author_email="brnorris03@gmail.com",
+      packages=py_packages,
+      package_data={"autoperf.utils": ["scripts/*.sh", "scripts/*.py"],
+                    "autoperf.utils.metric_spec": ["*"]},
+      scripts=["bin/autoperf"],
+      ext_modules=[partitioner],
+      license="BSD",
+      description="Automation for experiment, perf and analysis",
+      )

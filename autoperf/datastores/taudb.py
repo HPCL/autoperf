@@ -1,10 +1,10 @@
-import os
-import logging
 import configparser
+import logging
+import os
 
+from .interface import AbstractDatastore
 from ..utils import config
 from ..utils import script
-from .interface import AbstractDatastore
 
 
 class Datastore(AbstractDatastore):

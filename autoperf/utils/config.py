@@ -1,6 +1,6 @@
+import configparser
 import logging
 import os
-import configparser
 import re
 
 
@@ -21,8 +21,8 @@ class Config:
         """
 
         config_files = ['autoperf.cfg',
-                      '.autoperf.cfg',
-                      os.path.expanduser('~/.autoperf.cfg')]
+                        '.autoperf.cfg',
+                        os.path.expanduser('~/.autoperf.cfg')]
 
         if options and options.cfgfile:
             for filename in options.cfgfile.split(','):
@@ -59,7 +59,7 @@ class Config:
         """
         Strip the comment from the end of the line
         """
-        for c in [';','#']:
+        for c in [';', '#']:
             if line.find(c) > 0:
                 return line.split(c)[0].rstrip()
             else:
@@ -82,7 +82,6 @@ class Config:
         else:
             return self._find(super_section, option)
 
-
     def _unpack_spec(self, spec):
         """
         Unpack 'spec' into '[section, option]' following the section
@@ -98,7 +97,6 @@ class Config:
         else:
             return self._find(section, option)
 
-
     def set(self, spec, value):
 
         section, dot, option = spec.rpartition('.')
@@ -110,7 +108,6 @@ class Config:
         value = val.rstrip()
 
         self.cfg_parser.set(section, option, str(value))
-
 
     def get_section(self, section):
 
@@ -124,7 +121,6 @@ class Config:
             return items
         else:
             return self.get_section(super_section) + items
-
 
     def get(self, spec, default=None, datatype=None):
         """
@@ -161,20 +157,17 @@ class Config:
             else:
                 return default
 
-
     def getint(self, spec, default=None):
         """
         Get an option as an integer.
         """
         return self.get(spec, default, "int")
 
-
     def getfloat(self, spec, default=None):
         """
         Get an option as a float
         """
         return self.get(spec, default, "float")
-
 
     def getboolean(self, spec, default=None):
         """
@@ -208,4 +201,3 @@ class Config:
                 else:
                     newlist.append(exp)
         return newlist
-

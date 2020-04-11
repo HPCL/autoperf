@@ -1,13 +1,12 @@
 import os
-import re
 import subprocess
 
+from .interface import AbstractAnalysis
+from ..utils import config
 from ..utils.PPK import PPK
-from ..utils     import config
-from .interface  import AbstractAnalysis
+
 
 class Analysis(AbstractAnalysis):
-
     # gnuplot script template
     gp_template = """#!/usr/bin/env gnuplot
 
@@ -69,23 +68,23 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
 """
 
     def __init__(self, experiment):
-        self.name       = "compare2"
-        self.longname   = "Analyses.%s.%s" % (self.name, experiment.name)
+        self.name = "compare2"
+        self.longname = "Analyses.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
         self.longmetrics = config.get("%s.metrics" % self.longname, "TIME").split()
-        self.metrics     = [m.partition('@')[0] for m in self.longmetrics]
+        self.metrics = [m.partition('@')[0] for m in self.longmetrics]
 
-        self.mode      = config.get("%s.mode"      % self.longname, "absolute")
-        self.throttle  = config.get("%s.throttle"  % self.longname, 1000)
+        self.mode = config.get("%s.mode" % self.longname, "absolute")
+        self.throttle = config.get("%s.throttle" % self.longname, 1000)
         self.threshold = config.get("%s.threshold" % self.longname, 10)
-        self.base      = config.get("%s.base"      % self.longname)
-        self.hotspots  = config.get("%s.hotspots"  % self.longname, "").split()
+        self.base = config.get("%s.base" % self.longname)
+        self.hotspots = config.get("%s.hotspots" % self.longname, "").split()
 
-        self.throttle  = float(self.throttle)
+        self.throttle = float(self.throttle)
 
     def setup(self):
-        self.aName     = config.get("%s.instance"  % self.longname, "last")
+        self.aName = config.get("%s.instance" % self.longname, "last")
 
         instances = self.experiment.get_all_instance(self.base)
         if len(instances) == 0:
@@ -105,10 +104,10 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
 
         events = list(set(aEvents) | set(bEvents))
 
-        aData   = { }
-        bData   = { }
-        absDiff = { }
-        relDiff = { }
+        aData = {}
+        bData = {}
+        absDiff = {}
+        relDiff = {}
 
         for event in events:
             aData[event] = self.aPPK.getAggExcMean(event, metric)
@@ -132,8 +131,8 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         def throttle_filter(item):
             event = item[0]
             return (aData[event] >= self.throttle) and (bData[event] >= self.throttle)
-        diff = list(filter(throttle_filter, diff))
 
+        diff = list(filter(throttle_filter, diff))
 
         # apply the threshold
         diff.sort(key=lambda item: -item[1])
@@ -145,7 +144,7 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         f = open("compare.%s.dat" % metric, "w")
         f.write(fmtstr.format(self.aName, self.bName, "EventName"))
         for event in events:
-            maxLen = max(maxLen, len(event)-2)
+            maxLen = max(maxLen, len(event) - 2)
             f.write(fmtstr.format(aData[event], bData[event], event))
         f.close()
 
@@ -158,8 +157,8 @@ plot 'compare.{metric}.dat' using 1:xticlabels(3) title columnhead ls 1, \\
         subprocess.call(["gnuplot", "%s.gp" % metric])
 
     def run(self):
-        self.bName  = self.experiment.insname
-        self.bDir   = os.path.join(os.getcwd(), self.bName)
+        self.bName = self.experiment.insname
+        self.bDir = os.path.join(os.getcwd(), self.bName)
 
         self.aPPK = PPK("%s/data.ppk" % self.aDir, self.hotspots)
         self.bPPK = PPK("%s/data.ppk" % self.bDir, self.hotspots)
