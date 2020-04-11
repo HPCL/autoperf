@@ -1,5 +1,6 @@
 import pytest
-from ..autoperf.utils.config import Config
+from .config import Config
+
 
 def load_default_config(): 
     config = Config()
