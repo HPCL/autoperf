@@ -130,8 +130,8 @@ class MathExp:
                     # ... and either o1 is left-associative and its
                     # precedence is less than or equal to that of o2,
                     # or o1 has precedence less than that of o2
-                    if ((self.operators[o1][1] == MathExp.LR) and 
-                        (self.operators[o1][0] <= self.operators[o2][0])) or 
+                    if ((self.operators[o1][1] == MathExp.LR) and \
+                        (self.operators[o1][0] <= self.operators[o2][0])) or \
                             (self.operators[o1][0] < self.operators[o2][0]):
                         # pop o2 of the stack, onto the ouput queue
                         self.rpn.append(self.opstack.pop())
@@ -148,7 +148,7 @@ class MathExp:
 
             # if the token is a right parenthesis
             elif token[0] == MathExp.RP:
-                get_lp = False
+                get_lp = False;
                 while len(self.opstack) > 0:
                     # until the token at the top of the stack is a
                     # left parenthesis, pop operators off the stack on
@@ -198,14 +198,14 @@ class MathExp:
         if token == ',':
             return MathExp.COMMA
 
-        if token in list(self.operators.keys()):
+        if token in self.operators.keys():
             return MathExp.OP
 
-        if token in list(self.functions.keys()):
+        if token in self.functions.keys():
             return MathExp.FUNC
 
         try:
-            float(token)
+            val = float(token)
         except ValueError:
             return MathExp.VAR
         else:
@@ -241,7 +241,7 @@ class MathExp:
         if token[0] == MathExp.NUM:
             return float(token[1])
         elif token[0] == MathExp.VAR:
-            if token[1] in list(symtab.keys()):
+            if token[1] in symtab.keys():
                 return symtab[token[1]]
             else:
                 raise UnresolvedSymbolError(token[1])
@@ -262,7 +262,7 @@ class MathExp:
             argv.insert(0, stack.pop())
 
         # resolve argv[0]
-        if op == '=':
+        if op is '=':
             # special treatment for op=
             if argv[0][0] != MathExp.VAR:
                 raise Exception("Syntax error")
@@ -278,14 +278,14 @@ class MathExp:
 
         # FIXME: avoid divide-by-zero exception. Should we do it here?
         # Or should we even do it?
-        if op == '/' and argv[1] == 0:
+        if op is '/' and argv[1] == 0:
             argv[1] = 1
 
         # apply the operation and update the stack
         stack.append((MathExp.NUM, oper(*argv)))
 
         # update symbal table for op=
-        if op == '=':
+        if op is '=':
             symtab[argv[0]] = argv[1]
 
     def apply_function(self, symtab, stack, f):
@@ -346,7 +346,7 @@ if __name__ == '__main__':
                 continue
 
             # ignore comments
-            if line[0] == '#':
+            if line[0] is '#':
                 continue
 
             print(line)
