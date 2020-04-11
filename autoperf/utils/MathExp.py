@@ -130,8 +130,8 @@ class MathExp:
                     # ... and either o1 is left-associative and its
                     # precedence is less than or equal to that of o2,
                     # or o1 has precedence less than that of o2
-                    if ((self.operators[o1][1] == MathExp.LR) and \
-                        (self.operators[o1][0] <= self.operators[o2][0])) or \
+                    if ((self.operators[o1][1] == MathExp.LR) and 
+                        (self.operators[o1][0] <= self.operators[o2][0])) or 
                             (self.operators[o1][0] < self.operators[o2][0]):
                         # pop o2 of the stack, onto the ouput queue
                         self.rpn.append(self.opstack.pop())
@@ -148,7 +148,7 @@ class MathExp:
 
             # if the token is a right parenthesis
             elif token[0] == MathExp.RP:
-                get_lp = False;
+                get_lp = False
                 while len(self.opstack) > 0:
                     # until the token at the top of the stack is a
                     # left parenthesis, pop operators off the stack on
@@ -205,7 +205,7 @@ class MathExp:
             return MathExp.FUNC
 
         try:
-            val = float(token)
+            float(token)
         except ValueError:
             return MathExp.VAR
         else:
