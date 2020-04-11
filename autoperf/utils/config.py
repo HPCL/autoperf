@@ -1,12 +1,14 @@
-import sys
+import logging
 import os
 import configparser
-import logging
+import re
+
 
 class Config:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.cfg_parser = configparser.ConfigParser()
+        self.exp_code_re = re.compile(r'^\s*([\w_]+){(.*)}$')
 
     def parse(self, options=None):
         """
@@ -24,7 +26,7 @@ class Config:
 
         if options and options.cfgfile:
             for filename in options.cfgfile.split(','):
-                if os.path.exists(fileame):
+                if os.path.exists(filename):
                     config_files += filename
                 else:
                     raise IOError("Configuration file %s does not exist." % filename)
@@ -112,7 +114,7 @@ class Config:
 
     def get_section(self, section):
 
-        if self.has_section(section):
+        if self.cfg_parser.has_section(section):
             items = self.cfg_parser.items(section)
         else:
             items = []
@@ -121,7 +123,7 @@ class Config:
         if super_section is '':
             return items
         else:
-            return get_section(super_section) + items
+            return self.get_section(super_section) + items
 
 
     def get(self, spec, default=None, datatype=None):
@@ -160,51 +162,45 @@ class Config:
                 return default
 
 
-    def getint(spec, default=None):
+    def getint(self, spec, default=None):
         """
         Get an option as an integer.
         """
-        return get(spec, default, "int")
+        return self.get(spec, default, "int")
 
 
-    def getfloat(spec, default=None):
+    def getfloat(self, spec, default=None):
         """
         Get an option as a float
         """
-        return get(spec, default, "float")
+        return self.get(spec, default, "float")
 
 
-    def getboolean(spec, default=None):
+    def getboolean(self, spec, default=None):
         """
         Get an option as a boolean
         """
-        return get(spec, default, "boolean")
+        return self.get(spec, default, "boolean")
 
-
-    import re
-
-    exp_code_re = re.compile(r'^\s*([\w_]+){(.*)}$')
-
-
-    def get_list(secname):
+    def get_list(self, secname):
         """
         Generate the experiment names
         """
-        exp_strings = get(secname).split()
+        exp_strings = self.get(secname).split()
         newlist = []
         for exp in exp_strings:
             if exp.find('{') < 0:
                 newlist.append(exp)
                 continue
-            m = exp_code_re.match(exp)
+            m = self.exp_code_re.match(exp)
             if m:
                 try:
                     exec(m.group(2))
                 except:
                     raise configparser.Error("Invalid expression in experiment list: %s" % m.group(2))
             else:
-                if 'threads' in list(locals().keys()) and isinstance(threads, list):
-                    for t in threads:
+                if 'threads' in list(locals().keys()):
+                    for t in locals().get('threads'):
                         name = m.group(1) + '.' + str(t)
                         newlist.append(name)
                         # print ("set: Experiments.%s.threads" % name, t)

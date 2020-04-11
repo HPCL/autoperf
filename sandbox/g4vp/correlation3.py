@@ -1,17 +1,17 @@
 import os
-import numpy as np
 
 import matplotlib
+import numpy as np
+
 # get rid of "no display name" error
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from itertools import product
 from math import isnan, isinf
 
-from ..utils.PPK import PPK
-from ..utils     import config
-from .interface  import AbstractAnalysis
+from autoperf.utils.PPK import PPK
+from autoperf.utils  import config
+from autoperf.analyses.interface  import AbstractAnalysis
 
 class Analysis(AbstractAnalysis):
     """Correlation between different metrics for several experiments"""

@@ -1,16 +1,13 @@
-import re
 import sys
 import gzip
+import sys
+from itertools import product
+from struct import *
+
 import numpy as np
 
-import subprocess
+from .metadata import *
 
-from struct    import *
-from itertools import product
-
-from .MathExp   import MathExp
-from .MetricSet import MetricSet
-from .metadata  import *
 
 class _Error(Exception):
     """Base class for exceptions in this module"""
@@ -367,7 +364,7 @@ class Profile:
         elif flavor == PPK.INCLUSIVE:
             return self.inclusive[metric]
         else:
-            raise Error("Invalid parameter")
+            raise RuntimeError("Invalid parameter")
 
     def updateDerivedMetric(self, ms, meta):
         """
