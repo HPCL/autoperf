@@ -1,5 +1,4 @@
-PAPI    = $(HOME)/prefix/papi
-#CUDA    = /usr/local/packages/cuda/6.5
+# PAPI and CUDA variables are assumed in the environment
 
 #export TAU_MAKEFILE=$(TAU_ROOT)/x86_64/lib/Makefile.tau-papi-mpi-pdt
 #CXX     = tau_cxx.sh
@@ -9,7 +8,7 @@ CXX      = g++
 CPPFLAGS = -I$(PAPI)/include
 CXXFLAGS = -Wall -Wno-write-strings -g
 LDFLAGS  = -L$(PAPI)/lib -Wl,-rpath=$(PAPI)/lib -lpthread -ldl
-LDLIBS   = -lpapi
+LDLIBS   = -lpapi 
 
 ifdef CUDA
 CPPFLAGS += -DWITH_CUPTI -I$(CUDA)/include -I$(CUDA)/extras/CUPTI/include
@@ -43,13 +42,13 @@ METRICS = $(PAPI_METRICS) $(CUDA_METRICS) $(MISC_METRICS)
 all: $(TARGETS)
 
 partitioner: sqlite3.o partitioner.o
-	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(CXX) -o $@ $^ $(LDFLAGS) $(LDLIBS) 
 
 partitioner.o: partitioner.cpp
-	$(CXX) $^ $(CPPFLAGS) $(CXXFLAGS) -c
+	$(CXX) -c $^ $(CPPFLAGS) $(CXXFLAGS) 
 
 sqlite3.o: sqlite3.c
-	$(CC) sqlite3.c -lpthread -ldl -c
+	$(CC) -c sqlite3.c 
 
 libgprof-helper.so: gprof-helper.c
 	$(CC) -shared -fPIC $< -o $@ -lpthread -ldl
