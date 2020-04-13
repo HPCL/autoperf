@@ -22,7 +22,7 @@ var ElementBlock = function(name) {
     this.div      = $("<div class="+name+"></div>");
 
     this.div.data("-data-", this);
-}
+};
 
 ElementBlock.prototype.adopt = function(block) {
     if (block.parent != null) {
@@ -33,7 +33,7 @@ ElementBlock.prototype.adopt = function(block) {
     block.parent = this;
 
     return this;
-}
+};
 
 ElementBlock.prototype.unadopt = function(block) {
     var i = this.children.indexOf(block);
@@ -43,13 +43,13 @@ ElementBlock.prototype.unadopt = function(block) {
     }
 
     return this;
-}
+};
 
 ElementBlock.prototype.appendTo = function(sel) {
     this.div.hide().appendTo($(sel)).fadeIn(200);
 
     return this;
-}
+};
 
 ElementBlock.prototype.detach = function(sel) {
     this.children.forEach(function(child) {
@@ -58,7 +58,7 @@ ElementBlock.prototype.detach = function(sel) {
 
     this.div.detach();
     return this;
-}
+};
 
 ElementBlock.prototype.fill = function(sel) {
     var block = $(sel).find("."+this.name).data("-data-");
@@ -68,17 +68,17 @@ ElementBlock.prototype.fill = function(sel) {
 
     this.appendTo(sel);
     return this;
-}
+};
 
 ElementBlock.prototype.show = function(speed) {
     this.div.show(speed);
     return this;
-}
+};
 
 ElementBlock.prototype.hide = function(speed) {
     this.div.hide(speed);
     return this;
-}
+};
 
 
 
@@ -185,7 +185,7 @@ var OptionList = function(name, data, cb_click) {
 
     this.ul = ul;
     this.ul.data("OptionList", this);
-}
+};
 
 OptionList.prototype.set_default = function(optionList, dataArray) {
 	
@@ -205,12 +205,12 @@ OptionList.prototype.set_default = function(optionList, dataArray) {
         optionList.active = dataArray[ind];
 	    optionList.cb_click(optionList);
     }
-}
+};
 
 OptionList.prototype.adopt = function(optionList) {
     this.children.push(optionList);
     optionList.parent = this;
-}
+};
 
 OptionList.prototype.unadopt = function(optionList) {
     var i = this.children.indexOf(optionList);
@@ -218,14 +218,14 @@ OptionList.prototype.unadopt = function(optionList) {
 	this.children.splice(i, 1);
 	optionList.parent = undefined;
     }
-}
+};
 
 OptionList.prototype.appendTo = function(sel) {
     this.head.hide().appendTo($(sel)).fadeIn(100);
     this.ul.hide().appendTo($(sel)).fadeIn(100);
 
     return this.ul;
-}
+};
 
 OptionList.prototype.fill = function(sel) {
     var optionList = $(sel).find(".OptionList").data("OptionList");
@@ -233,7 +233,7 @@ OptionList.prototype.fill = function(sel) {
 	optionList.detach();
     }
     this.appendTo(sel);
-}
+};
 
 OptionList.prototype.detach = function() {
     this.children.forEach(function(child) {
@@ -242,21 +242,21 @@ OptionList.prototype.detach = function() {
     this.head.detach();
     this.ul.detach();
     return this.ul;
-}
+};
 
 OptionList.prototype.setActive = function(id) {
     this.active = id;
-}
+};
 
 OptionList.prototype.show = function(speed) {
     this.ul.show(speed);
     return this.ul;
-}
+};
 
 OptionList.prototype.hide = function(speed) {
     this.ul.hide(speed);
     return this.ul;
-}
+};
 
 // var OptionCategory = function(name) {
 //     this.name = name;
@@ -399,7 +399,7 @@ function update_dbinfo(hostname, dbname, dbuser) {
 
 function cb_get_applications(json) {
     var app;
-    var data = new Array;
+    var data = [];
 
     $.each(json, function(index, value) {
 	data.push(
@@ -432,7 +432,7 @@ function cb_get_applications(json) {
 
 function cb_get_trials(json) {
     var trial;
-    var data = new Array;
+    var data = [];
     var app = $("div#application .OptionList").data("OptionList");
 
     $.each(json, function(index, value) {
@@ -462,7 +462,7 @@ function cb_get_trials(json) {
 
 function cb_get_metrics(json) {
     var metric;
-    var data = new Array;
+    var data = [];
     var trial = $("div#trial .OptionList").data("OptionList");
 
     $.each(json, function(index, value) {
@@ -491,7 +491,7 @@ function cb_get_metrics(json) {
 
 function cb_get_threads(json) {
     var thread;
-    var data = new Array;
+    var data = [];
     var trial = $("div#trial .OptionList").data("OptionList");
 
     $.each(json, function(index, value) {
@@ -549,7 +549,7 @@ function cb_get_metadata(json) {
 }
 
 function cb_get_timers(json) {
-    var data = new Array;
+    var data = [];
     var metric = $("div#metric .OptionList").data("OptionList");
     var thread = $("div#thread .OptionList").data("OptionList");
 
@@ -597,7 +597,7 @@ function cb_get_timers(json) {
 }
 
 function timer_append(json) {
-    var timers = $("div#timer table")
+    var timers = $("div#timer table");
     $.each(json, function(index, entry) {
 	timers.append("<tr><td width='200px'>"+entry.short_name+"</td><td>"
 		      +entry.exclusive_value.toPrecision(5)+"</td><td>"
@@ -728,7 +728,7 @@ var PieChart = function(name, metric, thread, data) {
     });
 
     this.update();
-}
+};
 
 PieChart.prototype = Object.create(ElementBlock.prototype);
 
@@ -778,7 +778,7 @@ PieChart.prototype.update = function() {
     if (others.length != 0) {
 	this.div.find("path:last").attr("class", "other");
     }
-}
+};
 
 PieChart.prototype.append_data = function(json) {
     $.each(json, function(index, entry) {
@@ -790,7 +790,7 @@ PieChart.prototype.append_data = function(json) {
     this.data.push.apply(this.data, json);
 
     this.update();
-}
+};
 
 
 /////////////////////// BubbleChart //////////////////////
@@ -837,7 +837,7 @@ var BubbleChart = function(name, metric, thread, data, cb_get_new_data, cb_get_v
     });
 
     this.update();
-}
+};
 
 BubbleChart.prototype = Object.create(ElementBlock.prototype); 
 
@@ -888,7 +888,7 @@ BubbleChart.prototype.update = function() {
 	this.div.find("circle:last").attr("class", "other");
     }
 
-}
+};
 
 BubbleChart.prototype.append_data = function(json) {
     $.each(json, function(index, entry) {
@@ -900,4 +900,4 @@ BubbleChart.prototype.append_data = function(json) {
     this.data.push.apply(this.data, json);
 
     this.update();
-}
+};

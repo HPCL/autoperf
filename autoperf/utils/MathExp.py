@@ -1,9 +1,11 @@
-import sys
 import math
+import sys
+
 
 class _Error(Exception):
     """Base class for exceptions in this module"""
     pass
+
 
 class UnresolvedSymbolError(_Error):
     def __init__(self, symbol):
@@ -12,13 +14,14 @@ class UnresolvedSymbolError(_Error):
     def __str__(self):
         return "Unresolved symbol: `%s`" % self.symbol
 
+
 class MathExp:
     # token types
-    OP  = 0
+    OP = 0
     VAR = 1
     NUM = 2
-    LP  = 3
-    RP  = 4
+    LP = 3
+    RP = 4
     FUNC = 5
     COMMA = 6
 
@@ -30,31 +33,31 @@ class MathExp:
 
     operators = {
         # (precedence, associativity, argc, op)
-        '=': (0, RL, 2, lambda a,b: b),
-        '+': (1, LR, 2, lambda a,b: a+b),
-        '-': (1, LR, 2, lambda a,b: a-b),
-        '*': (2, LR, 2, lambda a,b: a*b),
-        '/': (2, LR, 2, lambda a,b: a/b),
-        '%': (2, LR, 2, lambda a,b: a%b),
-        '^': (3, RL, 2, lambda a,b: pow(a,b)),
+        '=': (0, RL, 2, lambda a, b: b),
+        '+': (1, LR, 2, lambda a, b: a + b),
+        '-': (1, LR, 2, lambda a, b: a - b),
+        '*': (2, LR, 2, lambda a, b: a * b),
+        '/': (2, LR, 2, lambda a, b: a / b),
+        '%': (2, LR, 2, lambda a, b: a % b),
+        '^': (3, RL, 2, lambda a, b: pow(a, b)),
     }
 
     functions = {
         # (argc, op)
-        'abs'  : (1, lambda a:    abs(a)),
-        'min'  : (2, lambda a, b: min(a, b)),
-        'max'  : (2, lambda a, b: max(a, b)),
-        'pow'  : (2, lambda a, b: math.pow(a, b)),
-        'exp'  : (1, lambda a:    math.exp(a)),
-        'log'  : (2, lambda a, b: math.log(a, b)),
-        'log10': (1, lambda a:    math.log10(a)),
-        'sqrt' : (1, lambda a:    math.sqrt(a)),
-        'acos' : (1, lambda a:    math.acos(a)),
-        'asin' : (1, lambda a:    math.asin(a)),
-        'atan' : (1, lambda a:    math.atan(a)),
-        'cos'  : (1, lambda a:    math.cos(a)),
-        'sin'  : (1, lambda a:    math.sin(a)),
-        'tan'  : (1, lambda a:    math.tan(a)),
+        'abs': (1, lambda a: abs(a)),
+        'min': (2, lambda a, b: min(a, b)),
+        'max': (2, lambda a, b: max(a, b)),
+        'pow': (2, lambda a, b: math.pow(a, b)),
+        'exp': (1, lambda a: math.exp(a)),
+        'log': (2, lambda a, b: math.log(a, b)),
+        'log10': (1, lambda a: math.log10(a)),
+        'sqrt': (1, lambda a: math.sqrt(a)),
+        'acos': (1, lambda a: math.acos(a)),
+        'asin': (1, lambda a: math.asin(a)),
+        'atan': (1, lambda a: math.atan(a)),
+        'cos': (1, lambda a: math.cos(a)),
+        'sin': (1, lambda a: math.sin(a)),
+        'tan': (1, lambda a: math.tan(a)),
     }
 
     def __init__(self, exp):
@@ -66,13 +69,13 @@ class MathExp:
         """
 
         # infix notation math exp
-        self.exp       = exp.strip()
+        self.exp = exp.strip()
 
         # operator stack
-        self.opstack   = [ ]
+        self.opstack = []
 
         # output queue
-        self.rpn       = [ ]
+        self.rpn = []
 
         # variable symbol table
         self.variables = set()
@@ -121,15 +124,15 @@ class MathExp:
                 # while there is an operator token, o2, at the top of
                 # the operator stack ...
                 while (len(self.opstack) > 0) and \
-                      (self.opstack[-1][0] == MathExp.OP):
+                        (self.opstack[-1][0] == MathExp.OP):
                     o2 = self.opstack[-1][1]
 
                     # ... and either o1 is left-associative and its
                     # precedence is less than or equal to that of o2,
                     # or o1 has precedence less than that of o2
-                    if ((self.operators[o1][1] == MathExp.LR) and            \
+                    if ((self.operators[o1][1] == MathExp.LR) and \
                         (self.operators[o1][0] <= self.operators[o2][0])) or \
-                       (self.operators[o1][0] < self.operators[o2][0]):
+                            (self.operators[o1][0] < self.operators[o2][0]):
                         # pop o2 of the stack, onto the ouput queue
                         self.rpn.append(self.opstack.pop())
                     else:
@@ -167,7 +170,7 @@ class MathExp:
                 # if the token at the top of the stack is a function
                 # token, pop it onto the ouput queue
                 if (len(self.opstack) > 0) and \
-                   (self.opstack[-1][0] == MathExp.FUNC):
+                        (self.opstack[-1][0] == MathExp.FUNC):
                     self.rpn.append(self.opstack.pop())
 
         # when there are no more tokens to read
@@ -176,7 +179,7 @@ class MathExp:
             # if the operator token on the top of the stack is a
             # parenthesis, then there are mismatched parentheses
             if (self.opstack[-1][0] == MathExp.LP) or \
-               (self.opstack[-1][0] == MathExp.RP):
+                    (self.opstack[-1][0] == MathExp.RP):
                 raise Exception("Mispatched parentheses")
 
             # pop the operator onto the ouput queue
@@ -195,10 +198,10 @@ class MathExp:
         if token == ',':
             return MathExp.COMMA
 
-        if token in list(self.operators.keys()):
+        if token in self.operators.keys():
             return MathExp.OP
 
-        if token in list(self.functions.keys()):
+        if token in self.functions.keys():
             return MathExp.FUNC
 
         try:
@@ -238,7 +241,7 @@ class MathExp:
         if token[0] == MathExp.NUM:
             return float(token[1])
         elif token[0] == MathExp.VAR:
-            if token[1] in list(symtab.keys()):
+            if token[1] in symtab.keys():
                 return symtab[token[1]]
             else:
                 raise UnresolvedSymbolError(token[1])
@@ -246,7 +249,7 @@ class MathExp:
             raise Exception("Fatal error: bug encountered")
 
     def apply_operator(self, symtab, stack, op):
-        argv = [ ]
+        argv = []
         argc = MathExp.operators[op][2]
         oper = MathExp.operators[op][3]
 
@@ -259,7 +262,7 @@ class MathExp:
             argv.insert(0, stack.pop())
 
         # resolve argv[0]
-        if op is '=':
+        if op == '=':
             # special treatment for op=
             if argv[0][0] != MathExp.VAR:
                 raise Exception("Syntax error")
@@ -275,18 +278,18 @@ class MathExp:
 
         # FIXME: avoid divide-by-zero exception. Should we do it here?
         # Or should we even do it?
-        if op is '/' and argv[1] == 0:
+        if op == '/' and argv[1] == 0:
             argv[1] = 1
 
         # apply the operation and update the stack
         stack.append((MathExp.NUM, oper(*argv)))
 
         # update symbal table for op=
-        if op is '=':
+        if op == '=':
             symtab[argv[0]] = argv[1]
 
     def apply_function(self, symtab, stack, f):
-        argv = [ ]
+        argv = []
         argc = MathExp.functions[f][0]
         func = MathExp.functions[f][1]
 
@@ -306,7 +309,7 @@ class MathExp:
 
         See http://en.wikipedia.org/wiki/Reverse_Polish_notation
         """
-        eval_stack = [ ]
+        eval_stack = []
 
         for token in self.rpn:
             if token[0] == MathExp.NUM:
@@ -326,9 +329,10 @@ class MathExp:
         else:
             raise Exception('Syntax error')
 
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print ("Usage: python MathExp.py <input_file>")
+        print("Usage: python MathExp.py <input_file>")
         exit(1)
 
     symtab = {'pi': math.pi, 'e': math.e}
@@ -342,11 +346,11 @@ if __name__ == '__main__':
                 continue
 
             # ignore comments
-            if line[0] is '#':
+            if line[0] == '#':
                 continue
 
-            print (line)
+            print(line)
             exp = MathExp(line)
             rv = exp.eval(symtab)
 
-    print ("rv = %f" % rv)
+    print("rv = %f" % rv)

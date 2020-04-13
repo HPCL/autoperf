@@ -2,7 +2,7 @@ class AbstractDatastore:
     name = "Abstract"
 
     def __init__(self, experiment):
-        self.longname   = "Analyses.%s.%s" % (self.name, experiment.name)
+        self.longname = "Analyses.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
     def setup(self):

@@ -2,9 +2,9 @@
 #include <Python.h>
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 #include <strings.h>
 
 #include <new>
@@ -15,6 +15,7 @@
 #include <algorithm>
 
 #include <papi.h>
+
 #include "sqlite3.h"
 
 #ifdef WITH_CUPTI
@@ -432,10 +433,6 @@ cuda_partitioner(const char *dbfile, vector<string> &events,
 #define MAX_LEN_62   128	// max length of 62 based number we
 				// are going to use
 
-extern int _papi_hwi_errno;
-
-#define PAPI_STRERROR() (PAPI_strerror(_papi_hwi_errno))
-
 static sqlite3 *db;
 static vector<PAPI_event_info_t> papi_avail_counters;
 
@@ -494,14 +491,14 @@ papi_get_avail_counters(vector<PAPI_event_info_t> &counters)
 
     rv = PAPI_enum_event(&event_code, PAPI_ENUM_FIRST);
     if (rv != PAPI_OK) {
-	report_error("PAPI_enum_event", PAPI_STRERROR(), XSTR(__LINE__));
+	report_error("PAPI_enum_event", PAPI_strerror(rv), XSTR(__LINE__));
 	return rv;
     }
 
     do {
 	rv = PAPI_get_event_info(event_code, &info);
 	if (rv != PAPI_OK) {
-	    report_error("PAPI_get_event_info", PAPI_STRERROR(), XSTR(__LINE__));
+	    report_error("PAPI_get_event_info", PAPI_strerror(rv), XSTR(__LINE__));
 	    return rv;
 	}
 
@@ -543,7 +540,7 @@ _papi_greedy_partition(vector<string> &events)
 
 	    rv = PAPI_create_eventset(&set);
 	    if (rv != PAPI_OK) {
-		report_error("PAPI_create_eventset", PAPI_STRERROR(), XSTR(__LINE__));
+		report_error("PAPI_create_eventset", PAPI_strerror(rv), XSTR(__LINE__));
 		goto bail;
 	    }
 
@@ -553,7 +550,7 @@ _papi_greedy_partition(vector<string> &events)
 		parts->push_back(events[i]);
 	    } else {
 		/* this should not happen */
-		report_error("PAPI_add_event", PAPI_STRERROR(), XSTR(__LINE__));
+		report_error("PAPI_add_event", PAPI_strerror(rv), XSTR(__LINE__));
 		goto bail;
 	    }
 	}
@@ -563,13 +560,13 @@ _papi_greedy_partition(vector<string> &events)
     for (i=0; i<event_sets.size(); i++) {
 	rv = PAPI_cleanup_eventset(event_sets[i]);
 	if (rv != PAPI_OK) {
-	    report_error("PAPI_cleanup_eventset", PAPI_STRERROR(), XSTR(__LINE__));
+	    report_error("PAPI_cleanup_eventset", PAPI_strerror(rv), XSTR(__LINE__));
 	    goto bail;
 	}
 
 	rv =PAPI_destroy_eventset(&event_sets[i]);
 	if (rv != PAPI_OK) {
-	    report_error("PAPI_destroy_eventset", PAPI_STRERROR(), XSTR(__LINE__));
+	    report_error("PAPI_destroy_eventset", PAPI_strerror(rv), XSTR(__LINE__));
 	    goto bail;
 	}
     }
@@ -970,7 +967,7 @@ main(int argc, char **argv)
     rv = PAPI_library_init(PAPI_VER_CURRENT);
     if (rv != PAPI_VER_CURRENT) {
 	// printf("PAPI_VER_CURRENT = %x\n", PAPI_VER_CURRENT);
-	report_error("PAPI_library_init", PAPI_STRERROR(), XSTR(__LINE__));
+	report_error("PAPI_library_init", PAPI_strerror(rv), XSTR(__LINE__));
 	return -1;
     }
 

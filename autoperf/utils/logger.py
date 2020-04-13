@@ -1,10 +1,11 @@
 from logging import Logger
 
+
 class MyLogger(Logger):
-    VERB    = 15
+    VERB = 15
     VERBOSE = 15
 
-    CMD     = 12
+    CMD = 12
     COMMAND = 12
 
     indent = ""

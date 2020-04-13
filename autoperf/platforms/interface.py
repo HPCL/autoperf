@@ -1,8 +1,8 @@
 class AbstractPlatform:
-    name       = "Abstract"
+    name = "Abstract"
 
     def __init__(self, experiment):
-        self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
+        self.longname = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
     def setup(self):
@@ -30,7 +30,7 @@ class AbstractPlatform:
 
         Args:
           execmd (string): the command going to run
-          exeopt (string): the cmdline option for `execmd`
+          exeopt (string): the cmdline option for `exe_cmd`
           block  (bool)  : block until application exit?
 
         Returns:

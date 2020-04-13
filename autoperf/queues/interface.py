@@ -1,9 +1,6 @@
-import os
-import re
-
 class AbstractQueue:
-    name       = "Abstract"
-    longname   = "Abstract"
+    name = "Abstract"
+    longname = "Abstract"
     experiment = None
 
     def get_status(self, idstr):
@@ -22,5 +19,5 @@ class AbstractQueue:
     def submit(self, cmd, block=False):
         raise NotImplementedError
 
-    def wrap_command(self, execmd, exeopt):
-        return [execmd, exeopt]
+    def wrap_command(self, execmd, exeopt) -> (str,str):
+        return (execmd, exeopt)

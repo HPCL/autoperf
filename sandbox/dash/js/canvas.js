@@ -16,7 +16,7 @@ function canvas_init() {
 
     // kick start
     Canvas.model.fetch();
-};
+}
 
 /////////////////////
 //
@@ -1190,7 +1190,7 @@ Canvas.drawDonut = function(sel, model, attri){
 			      });
 
 
-}
+};
 
 /////////////////////////
 //
@@ -1412,7 +1412,7 @@ Canvas.WidgetModel = Backbone.Model.extend({
 		self.trigger("widget:metrics");
 
 		if (self.get("valid")) {
-		    return;
+
 		}
 
 		/*
@@ -1433,7 +1433,7 @@ Canvas.WidgetModel = Backbone.Model.extend({
 		self.trigger("widget:threads");
 
 		if (self.get("valid")) {
-		    return;
+
 		}
 
 		/*

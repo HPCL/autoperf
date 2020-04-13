@@ -1,17 +1,15 @@
-import os
 import logging
-import subprocess
-import configparser
+import os
 
-from ..utils import config
-from .interface  import *
+from .interface import *
+
 
 class Tool(AbstractTool):
     def __init__(self, experiment):
-        self.name        = "hpctoolkit"
-        self.longname    = "Tool.hpctoolkit.%s" % experiment.name
-        self.experiment  = experiment
-        self.logger      = logging.getLogger(__name__)
+        self.name = "hpctoolkit"
+        self.longname = "Tool.hpctoolkit.%s" % experiment.name
+        self.experiment = experiment
+        self.logger = logging.getLogger(__name__)
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -20,10 +18,10 @@ class Tool(AbstractTool):
     def build_env(self):
         return dict()
 
-    def setup_str(self):
+    def setup_str(self) -> str:
         return ""
 
-    def wrap_command(self, execmd, exeopt):
+    def wrap_command(self, exe_cmd, exe_opt) -> (str,str):
         datadir = self.experiment.datadirs[self.experiment.iteration]
         metrics = self.experiment.parted_metrics[self.experiment.iteration]
 
@@ -33,16 +31,16 @@ class Tool(AbstractTool):
         for metric in metrics.split(':'):
             _execmd += " -e %s@%s" % (metric, self.experiment.metric_set.interval[metric])
 
-        _execmd += " %s" % execmd
+        _execmd += " %s" % exe_cmd
 
-        return [_execmd, exeopt]
+        return (_execmd, exe_opt)
 
     def aggregate(self):
         """
         Aggregate data collected by all iterations of the current
         experiment. We assume that iterations have all been finished.
         """
-        execmd = config.get("%s.execmd" % self.experiment.longname)
+        execmd = config.get("%s.exe_cmd" % self.experiment.longname)
         execmd = os.path.expanduser(execmd)
         exebin = os.path.basename(execmd)
         appsrc = config.get("%s.appsrc" % self.longname)
@@ -61,17 +59,17 @@ class Tool(AbstractTool):
         # aggregate HPCToolkit collected data:
         for datadir in self.experiment.datadirs:
             measurement = "%s/measurement" % datadir
-            database    = "%s/database"    % datadir
+            database = "%s/database" % datadir
 
             # 1. convert to ppk (paraprof -f hpc --pack)
-            cmd =["hpcprof",
-                  "-o",
-                  database,
-                  "-S",
-                  hpcstruct,
-                  "-I",
-                  "%s/'*'" % appsrc,
-                  measurement]
+            cmd = ["hpcprof",
+                   "-o",
+                   database,
+                   "-S",
+                   hpcstruct,
+                   "-I",
+                   "%s/'*'" % appsrc,
+                   measurement]
             self.logger.info("HPCToolkit: run hpcprof")
             self.logger.cmd(' '.join(cmd))
             subprocess.call(cmd)
@@ -109,8 +107,8 @@ class Tool(AbstractTool):
 
             # 3. aggregate tau profiles
             for metric in os.listdir("%s/profiles" % datadir):
-                target    = os.path.relpath("%s/profiles/%s" % (datadir, metric),
-                                            "%s/profiles"    % self.experiment.insname)
+                target = os.path.relpath("%s/profiles/%s" % (datadir, metric),
+                                         "%s/profiles" % self.experiment.insname)
                 link_name = "%s/profiles/%s" % (self.experiment.insname, metric)
 
                 self.logger.cmd("ln -s %s %s", target, link_name)

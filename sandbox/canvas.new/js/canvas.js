@@ -16,7 +16,7 @@ function canvas_init() {
 
     // kick start
     Canvas.model.fetch();
-};
+}
 
 /////////////////////
 //

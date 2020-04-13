@@ -1,25 +1,28 @@
+import configparser
+import datetime
+import errno
+import logging
 import os
 import re
-import logging
-import datetime
+import shlex
+import shutil
 import subprocess
-import shutil, shlex, errno
-import configparser
-
 from importlib import import_module
 
-from .                import logger as rootLogger
-from .utils           import config
-from .utils.logger    import MyLogger
+from . import logger as rootLogger
+from .utils import logger
 from .utils.MetricSet import MetricSet
+from .utils.config import Config
+
 
 class Experiment:
-    platform  = None
-    tool      = None
-    datastore = None
-    analyses  = None
+    """
+    Performance experiment definition. The minimal configuration is using TAU,
+    which will be built on demand, with just time as the metric and local
+    datastore.
+    """
 
-    def __init__(self, name, insname=None):
+    def __init__(self, config: Config, name, insname='None'):
         """
         Instantiating an experiment. Do the first step of the
         initialization. If `insname` is not given, it will take
@@ -29,44 +32,56 @@ class Experiment:
           name    (string): The name of this experiment
           insname (string): The instance ID of this experiment
         """
-        experiments = config.get_list("Main.Experiments")
+
+        # Defaults:
+        self.platform = None
+        self.tool = "tau"
+        self.datastore = None
+        self.analyses = "TIME"
+
+        self.config = config
+
+        experiments = self.config.get_list("Main.Experiments")
         if name not in experiments:
             raise Exception("Unknown experiment: '%s'" % name)
         else:
-            self.name     = name
+            self.name = name
             self.longname = "Experiments.%s" % name
 
-        self.insname  = insname
-        self.datadirs = [ ]
-
+        self.insname = insname
+        self.datadirs = []
 
         # get some basic config values
-        self.platform_name  = config.get("%s.Platform"   % self.longname, "generic").split(';')[0].rstrip()
-        self.tool_name      = config.get("%s.Tool"       % self.longname, "tau").split(';')[0].rstrip()
-        self.datastore_name = config.get("%s.Datastore"  % self.longname, "nop").split(';')[0].rstrip()
-        self.analyses_names  = [x.rstrip() for x in (config.get("%s.Analyses"   % self.longname).split(';')[0]).split()]
+        self.platform_name = self.config.get("%s.Platform" % self.longname, "generic").split(';')[0].rstrip()
+        self.tool_name = self.config.get("%s.Tool" % self.longname, "tau").split(';')[0].rstrip()
+        self.datastore_name = self.config.get("%s.Datastore" % self.longname, "nop").split(';')[0].rstrip()
+        self.analyses_names = [x.rstrip() for x in self.config.get("%s.Analyses" % self.longname, default='').split()]
 
-        self.cwd            = os.getcwd()
-        self.rootdir        = config.get("%s.rootdir" % self.longname, self.cwd)
-        self.rootdir        = os.path.expanduser(self.rootdir)
-        self.rootdir        = os.path.join(self.cwd, self.rootdir)
+        self.cwd = os.getcwd()
+        self.rootdir = self.config.get("%s.rootdir" % self.longname, self.cwd)
+        self.rootdir = os.path.expanduser(self.rootdir)
+        self.rootdir = os.path.join(self.cwd, self.rootdir)
 
-        self.debug          = config.getboolean("%s.debug" % self.longname, True)
-        self.is_mpi         = config.getboolean("%s.mpi"   % self.longname, False)
-        self.is_cupti       = config.getboolean("%s.cupti" % self.longname, False)
-        self.tauroot        = config.get("%s.tauroot"      % self.longname)
-        self.tauroot        = os.path.expanduser(self.tauroot)
-        self.threads        = config.getint("%s.threads" % self.longname, 1)
+        self.debug = self.config.getboolean("%s.debug" % self.longname, True)
+        self.is_mpi = self.config.getboolean("%s.mpi" % self.longname, False)
+        self.is_cupti = self.config.getboolean("%s.cupti" % self.longname, False)
+        try:
+            self.tauroot = self.config.get("%s.tauroot" % self.longname)
+            self.tauroot = os.path.expanduser(self.tauroot)
+        except Exception:
+            # TAU is optional
+            self.tauroot = None
 
-        self.execmd         = config.get("%s.execmd" % self.longname)
-        self.execmd         = os.path.expanduser(self.execmd)
-        self.exeopt         = config.get("%s.exeopt" % self.longname, "")
+        self.threads = self.config.getint("%s.threads" % self.longname, 1)
+        self.execmd = self.config.get("%s.exe_cmd" % self.longname)
+        self.execmd = os.path.expanduser(self.execmd)
+        self.exeopt = self.config.get("%s.exe_opt" % self.longname, "")
 
-        self.ppkname        = config.get("%s.ppkname" % self.longname, "data")
+        self.ppkname = self.config.get("%s.ppkname" % self.longname, "data")
 
-        self.specdirs       = config.get("%s.specdirs" % self.longname, "").split()
-        self.specdirs       = list(map(os.path.expanduser, self.specdirs))
-        self.specdirs       = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
+        self.specdirs = self.config.get("%s.specdirs" % self.longname, "").split()
+        self.specdirs = list(map(os.path.expanduser, self.specdirs))
+        self.specdirs = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
 
         self.metric_set = MetricSet(self.specdirs)
 
@@ -99,11 +114,12 @@ class Experiment:
         """
         Get logger configurations and set it up.
         """
-        self.logger = logging.getLogger(__name__)
+        # self.logger = logging.getLogger(__name__)
+        self.logger = logger.MyLogger(__name__)
 
         # log destination
-        logfile = config.get("Logger.%s.logfile" % self.name,
-                             "%s/autoperf.log"   % self.rootdir)
+        logfile = self.config.get("Logger.%s.logfile" % self.logger.name,
+                                  "%s/autoperf.log" % self.rootdir)
 
         # log formatter
         # formatter = logging.Formatter(fmt="%(asctime)s %(levelname)-7s %(message)s",
@@ -116,7 +132,7 @@ class Experiment:
         rootLogger.addHandler(self.logHandler)
 
         # log level
-        loglvl = config.get("Logger.%s.loglvl" % self.name, "DEBUG")
+        loglvl = self.config.get("Logger.%s.loglvl" % self.name, "DEBUG")
         loglvl = getattr(logging, loglvl.upper(), None)
         if not isinstance(loglvl, int):
             loglvl = logging.DEBUG
@@ -149,7 +165,7 @@ class Experiment:
         Returns:
           list: the status the instance
         """
-        status = [ ]
+        status = []
 
         # `dirname` should be in specific pattern (i.e. timestamp)
         if not re.match(r"\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{6}",
@@ -176,25 +192,25 @@ class Experiment:
             if expname != experiment:
                 continue
 
-            stat   = { }
+            stat = {}
             marker = os.path.realpath("%s/%s" % (dirname, item))
 
             if os.path.isfile(marker):
                 with open(marker, 'r') as fp:
                     content = fp.read().split()
-                    stat["marker"]  = marker
-                    stat["expname"] = content[0]
+                    stat["marker"] = marker
+                    stat["exp_name"] = content[0]
                     stat["insname"] = content[1]
-                    stat["jobid"]   = content[2]
-                    stat["status"]  = content[3]
+                    stat["jobid"] = content[2]
+                    stat["status"] = content[3]
 
             else:
                 # small chance that job stat marker is not placed yet
-                stat["marker"]  = marker
-                stat["expname"] = expname
+                stat["marker"] = marker
+                stat["exp_name"] = expname
                 stat["insname"] = os.path.basename(dirname)
-                stat["jobid"]   = "Unknown"
-                stat["status"]  = "Unknown"
+                stat["jobid"] = "Unknown"
+                stat["status"] = "Unknown"
 
             # double check the job status, i.e. qdel? ctrl-c?
             if stat["status"] != "Finished" and stat["status"] != "Unknown":
@@ -202,12 +218,8 @@ class Experiment:
 
                 # try our best, use the queue name saved in stat
                 # marker instead of current config file
-                _module_ = __import__("queues.%s" % queue,
-                                      globals(),
-                                      fromlist=["Queue"],
-                                      level=1)
-
-                if _module_.Queue(self).get_status(stat["jobid"]) == "Dead":
+                _module = import_module(".%s" % queue, package="autoperf.queues")
+                if _module.Queue(self).get_status(stat["jobid"]) == "Dead":
                     stat["status"] = "Aborted"
 
             status.append(stat)
@@ -226,7 +238,7 @@ class Experiment:
         Returns:
           list: A list of status
         """
-        stats = [ ]
+        stats = []
 
         dirs = [os.path.join(path, f) for f in os.listdir(path)]
         dirs = [d for d in dirs if os.path.isdir(d)]
@@ -238,7 +250,7 @@ class Experiment:
         stats.sort(key=lambda stat: stat[0]["insname"])
         return stats
 
-    def get_all_instance(self, expname=None):
+    def get_all_instances(self, expname=None):
         """
         Get all instances of an experiment.
 
@@ -251,12 +263,10 @@ class Experiment:
         if expname is None:
             expname = self.name
 
-        instances = [ ]
+        instances = []
 
-        rootdir = config.get("Experiments.%s.rootdir" % expname,
-                             self.cwd)
-        rootdir = os.path.expanduser(self.rootdir)
-        rootdir = os.path.join(self.cwd, rootdir)
+        rootdir = os.path.expanduser(self.config.get("Experiments.%s.rootdir" % expname, self.cwd))
+        self.rootdir = os.path.join(self.cwd, rootdir)
 
         dirs = [os.path.join(rootdir, f) for f in os.listdir(rootdir)]
         dirs = [d for d in dirs if os.path.isdir(d)]
@@ -265,7 +275,7 @@ class Experiment:
             if len(stat) != 0:
                 instances.append((os.path.basename(dirname), dirname))
 
-        instances.sort(key = lambda inst: inst[0])
+        instances.sort(key=lambda inst: inst[0])
 
         return instances
 
@@ -274,7 +284,7 @@ class Experiment:
         Run the builder command if it exist
         """
         try:
-            builder = config.get("%s.builder" % self.longname)
+            builder = self.config.get("%s.builder" % self.longname)
             builder = os.path.expanduser(builder)
         except configparser.Error:
             self.logger.verb("No builder found, bypass\n")
@@ -284,7 +294,7 @@ class Experiment:
             'AP_ROOTDIR': self.rootdir,
             'AP_PLATFORM': self.platform_name,
             'AP_TOOL': self.tool_name,
-            }
+        }
 
         env = dict(list(env.items()) + list(self.platform.build_env().items()))
 
@@ -294,7 +304,7 @@ class Experiment:
         self.logger.cmd(builder)
 
         process = subprocess.Popen(shlex.split(builder),
-                                   env=dict(list(os.environ.items())+list(env.items())))
+                                   env=dict(list(os.environ.items()) + list(env.items())))
 
         for key in env:
             self.logger.cmd("unset %s", key)
@@ -326,16 +336,16 @@ class Experiment:
         Link necessary files, if they are specified in config file
         """
         try:
-            items = config.get("%s.link" % self.longname).split()
+            items = self.config.get("%s.link" % self.longname).split()
         except configparser.Error:
             self.logger.verb("Nothing to link, bypass\n")
             return
 
         self.logger.info("Linking necessary files")
         for item in items:
-            print ("Linking %s ..." % item)
-            item      = os.path.normpath(item)
-            item      = os.path.expanduser(item)
+            print("Linking %s ..." % item)
+            item = os.path.normpath(item)
+            item = os.path.expanduser(item)
             link_name = os.path.basename(item)
             if os.path.islink(link_name) and os.readlink(link_name) == item:
                 # do nothing if the link is already there
@@ -349,14 +359,14 @@ class Experiment:
         Copy necessary files, if they are specified in config file
         """
         try:
-            items = config.get("%s.copy" % self.longname).split()
+            items = self.config.get("%s.copy" % self.longname).split()
         except configparser.Error:
             self.logger.verb("Nothing to copy, bypass\n")
             return
 
         self.logger.info("Copying necessary files")
         for item in items:
-            print ("Copying %s ..." % item)
+            print("Copying %s ..." % item)
             item = os.path.expanduser(item)
             self.logger.cmd("cp -r %s .", item)
             try:
@@ -379,7 +389,7 @@ class Experiment:
         Returns:
           None
         """
-        print ("--- Preparing to run %s" % self.name)
+        print("--- Preparing to run %s" % self.name)
 
         self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
@@ -395,31 +405,33 @@ class Experiment:
         self.copy_items()
         self.build()
 
-        # partition the metrics
-        from partitioner import partitioner
-        dbfile = config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
-        algo   = config.get("Partitioner.%s.algo"   % self.name, "greedy")
-        self.parted_metrics = partitioner(dbfile, list(self.metric_set.nmetrics), algo, False)
+        # TODO: temporarily disabling until the default non-counter configuration works
+        if False:
+            # partition the metrics
+            from ..ext import partitioner
+            dbfile = self.config.get("Partitioner.%s.dbfile" % self.name, "%s.db" % self.platform_name)
+            algo = self.config.get("Partitioner.%s.algo" % self.name, "greedy")
+            self.parted_metrics = partitioner(dbfile, list(self.metric_set.nmetrics), algo, False)
 
-        # logger
-        self.logger.info("Partitioning the metrics:")
-        if len(self.parted_metrics) == 0:
-            self.logger.critical("CRITICAL: partitioner failed, abort\n")
-            # 'cd' actually never happens
-            self.logger.cmd("cd %s", self.cwd)
-            self.logger.unshift()
-            self.logger.cmd( "}")
-            raise Exception("Metrics partition failed!")
-        for i in range(len(self.parted_metrics)):
-            self.logger.info("  %2d: %s", i+1, self.parted_metrics[i])
-        self.logger.newline()
+            # logger
+            self.logger.info("Partitioning the metrics:")
+            if len(self.parted_metrics) == 0:
+                self.logger.critical("CRITICAL: partitioner failed, abort\n")
+                # 'cd' actually never happens
+                self.logger.cmd("cd %s", self.cwd)
+                self.logger.unshift()
+                self.logger.cmd("}")
+                raise Exception("Metrics partition failed!")
+            for i in range(len(self.parted_metrics)):
+                self.logger.info("  %2d: %s", i + 1, self.parted_metrics[i])
+            self.logger.newline()
 
         # populate the data directories
         self.logger.info("Populating data directories")
         self.logger.cmd("mkdir -p %s/profiles", self.insname)
         os.makedirs("%s/profiles" % self.insname)
 
-        self.datadirs = [ ]
+        self.datadirs = []
         for i in range(len(self.parted_metrics)):
             datadir = "%s/.iter-%02d" % (self.insname, i)
             self.datadirs.append(datadir)
@@ -428,12 +440,12 @@ class Experiment:
             os.makedirs("%s/profiles" % datadir)
 
             # pre-link job log and stat marker
-            target    = os.path.relpath("%s/job.log" % datadir, self.insname)
+            target = os.path.relpath("%s/job.log" % datadir, self.insname)
             link_name = "%s/job-%02d.log" % (self.insname, i)
             self.logger.cmd("ln -s %s %s", target, link_name)
             os.symlink(target, link_name)
-            target    = os.path.relpath("%s/.job.stat" % datadir, self.insname)
-            link_name = "%s/.job-%s-%02d.stat" % (self.insname, self.name , i)
+            target = os.path.relpath("%s/.job.stat" % datadir, self.insname)
+            link_name = "%s/.job-%s-%02d.stat" % (self.insname, self.name, i)
             self.logger.cmd("ln -s %s %s", target, link_name)
             os.symlink(target, link_name)
 
@@ -442,7 +454,7 @@ class Experiment:
         # run the experiment
         for i in range(len(self.parted_metrics)):
             self.logger.info("Running experiment, iteration %d of %d",
-                             i+1, len(self.parted_metrics))
+                             i + 1, len(self.parted_metrics))
             self.iteration = i
             self.platform.run(self.execmd, self.exeopt, block)
             self.logger.newline()
@@ -450,7 +462,7 @@ class Experiment:
         # 'cd' actually happens in cleanup()
         self.logger.cmd("cd %s", self.cwd)
         self.logger.unshift()
-        self.logger.cmd( "}")
+        self.logger.cmd("}")
 
     def analyze(self):
         # sanity check
@@ -471,7 +483,7 @@ class Experiment:
             for d in os.listdir(self.insname):
                 if not os.path.isdir("%s/%s" % (self.insname, d)):
                     continue
-                if not re.match("\.iter-\d+$", d):
+                if not re.match(r"\.iter-\d+$", d):
                     continue
                 self.datadirs.append("%s/%s" % (self.insname, d))
             self.datadirs.sort()
@@ -489,7 +501,7 @@ class Experiment:
         # 'cd' actually happens in cleanup()
         self.logger.cmd("cd %s", self.cwd)
         self.logger.unshift()
-        self.logger.cmd( "}")
+        self.logger.cmd("}")
 
     def cleanup(self):
         os.chdir(self.cwd)
