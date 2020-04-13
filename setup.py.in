@@ -4,17 +4,17 @@ from distutils.command.install import install as _install
 from distutils.core import setup, Extension
 
 def get_option(env_name, cmake_name):
-    if os.path.exists(cmake_name): return cmake_name
-    if os.path.exists(os.getenv(env_name)): return os.getenv(env_name)
+    if cmake_name != '':
+        if os.path.exists(str(cmake_name)): return cmake_name
+    if env_name != '': 
+        if os.path.exists(str(os.getenv(env_name))): return os.getenv(env_name)
     return None
 
 # where to find headers/libraries to compile the extension
-CUDA = get_option('CUDA', '${CUDA_SDK_ROOT_DIR}')
+CUDA = get_option('CUDA', '${CUDA_TOOLKIT_ROOT_DIR}')
 PAPI = get_option('PAPI', '${PAPI_PREFIX}')
 
-INCLUDE_DIRS = [PAPI + '/include']
-LIBRARY_DIRS = [PAPI + '/lib', PAPI + '/lib64']
-LIBRARIES = ['papi']
+extensions = []
 DEFINE_MACROS = [('EXT_PYTHON', None)]
 
 if CUDA is not None:
@@ -34,15 +34,21 @@ for root, dirs, files in os.walk(src_dir, topdown=True):
         py_packages.append('.'.join(dir_names))
 
 # partitioner is a python extension written in C++
-partitioner = Extension(
-    name='autoperf.partitioner',
-    language='c++',
-    include_dirs=INCLUDE_DIRS,
-    library_dirs=LIBRARY_DIRS,
-    libraries=LIBRARIES,
-    runtime_library_dirs=LIBRARY_DIRS,
-    define_macros=DEFINE_MACROS,
-    sources=['${CMAKE_CURRENT_SOURCE_DIR}/ext/partitioner.cpp', '${CMAKE_CURRENT_SOURCE_DIR}/ext/sqlite3.c'])
+if PAPI:
+    print('PAPI=%s' % PAPI)
+    INCLUDE_DIRS = [PAPI + '/include']
+    LIBRARY_DIRS = [PAPI + '/lib', PAPI + '/lib64']
+    LIBRARIES = ['papi']
+    partitioner = Extension(
+        name='autoperf.partitioner',
+        language='c++',
+        include_dirs=INCLUDE_DIRS,
+        library_dirs=LIBRARY_DIRS,
+        libraries=LIBRARIES,
+        runtime_library_dirs=LIBRARY_DIRS,
+        define_macros=DEFINE_MACROS,
+        sources=['${CMAKE_CURRENT_SOURCE_DIR}/ext/partitioner.cpp', '${CMAKE_CURRENT_SOURCE_DIR}/ext/sqlite3.c'])
+    extensions = [partitioner]
 
 
 # Helper C library to enable use of gprof with multi-threaded codes
@@ -65,8 +71,8 @@ setup(
     package_data={
         "autoperf.utils.metric_spec": ["*"],
         "autoperf": ['libgprof-helper.so']},
-    scripts=["bin/autoperf"],
-    ext_modules=[partitioner],
+    scripts=["${CMAKE_CURRENT_SOURCE_DIR}/bin/autoperf"],
+    ext_modules=extensions, 
     license="BSD",
     description="Automation for performance experiments and analysis",
 )
