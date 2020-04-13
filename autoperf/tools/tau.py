@@ -1,19 +1,16 @@
-import os
 import logging
-import configparser
-import subprocess
-
+import os
 from glob import glob
 
-from ..utils import config
 from .interface import *
+
 
 class Tool(AbstractTool):
     def __init__(self, experiment):
-        self.name       = "tau"
-        self.longname   = "Tool.tau.%s" % experiment.name
+        self.name = "tau"
+        self.longname = "Tool.tau.%s" % experiment.name
         self.experiment = experiment
-        self.logger     = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -21,9 +18,12 @@ class Tool(AbstractTool):
 
         options = self.get_tau_bindings()
 
-        self.binding = "papi,pdt"
-        options = [b for b in options if 'papi' in b]
-        options = [b for b in options if 'pdt' in b]
+        if not 'mpi' in options:
+            self.binding = "serial"  # default, should always work
+
+        # self.binding = "papi,pdt"
+        # options = [b for b in options if 'papi' in b]
+        # options = [b for b in options if 'pdt' in b]
 
         if self.experiment.is_cupti:
             self.binding += ",cupti"
@@ -32,7 +32,7 @@ class Tool(AbstractTool):
         if self.experiment.is_mpi:
             self.binding += ",mpi"
             options = [b for b in options if 'mpi' in b]
-        else:
+        elif self.binding.find('serial') < 0:
             self.binding += ",serial"
             options = [b for b in options if 'mpi' not in b]
 
@@ -49,7 +49,10 @@ class Tool(AbstractTool):
     def get_tau_bindings(self):
         """ Get available TAU bindings combination """
         makefiles = list(map(os.path.basename, glob("%s/lib/Makefile.tau-*" % self.experiment.tauroot)))
-        return [str.split(s, '-')[1:] for s in makefiles]
+        if makefiles:
+            return [str.split(s, '-')[1:] for s in makefiles]
+        else:
+            return []
 
     def get_tau_vars(self):
         """
@@ -84,8 +87,8 @@ class Tool(AbstractTool):
           string: A string of commands to be executed before running
                   TAU experiment
         """
-        datadir   = self.experiment.datadirs[self.experiment.iteration]
-        metrics   = self.experiment.parted_metrics[self.experiment.iteration]
+        datadir = self.experiment.datadirs[self.experiment.iteration]
+        metrics = self.experiment.parted_metrics[self.experiment.iteration]
 
         # make sure more than one metrics are measured, so TAU will
         # put data into MULTI__* directory, so we can easily aggregate
@@ -94,7 +97,7 @@ class Tool(AbstractTool):
             metrics = "%s:TIME" % metrics
 
         tau_setup = "# TAU environment variables\n"
-        tau_vars  = self.get_tau_vars()
+        tau_vars = self.get_tau_vars()
         for name in tau_vars:
             tau_setup += "export %s=%s\n" % (name, tau_vars[name])
 
@@ -120,7 +123,7 @@ class Tool(AbstractTool):
             period = config.get("%s.period" % self.longname, 10000)
             source = config.get("%s.source" % self.longname, "TIME")
 
-            tau_exec_opt  = "-T %s" % self.binding
+            tau_exec_opt = "-T %s" % self.binding
             tau_exec_opt += " -ebs -ebs_period=%s -ebs_source=%s" % (period, source)
             if self.experiment.is_cupti:
                 tau_exec_opt += " -cupti"
@@ -140,8 +143,8 @@ class Tool(AbstractTool):
         for datadir in self.experiment.datadirs:
             metrics = os.listdir("%s/profiles" % datadir)
             for metric in metrics:
-                target    = os.path.relpath("%s/profiles/%s" % (datadir, metric),
-                                            "%s/profiles"    % self.experiment.insname)
+                target = os.path.relpath("%s/profiles/%s" % (datadir, metric),
+                                         "%s/profiles" % self.experiment.insname)
                 link_name = "%s/profiles/%s" % (self.experiment.insname, metric)
 
                 self.logger.cmd("ln -s %s %s", target, link_name)

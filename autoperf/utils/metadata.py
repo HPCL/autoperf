@@ -1,7 +1,8 @@
 import re
 
-from os      import listdir
-from os.path import join, isdir
+from os import listdir
+from os.path import join
+
 
 class _CPUInfo:
     def __eq__(self, other):
@@ -11,7 +12,7 @@ class _CPUInfo:
         return not self.__eq__(other)
 
     def __init__(self, cpuid, procinfo):
-        self.id    = cpuid
+        self.id = cpuid
         self.cache = dict()
 
         # get cache info
@@ -34,9 +35,9 @@ class _CPUInfo:
 
             # I/D cache
             if type == "Data":
-                self.cache[key+"D"] = size
+                self.cache[key + "D"] = size
             elif type == "Instruction":
-                self.cache[key+"I"] = size
+                self.cache[key + "I"] = size
 
             # synthesize total cache size from I/D
             if key in self.cache:
@@ -63,6 +64,7 @@ class _CPUInfo:
                 if self.physical_id != int(m.group(1)):
                     raise Exception("Inconsistant info between /sys and /proc")
 
+
 def _get_cpu_info():
     metadata = dict()
 
@@ -74,19 +76,18 @@ def _get_cpu_info():
     # CPU core / thread number
     metadata["META_CORE_NUM"] = len(procinfo)
 
-    cpuinfo     = [ ]
+    cpuinfo = []
     physical_id = set()
     for cpuid in range(len(procinfo)):
         cpuinfo.append(_CPUInfo(cpuid, procinfo[cpuid]))
 
     for cpuid in range(len(procinfo)):
         a = cpuinfo[cpuid]
-        b = cpuinfo[(cpuid+1)%len(procinfo)]
+        b = cpuinfo[(cpuid + 1) % len(procinfo)]
         if a != b:
             raise Exception("Different CPU models are installed")
         else:
             physical_id.add(a.physical_id)
-
 
     # cache size in kB
     for key in cpuinfo[0].cache:
@@ -99,6 +100,7 @@ def _get_cpu_info():
     metadata["META_CPU_MODEL"] = cpuinfo[0].model
 
     return metadata
+
 
 def _get_memory_info():
     metadata = dict()
@@ -115,13 +117,15 @@ def _get_memory_info():
 
     return metadata
 
+
 def get_sys_info():
-    cpu    = _get_cpu_info()
+    cpu = _get_cpu_info()
     memory = _get_memory_info()
 
     return dict(list(cpu.items()) + list(memory.items()))
 
+
 if __name__ == "__main__":
     info = get_sys_info()
     for key in info:
-        print ("{0:20}: {1}".format(key, info[key]))
+        print("{0:20}: {1}".format(key, info[key]))

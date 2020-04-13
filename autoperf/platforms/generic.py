@@ -1,34 +1,34 @@
 import os
-import logging
-import configparser
+from importlib import import_module
 
 from .interface import AbstractPlatform
 from ..utils import config
 
+
 class Platform(AbstractPlatform):
-    name          = "generic"
-    launcher      = ""
+    name = "generic"
+    launcher = ""
     launcher_opts = ""
 
     def __init__(self, experiment):
-        self.longname   = "Platform.%s.%s" % (self.name, experiment.name)
+        self.longname = "Platform.%s.%s" % (self.name, experiment.name)
         self.experiment = experiment
 
         if self.launcher == "":
-            self.launcher = config.get("%s.launcher" % experiment.longname, "")
+            self.launcher = self.experiment.config.get("%s.launcher" % experiment.longname, "")
 
-        self.launcher_opts += config.get("%s.launcher_opts" % experiment.longname, "")
+        self.launcher_opts += self.experiment.config.get("%s.launcher_opts" % experiment.longname, "")
 
-        _queue  = config.get("%s.Queue" % self.longname, "serial")
+        _queue = self.experiment.config.get("%s.Queue" % self.longname, "serial")
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = self.experiment.logger
         self.logger.info("Queue    : %s", _queue)
 
-        _module = __import__("queues.%s" % _queue, globals(), fromlist=["Queue"], level=2)
+        _module = import_module(".%s" % _queue, package="autoperf.queues")
         self.queue = _module.Queue(self.experiment)
 
     def setup(self):
-        self.tool      = self.experiment.tool
+        self.tool = self.experiment.tool
         self.datastore = self.experiment.datastore
         self.queue.setup()
 
@@ -42,7 +42,7 @@ class Platform(AbstractPlatform):
         for name, value in config.get_section("Env.%s" % self.experiment.name):
             prologue += "export %s='%s'\n" % (name, value)
 
-	#print "NUMBER OF THREADS = %d" % self.experiment.threads
+        # print "NUMBER OF THREADS = %d" % self.experiment.threads
         prologue += "export OMP_NUM_THREADS=%d\n" % (self.experiment.threads)
         prologue += self.tool.setup_str()
 
@@ -54,21 +54,21 @@ class Platform(AbstractPlatform):
           dict: A dict of environment variables which should be set
                 before building any applications on this platform
         """
-        env = { }
+        env = {}
 
         env = dict(list(env.items()) + list(self.tool.build_env().items()))
 
         return env
 
     def wrap_command(self, _execmd, _exeopt):
-        execmd, exeopt = self.queue.wrap_command(_execmd, _exeopt)
-        execmd, exeopt = self.tool.wrap_command(execmd, exeopt)
+        exe_cmd, exe_opts = self.queue.wrap_command(_execmd, _exeopt)
+        exe_cmd, exe_opts = self.tool.wrap_command(exe_cmd, exe_opts)
 
         # ignore launcher and launcher option if they are not specified
         if self.launcher == "":
-            cmd = "%s %s" % (execmd, exeopt)
+            cmd = "%s %s" % (exe_cmd, exe_opts)
         else:
-            cmd = "%s %s %s %s" % (self.launcher, self.launcher_opts, execmd, exeopt)
+            cmd = "%s %s %s %s" % (self.launcher, self.launcher_opts, exe_cmd, exe_opts)
 
         cmd = cmd.strip()
 
@@ -77,7 +77,7 @@ class Platform(AbstractPlatform):
 
         self.logger.debug("Application command:")
         self.logger.debug("  Original: %s %s", _execmd, _exeopt)
-        self.logger.debug("  ToolWrap: %s %s", execmd, exeopt)
+        self.logger.debug("  ToolWrap: %s %s", exe_cmd, exe_opts)
 
         return cmd
 
@@ -86,8 +86,8 @@ class Platform(AbstractPlatform):
         Run an application on this platform.
 
         Args:
-          execmd (string): the command going to run
-          exeopt (string): the cmdline option for `execmd`
+          _execmd (string): the command going to run
+          _exeopt (string): the cmdline option for `_execmd`
           block  (bool)  : block until application exit?
 
         Returns:

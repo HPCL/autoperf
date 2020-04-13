@@ -1,19 +1,23 @@
-import os
-import logging
 import configparser
+import logging
+import os
 
+from .interface import AbstractDatastore
 from ..utils import config
 from ..utils import script
-from .interface import AbstractDatastore
+
 
 class Datastore(AbstractDatastore):
     def __init__(self, experiment):
-        self.name       = "taudb"
-        self.longname   = "Datastore.taudb.%s" % experiment.name
-        self.experiment = experiment
-        self.logger     = logging.getLogger(__name__)
+        super().__init__(experiment)
 
-        self.config  = config.get("%s.config" % self.longname)
+        self.name = "taudb"
+        self.longname = "Datastore.taudb.%s" % experiment.name
+        self.experiment = experiment
+        self.tool = self.experiment.tool
+        self.logger = logging.getLogger(__name__)
+
+        self.config = config.get("%s.config" % self.longname)
 
         try:
             self.appname = config.get("%s.appname" % self.longname)
@@ -22,17 +26,17 @@ class Datastore(AbstractDatastore):
             self.appname = os.path.basename(self.appname)
 
     def setup(self):
-        self.tool = self.experiment.tool
+        pass
 
     def load(self):
         self.logger.info("Loading collected data to TAUdb:")
 
         script.run("taudb_loadtrial.py",
                    "%s/taudb_loadtrial.py" % self.experiment.insname,
-                   tauroot  = self.experiment.tauroot,
-                   taudb    = self.config,
-                   filetype = "packed",
-                   appname  = self.appname,
-                   expname  = self.experiment.name,
-                   trial    = self.experiment.insname,
-                   source   = "data.ppk")
+                   tauroot=self.experiment.tauroot,
+                   taudb=self.config,
+                   filetype="packed",
+                   appname=self.appname,
+                   expname=self.experiment.name,
+                   trial=self.experiment.insname,
+                   source="data.ppk")

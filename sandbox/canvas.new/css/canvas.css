@@ -53,7 +53,7 @@ body {
 
 #dsModal .panel-group {
     max-height: 500px;
-    overflow-x: hide;
+    overflow-x: hidden;
     overflow-y: auto;
 }
 

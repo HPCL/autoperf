@@ -1,17 +1,15 @@
-import os
 import logging
-import subprocess
-import configparser
+import os
 
-from ..utils import config
-from .interface  import *
+from .interface import *
+
 
 class Tool(AbstractTool):
     def __init__(self, experiment):
-        self.name        = "hpctoolkit"
-        self.longname    = "Tool.hpctoolkit.%s" % experiment.name
-        self.experiment  = experiment
-        self.logger      = logging.getLogger(__name__)
+        self.name = "hpctoolkit"
+        self.longname = "Tool.hpctoolkit.%s" % experiment.name
+        self.experiment = experiment
+        self.logger = logging.getLogger(__name__)
 
     def setup(self):
         self.platform = self.experiment.platform
@@ -61,17 +59,17 @@ class Tool(AbstractTool):
         # aggregate HPCToolkit collected data:
         for datadir in self.experiment.datadirs:
             measurement = "%s/measurement" % datadir
-            database    = "%s/database"    % datadir
+            database = "%s/database" % datadir
 
             # 1. convert to ppk (paraprof -f hpc --pack)
-            cmd =["hpcprof",
-                  "-o",
-                  database,
-                  "-S",
-                  hpcstruct,
-                  "-I",
-                  "%s/'*'" % appsrc,
-                  measurement]
+            cmd = ["hpcprof",
+                   "-o",
+                   database,
+                   "-S",
+                   hpcstruct,
+                   "-I",
+                   "%s/'*'" % appsrc,
+                   measurement]
             self.logger.info("HPCToolkit: run hpcprof")
             self.logger.cmd(' '.join(cmd))
             subprocess.call(cmd)
@@ -109,8 +107,8 @@ class Tool(AbstractTool):
 
             # 3. aggregate tau profiles
             for metric in os.listdir("%s/profiles" % datadir):
-                target    = os.path.relpath("%s/profiles/%s" % (datadir, metric),
-                                            "%s/profiles"    % self.experiment.insname)
+                target = os.path.relpath("%s/profiles/%s" % (datadir, metric),
+                                         "%s/profiles" % self.experiment.insname)
                 link_name = "%s/profiles/%s" % (self.experiment.insname, metric)
 
                 self.logger.cmd("ln -s %s %s", target, link_name)

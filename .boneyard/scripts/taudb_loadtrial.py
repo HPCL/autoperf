@@ -4,14 +4,13 @@ TAUROOT  = "{tauroot}"
 TAUDB    = "{taudb}"
 FILETYPE = "{filetype}"
 APPNAME  = "{appname}"
-EXPNAME  = "{expname}"
+EXPNAME  = "{exp_name}"
 TRIAL    = "{trial}"
 SOURCE   = "{source}"
 
 import os
-import sys
 import subprocess
-
+import sys
 from glob import glob
 
 # import all necessary JARs

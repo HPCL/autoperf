@@ -1,9 +1,6 @@
-import os
-import re
-
 class AbstractQueue:
-    name       = "Abstract"
-    longname   = "Abstract"
+    name = "Abstract"
+    longname = "Abstract"
     experiment = None
 
     def get_status(self, idstr):

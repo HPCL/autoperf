@@ -1,265 +1,278 @@
 #!/usr/bin/env python
 
-import os, sys
-import logging
 import argparse
 import distutils.sysconfig
+import logging
+import os
+import sys
+from importlib import import_module
+
+from autoperf.experiment import Experiment
+from autoperf.utils.config import Config
+
 
 # include autoperf in the Python's search path
 
-# include the annotation tool in the Python's search path
-abs_path = os.path.realpath(sys.argv[0])
-cur_dir = os.path.dirname(abs_path)
-dirs=[]
-if os.path.basename(cur_dir) == 'bin':
-    # installed location
-    base_dir = os.path.join(os.path.dirname(cur_dir),'lib','python' + distutils.sysconfig.get_python_version(),'site-packages')
-    dirs = [base_dir, os.path.join(base_dir,'autoperf')]
-else:
-    # source tree (development) location
-    dirs = [os.path.join(cur_dir,'autoperf')]
-sys.path.extend(dirs)
 
-# command line parsing
+class Autoperf:
+    """
+    The top-level workflow specification.
+    """
 
-parser = argparse.ArgumentParser()
-parser.set_defaults(mode="run")
+    def __init__(self):
 
-# config specification
-parser.add_argument("-f", "--config",
-                    action="store", dest="cfgfile",
-                    help="Specify a config file. If not specified or file "
-                    "does not exist, search for .autoperf.cfg, autoperf.cfg, "
-                    "~/.autoperf.cfg in order")
-parser.add_argument("-D",
-                    action="append", dest="cfgoptions",
-                    metavar="CONFIG.OPTION=VALUE", default=[],
-                    help="Override a config option in config file. This "
-                    "option can be specified multiple times")
-
-# operation mode
-group = parser.add_mutually_exclusive_group()
-group.add_argument("-r", "--run",
-                   action="store_const", const="run", dest="mode",
-                   help="When used with '-e', run specified experiment(s). "
-                   "Otherwise run each defined experiment once. (default)")
-group.add_argument("-c", "--check",
-                   action="store_const", const="check", dest="mode",
-                   help="When used with '-e' or '-i', show the status ("
-                   "Unknown, Queueing, Running or Finished) of those experiments. "
-                   "Otherwise, show status of all experiments.")
-group.add_argument("-y", "--analyze",
-                   action="store_const", const="analyze", dest="mode",
-                   help="When used with '-e' or '-i', analyze those "
-                   "experiments data. Otherwise, analyze all exepriments. "
-                   "The experiment must be in 'Finished' state.")
-group.add_argument("-q", "--cancel",
-                   action="store_const", const="cancel", dest="mode",
-                   help="When used with '-e' or '-i', cancel those experiments "
-                   "if they are still running.")
-
-# experiment selection
-parser.add_argument("-e", "--exp",
-                    action="append", dest="exps", metavar="EXP[@NUM]",
-                    help="Select experiment EXP NUM times. This option can be "
-                    "used multiple times and experiments will be selected in "
-                    "the order they appear. [default: NUM=1]")
-parser.add_argument("-i", "--insname",
-                    action="append", dest="insnames",
-                    metavar="INSTANCE", default=None,
-                    help="Use with '-c' or '-y' to specify the instance name of "
-                    "the experiment. This option can be specified multiple times")
-
-# block
-parser.add_argument("-b", "--block",
-                    action="store_true", dest="block", default=False,
-                    help="Instead of exiting immediately after submitting the"
-                    "experiment to the batch system, now block until the job "
-                    "is finished [default: %(default)s]")
-
-options = parser.parse_args()
-
-# now run the experiments
-
-from autoperf.utils      import config
-from autoperf.experiment import *
-
-def parse_config():
-    global options
-    cfgfiles = ['.autoperf.cfg',
-                'autoperf.cfg',
-                os.path.expanduser('~/.autoperf.cfg')]
-
-    if options.cfgfile is not None:
-        cfgfiles.insert(0, options.cfgfile)
-
-    for cfgfile in cfgfiles:
-        try:
-            config.parse(cfgfile)
-        except:
-            print ("*** Invalid config file %s, trying next option..." % cfgfile)
+        # include the Autoperf tool in the Python's search path
+        abs_path = os.path.realpath(sys.argv[0])
+        cur_dir = os.path.dirname(abs_path)
+        dirs = []
+        if os.path.basename(cur_dir) == 'bin':
+            # installed location
+            base_dir = os.path.join(os.path.dirname(cur_dir), 'lib',
+                                    'python' + distutils.sysconfig.get_python_version(),
+                                    'site-packages')
+            dirs = [base_dir, os.path.join(base_dir, 'autoperf')]
         else:
-            break
+            # source tree (development) location
+            dirs = [os.path.join(cur_dir, 'autoperf')]
+        sys.path.extend(dirs)
 
-    if not config.done:
-        print ("*** Can't find any valid config file (looked for %s). Abort" % str(cfgfiles))
-        exit(1)
+        self.options = None
+        self.optparser = self._init_command_line_opts()
+        self.config = self._parse_config()
 
-    # handle cmdline option override
-    for cfgoption in options.cfgoptions:
-        spec, equal, value = cfgoption.partition('=')
-        config.set(spec, value)
+        pass
 
-def get_experiment_list(allow_dup=True):
-    """
-    Get the list of experiment we need to concern with
-    """
-    global options
-    if options.exps is None:
-        return config.get_list("Main.Experiments")
-    else:
-        exps = [ ]
-        for expnum in options.exps:
-            try:
-                exp, num = expnum.split('@')
-                if not allow_dup:
+    def _init_command_line_opts(self):
+        # command line parsing
+
+        parser = argparse.ArgumentParser()
+        parser.set_defaults(mode="run")
+
+        # config specification
+        parser.add_argument("-f", "--config",
+                            action="store", dest="cfgfile",
+                            help="Specify a config file. If not specified or file "
+                                 "does not exist, search for .autoperf.cfg, autoperf.cfg, "
+                                 "~/.autoperf.cfg in order")
+        parser.add_argument("-D",
+                            action="append", dest="cfgoptions",
+                            metavar="CONFIG.OPTION=VALUE", default=[],
+                            help="Override a config option in config file. This "
+                                 "option can be specified multiple times")
+
+        # operation mode
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("-r", "--run",
+                           action="store_const", const="run", dest="mode",
+                           help="When used with '-e', run specified experiment(s). "
+                                "Otherwise run each defined experiment once. (default)")
+        group.add_argument("-c", "--check",
+                           action="store_const", const="check", dest="mode",
+                           help="When used with '-e' or '-i', show the status ("
+                                "Unknown, Queueing, Running or Finished) of those experiments. "
+                                "Otherwise, show status of all experiments.")
+        group.add_argument("-y", "--analyze",
+                           action="store_const", const="analyze", dest="mode",
+                           help="When used with '-e' or '-i', analyze those "
+                                "experiments data. Otherwise, analyze all exepriments. "
+                                "The experiment must be in 'Finished' state.")
+        group.add_argument("-q", "--cancel",
+                           action="store_const", const="cancel", dest="mode",
+                           help="When used with '-e' or '-i', cancel those experiments "
+                                "if they are still running.")
+
+        # experiment selection
+        parser.add_argument("-e", "--exp",
+                            action="append", dest="exps", metavar="EXP[@NUM]",
+                            help="Select experiment EXP NUM times. This option can be "
+                                 "used multiple times and experiments will be selected in "
+                                 "the order they appear. [default: NUM=1]")
+        parser.add_argument("-i", "--insname",
+                            action="append", dest="insnames",
+                            metavar="INSTANCE", default=None,
+                            help="Use with '-c' or '-y' to specify the instance name of "
+                                 "the experiment. This option can be specified multiple times")
+
+        # block
+        parser.add_argument("-b", "--block",
+                            action="store_true", dest="block", default=False,
+                            help="Instead of exiting immediately after submitting the"
+                                 "experiment to the batch system, now block until the job "
+                                 "is finished [default: %(default)s]")
+        return parser
+
+    def _parse_config(self):
+        """
+        Parse all available configuration files, including those specified in command-line options
+        Returns: Nothing
+        """
+        self.options = self.optparser.parse_args()
+
+        config = Config()
+        config.parse(self.options)
+
+        # handle cmdline option override
+        for cfgoption in self.options.cfgoptions:
+            spec, equal, value = cfgoption.partition('=')
+            config.set(spec, value)
+
+        return config
+
+    def get_experiment_list(self, allow_dup=True):
+        """
+        Get the list of experiment we need to concern with
+        """
+        if self.options.exps is None:
+            return self.config.get_list("Main.Experiments")
+        else:
+            exps = []
+            for exp_num in self.options.exps:
+                try:
+                    exp, num = exp_num.split('@')
+                    if not allow_dup:
+                        num = 1
+                except ValueError:
+                    exp = exp_num
                     num = 1
-            except ValueError:
-                exp = expnum
-                num = 1
 
-            for i in range(int(num)):
-                exps.append(exp)
+                for i in range(int(num)):
+                    exps.append(exp)
 
-        return exps
+            return exps
 
-def run_experiments():
-    exps = get_experiment_list()
-    for exp in exps:
-        experiment = Experiment(exp)
+    def run_experiments(self):
+        exps = self.get_experiment_list()
+        for exp in exps:
+            experiment = Experiment(self.config, exp)
+            experiment.setup()
+            experiment.run(self.options.block)
+
+            if (self.options.block):
+                experiment.analyze()
+
+            experiment.cleanup()
+
+    def check_an_experiment(self, exp_name, insnames=None):
+        """
+        Check and return the status of all the instances of experiment
+        `exp_name`. If `insname` is not None, check only those instances
+
+        Args:
+          exp_name (string): Name of an experiment
+          insnames  (list): List of instances need to check
+
+        Returns:
+          list: List of instance status
+        """
+        logging.disable(logging.CRITICAL)
+
+        experiment = Experiment(self.config, exp_name, "None")
         experiment.setup()
-        experiment.run(options.block)
 
-        if (options.block):
-            experiment.analyze()
+        stats = experiment.get_status()
 
         experiment.cleanup()
 
-def check_an_experiment(expname, insnames=None):
-    """
-    Check and return the status of all the instances of experiment
-    `expname`. If `insname` is not None, check only those instances
+        logging.disable(logging.NOTSET)
 
-    Args:
-      expname (string): Name of an experiment
-      insnames  (list): List of instances need to check
-
-    Returns:
-      list: List of instance status
-    """
-    logging.disable(logging.CRITICAL)
-
-    experiment = Experiment(expname, None)
-    experiment.setup()
-
-    stats = experiment.get_status()
-
-    experiment.cleanup()
-
-    logging.disable(logging.NOTSET)
-
-    if insnames is None:
-        return stats
-    else:
-        return [stat for stat in stats if stat[0]['insname'] in insnames]
-
-def get_overall_status(instance):
-    """
-    Get overall status of the `instance'.
-      Cancelled: *any* of the iteration is in `Cancelled' state
-      Finished : *all* of the iterations are `Finished'
-      Running  : none of above
-
-    Args:
-      instance (list): List of iteration status
-
-    Returns:
-      string: the overall status
-    """
-    status = 'Finished'
-    for iteration in instance:
-        if iteration['status'] == 'Cancelled':
-            return 'Cancelled'
-        if iteration['status'] != 'Finished':
-            status = 'Running'
-
-    return status
-
-def check_experiments(insnames):
-    fmtstr = "{0:20} {1:30} {2:15} {3:10}"
-
-    print ("--- Experiment status:")
-    print (fmtstr.format("Experiment", "Instance", "Job ID", "Status"))
-    print ("----------------------------------------------------------------------------")
-
-    exps = get_experiment_list(False)
-    for exp in exps:
-        for instance in check_an_experiment(exp, insnames):
-            # all iterations of an instance shall have same
-            # experiment name and instance name
-            expname = instance[0]['expname']
-            insname = instance[0]['insname']
-
-            status = get_overall_status(instance)
-            if status != 'Running':
-                print (fmtstr.format(expname, insname, "-", status))
-            else:
-                for iteration in instance:
-                    print (fmtstr.format(expname, insname,
-                                        iteration['jobid'],
-                                        iteration['status']))
-                    # don't bother show expname and insname for
-                    # the following iterations
-                    expname = ""
-                    insname = ""
-
-def cancel_experiments(insnames):
-    exps = get_experiment_list(False)
-    for exp in exps:
-        platform = config.get("Experiments.%s.Platform" % exp)
-        queue    = config.get("Platform.%s.Queue" % platform)
-        _module = __import__("autoperf.queues.%s" % queue,
-                             globals(),
-                             fromlist=["Queue"])
-        for instance in check_an_experiment(exp, insnames):
-            for iteration in instance:
-                if iteration['status'] != 'Finished' and iteration['status'] != 'Cancelled':
-                    _module.Queue.cancel(iteration)
-
-def analyze_an_experiment(expname, insnames):
-    for instance in check_an_experiment(expname, insnames):
-        insname = instance[0]['insname']
-        if get_overall_status(instance) == "Finished":
-            print ("--- Analyzing %s %s ..." % (expname, insname))
-            experiment = Experiment(expname, insname)
-            experiment.setup()
-            experiment.analyze()
-            experiment.cleanup()
+        if insnames is None:
+            return stats
         else:
-            print ("--- Experiment %s %s is not finished yet, ignore" % (expname, insname))
+            return [stat for stat in stats if stat[0]['insname'] in insnames]
 
-def analyze_experiments(insnames):
-    exps = get_experiment_list(False)
-    for exp in exps:
-        analyze_an_experiment(exp, insnames)
+    def get_overall_status(self, instance):
+        """
+        Get overall status of the `instance'.
+          Cancelled: *any* of the iteration is in `Cancelled' state
+          Finished : *all* of the iterations are `Finished'
+          Running  : none of above
 
-parse_config()
+        Args:
+          instance (list): List of iteration status
 
-if options.mode == 'run':
-    run_experiments()
-elif options.mode == 'check':
-    check_experiments(options.insnames)
-elif options.mode == 'analyze':
-    analyze_experiments(options.insnames)
-elif options.mode == 'cancel':
-    cancel_experiments(options.insnames)
+        Returns:
+          string: the overall status
+        """
+        status = 'Finished'
+        for iteration in instance:
+            if iteration['status'] == 'Cancelled':
+                return 'Cancelled'
+            if iteration['status'] != 'Finished':
+                status = 'Running'
+
+        return status
+
+    def check_experiments(self, insnames):
+        fmtstr = "{0:20} {1:30} {2:15} {3:10}"
+
+        print("--- Experiment status:")
+        print(fmtstr.format("Experiment", "Instance", "Job ID", "Status"))
+        print("----------------------------------------------------------------------------")
+
+        exps = self.get_experiment_list(False)
+        for exp in exps:
+            for instance in self.check_an_experiment(exp, insnames):
+                # all iterations of an instance shall have same
+                # experiment name and instance name
+                exp_name = instance[0]['exp_name']
+                insname = instance[0]['insname']
+
+                status = self.get_overall_status(instance)
+                if status != 'Running':
+                    print(fmtstr.format(exp_name, insname, "-", status))
+                else:
+                    for iteration in instance:
+                        print(fmtstr.format(exp_name, insname,
+                                            iteration['jobid'],
+                                            iteration['status']))
+                        # don't bother show exp_name and insname for
+                        # the following iterations
+                        exp_name = ""
+                        insname = ""
+
+    def cancel_experiments(self, insnames):
+        exps = self.get_experiment_list(False)
+        for exp in exps:
+            platform = self.config.get("Experiments.%s.Platform" % exp)
+            queue = self.config.get("Platform.%s.Queue" % platform)
+            _module = import_module(".%s" % queue, package="autoperf.queues")
+            for instance in self.check_an_experiment(exp, insnames):
+                for iteration in instance:
+                    if iteration['status'] != 'Finished' and iteration['status'] != 'Cancelled':
+                        _module.Queue.cancel(iteration)
+
+    def analyze_an_experiment(self, exp_name, insnames):
+        for instance in self.check_an_experiment(exp_name, insnames):
+            insname = instance[0]['insname']
+            if self.get_overall_status(instance) == "Finished":
+                print("--- Analyzing %s %s ..." % (exp_name, insname))
+                experiment = Experiment(self.config, exp_name, insname)
+                experiment.setup()
+                experiment.analyze()
+                experiment.cleanup()
+            else:
+                print("--- Experiment %s %s is not finished yet, ignore" % (exp_name, insname))
+
+    def analyze_experiments(self, insnames):
+        exps = self.get_experiment_list(False)
+        for exp in exps:
+            self.analyze_an_experiment(exp, insnames)
+
+    def run(self):
+        if self.options.mode == 'run':
+            self.run_experiments()
+        elif self.options.mode == 'check':
+            self.check_experiments(self.options.insnames)
+        elif self.options.mode == 'analyze':
+            self.analyze_experiments(self.options.insnames)
+        elif self.options.mode == 'cancel':
+            self.cancel_experiments(self.options.insnames)
+
+
+def main():
+    autoperf = Autoperf()
+    autoperf.run()
+
+
+if __name__ == "__main__":
+    main()

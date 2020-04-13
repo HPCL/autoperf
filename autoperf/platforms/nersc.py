@@ -1,5 +1,6 @@
 from .generic import Platform as GenericPlatform
 
+
 class Platform(GenericPlatform):
-    name     = "nersc"
+    name = "nersc"
     launcher = "aprun"
