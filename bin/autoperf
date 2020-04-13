@@ -118,7 +118,7 @@ class Autoperf:
 
         return config
 
-    def get_experiment_list(self, allow_dup=True):
+    def get_experiment_list(self, allow_duplicates: bool = True) -> list:
         """
         Get the list of experiment we need to concern with
         """
@@ -129,7 +129,7 @@ class Autoperf:
             for exp_num in self.options.exps:
                 try:
                     exp, num = exp_num.split('@')
-                    if not allow_dup:
+                    if not allow_duplicates:
                         num = 1
                 except ValueError:
                     exp = exp_num

@@ -1,11 +1,11 @@
 #ifdef EXT_PYTHON
-#include <Python.h>
+#include <pybind11/pybind11.h>
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <strings.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cstrings>
 
 #include <new>
 #include <vector>

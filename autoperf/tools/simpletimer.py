@@ -6,8 +6,8 @@ from .interface import *
 
 class Tool(AbstractTool):
     def __init__(self, experiment):
-        self.name = "hpctoolkit"
-        self.longname = "Tool.hpctoolkit.%s" % experiment.name
+        self.name = "simpletimer"
+        self.longname = "Tool.simpletimer.%s" % experiment.name
         self.experiment = experiment
         self.logger = logging.getLogger(__name__)
 
@@ -18,10 +18,10 @@ class Tool(AbstractTool):
     def build_env(self):
         return dict()
 
-    def setup_str(self) -> str:
+    def setup_str(self) -> string:
         return ""
 
-    def wrap_command(self, exe_cmd, exe_opt) -> (str,str):
+    def wrap_command(self, exe_cmd, exe_opt):
         datadir = self.experiment.datadirs[self.experiment.iteration]
         metrics = self.experiment.parted_metrics[self.experiment.iteration]
 
@@ -33,7 +33,7 @@ class Tool(AbstractTool):
 
         _execmd += " %s" % exe_cmd
 
-        return (_execmd, exe_opt)
+        return [_execmd, exe_opt]
 
     def aggregate(self):
         """

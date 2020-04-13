@@ -13,17 +13,22 @@ class AbstractTool:
         raise NotImplementedError
 
     def setup(self):
+        """
+        Perform necessary tool setup.
+        Returns:
+          Nothing
+        """
         raise NotImplementedError
 
-    def build_env(self):
+    def build_env(self) -> dict:
         """
         Returns:
-          map: A map of environment variables which are need to build the
+          map: A dictionary of environment variables which are need to build the
                app with the support of this tool
         """
         raise NotImplementedError
 
-    def setup_str(self):
+    def setup_str(self) -> str:
         """
         Returns:
           string: A string of commands which are needed to be executed
@@ -31,14 +36,14 @@ class AbstractTool:
         """
         raise NotImplementedError
 
-    def wrap_command(self, execmd, exeopt):
+    def wrap_command(self, exe_cmd, exe_opt) -> (str,str):
         """
         Args:
-          execmd (string): the command used to run the app
-          exeopt (string): the command line option for the app
+          exe_cmd (string): the command used to run the app
+          exe_opt (string): the command line option for the app
 
         Returns:
-          string: A string of command used to run `execmd exeopt` with the
+          string: A pair of strings containing the command used to run `execmd exe_opt` with the
                   support of this tool
         """
         raise NotImplementedError
@@ -48,7 +53,7 @@ class AbstractTool:
         Collect the profiling data and do some postprocessing if necessary
 
         Returns:
-          None
+          Nothing
         """
         ppkfile = "%s/%s.ppk" % (self.experiment.insname, self.experiment.ppkname)
         cmd = ["%s/bin/paraprof" % self.experiment.tauroot,

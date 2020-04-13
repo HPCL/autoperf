@@ -9,7 +9,7 @@
  *  http://sam.zoy.org/projects/COPYING.WTFPL for more details.
  *
  * Compilation example:
- * gcc -shared -fPIC gprof-helper.c -o gprof-helper.so -lpthread -ldl
+ * gcc -shared -fPIC gprof-helper.c -o libgprof-helper.so -lpthread -ldl
  *
  * Usage example:
  * LD_PRELOAD=./gprof-helper.so your_program

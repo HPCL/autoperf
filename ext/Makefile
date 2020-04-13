@@ -17,7 +17,7 @@ LDFLAGS  += -L$(CUDA)/lib64 -L$(CUDA)/extras/CUPTI/lib64
 LDLIBS   += -lcuda -lcudart -lcupti
 endif
 
-TARGETS = partitioner
+TARGETS = partitioner libgprof-helper.so
 
 PAPI_METRICS = PAPI_FP_INS PAPI_TOT_INS PAPI_RES_STL PAPI_TOT_CYC \
                PAPI_L1_DCM PAPI_L1_ICM PAPI_L2_DCM PAPI_L2_ICM    \
@@ -50,6 +50,9 @@ partitioner.o: partitioner.cpp
 
 sqlite3.o: sqlite3.c
 	$(CC) sqlite3.c -lpthread -ldl -c
+
+libgprof-helper.so: gprof-helper.c
+	$(CC) -shared -fPIC $< -o $@ -lpthread -ldl
 
 test:
 	./partitioner sqlite3.db $(subst $(eval) ,:,$(METRICS)) greedy true

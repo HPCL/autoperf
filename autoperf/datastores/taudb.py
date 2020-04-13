@@ -22,7 +22,7 @@ class Datastore(AbstractDatastore):
         try:
             self.appname = config.get("%s.appname" % self.longname)
         except configparser.Error:
-            self.appname = config.get("%s.execmd" % experiment.longname)
+            self.appname = config.get("%s.exe_cmd" % experiment.longname)
             self.appname = os.path.basename(self.appname)
 
     def setup(self):

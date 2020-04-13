@@ -30,7 +30,7 @@ class AbstractPlatform:
 
         Args:
           execmd (string): the command going to run
-          exeopt (string): the cmdline option for `execmd`
+          exeopt (string): the cmdline option for `exe_cmd`
           block  (bool)  : block until application exit?
 
         Returns:

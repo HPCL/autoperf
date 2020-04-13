@@ -81,7 +81,7 @@ class Tool(AbstractTool):
 
         return env
 
-    def setup_str(self):
+    def setup_str(self) -> string:
         """
         Returns:
           string: A string of commands to be executed before running
@@ -105,7 +105,7 @@ class Tool(AbstractTool):
         tau_setup += "export PROFILEDIR=%s/profiles\n" % datadir
         return tau_setup
 
-    def wrap_command(self, execmd, exeopt):
+    def wrap_command(self, exe_cmd, exe_opt) -> (str,str):
         """
         Transmute application command line when necessary
 
@@ -116,7 +116,7 @@ class Tool(AbstractTool):
 
         # do nothing for instrumented application
         if mode == "instrumentation":
-            return [execmd, exeopt]
+            return (exe_cmd, exe_opt)
 
         # wrap the command with "tau_exec" for sampling
         if mode == "sampling":
@@ -127,9 +127,9 @@ class Tool(AbstractTool):
             tau_exec_opt += " -ebs -ebs_period=%s -ebs_source=%s" % (period, source)
             if self.experiment.is_cupti:
                 tau_exec_opt += " -cupti"
-            tau_exec_opt += " %s" % execmd
+            tau_exec_opt += " %s" % exe_cmd
 
-            return ["tau_exec %s" % tau_exec_opt, exeopt]
+            return ("tau_exec %s" % tau_exec_opt, exe_opt)
 
         raise Exception("TAU: invalid mode: %s. (Available: instrumentation, sampling)" % mode)
 

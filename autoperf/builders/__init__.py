@@ -14,16 +14,3 @@
 #  OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from ..interface import AbstractBuilder
-
-
-class TauBuilder(AbstractBuilder):
-    def __init__(self, experiment):
-        super().__init__(experiment)
-        self.default_config_options = {}
-
-    def configure(self, params=None):
-        pass
-
-    def build(self, params=None):
-        pass

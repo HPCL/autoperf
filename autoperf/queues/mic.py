@@ -146,5 +146,5 @@ echo -n "{exp_name} {insname} mic Finished" >{datadir}/.job.stat
         self.logger.cmd("ssh %s %s\n", self.target, script_name)
         subprocess.call(["ssh", self.target, script_name])
 
-    def wrap_command(self, execmd, exeopt):
-        return [self.host2mic(execmd), exeopt]
+    def wrap_command(self, execmd, exeopt) -> (str,str):
+        return (self.host2mic(execmd), exeopt)

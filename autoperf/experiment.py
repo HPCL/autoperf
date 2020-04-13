@@ -73,9 +73,9 @@ class Experiment:
             self.tauroot = None
 
         self.threads = self.config.getint("%s.threads" % self.longname, 1)
-        self.execmd = self.config.get("%s.execmd" % self.longname)
+        self.execmd = self.config.get("%s.exe_cmd" % self.longname)
         self.execmd = os.path.expanduser(self.execmd)
-        self.exeopt = self.config.get("%s.exeopt" % self.longname, "")
+        self.exeopt = self.config.get("%s.exe_opt" % self.longname, "")
 
         self.ppkname = self.config.get("%s.ppkname" % self.longname, "data")
 

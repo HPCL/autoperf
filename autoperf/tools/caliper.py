@@ -6,8 +6,8 @@ from .interface import *
 
 class Tool(AbstractTool):
     def __init__(self, experiment):
-        self.name = "hpctoolkit"
-        self.longname = "Tool.hpctoolkit.%s" % experiment.name
+        self.name = "caliper"
+        self.longname = "Tool.caliper.%s" % experiment.name
         self.experiment = experiment
         self.logger = logging.getLogger(__name__)
 
