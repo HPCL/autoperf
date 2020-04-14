@@ -23,7 +23,7 @@ class Experiment:
     datastore.
     """
 
-    def __init__(self, config: Config, name, insname='None'):
+    def __init__(self, config: Config, name, insname=''):
         """
         Instantiating an experiment. Do the first step of the
         initialization. If `insname` is not given, it will take
@@ -60,6 +60,10 @@ class Experiment:
         self.rootdir = self.config.get("%s.rootdir" % self.longname, self.cwd)
         self.rootdir = os.path.expanduser(self.rootdir)
         self.rootdir = os.path.join(self.cwd, self.rootdir)
+        try:
+            os.stat(self.rootdir)
+        except RuntimeError:
+            os.mkdir(self.rootdir)
 
         self.debug = self.config.getboolean("%s.debug" % self.longname, True)
         self.is_mpi = self.config.getboolean("%s.mpi" % self.longname, False)
@@ -276,7 +280,7 @@ class Experiment:
 
     def build(self):
         """
-        Run the builder command if it exist
+        Run the builder command if it exists
         """
         try:
             builder = self.config.get("%s.builder" % self.longname)
@@ -386,7 +390,10 @@ class Experiment:
         """
         print("--- Preparing to run %s" % self.name)
 
-        self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+        if not self.insname:
+            self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+        if self.rootdir:
+            self.insname = os.path.join(self.rootdir,self.insname)
 
         # logger
         self.logger.info("Run the experiment")
@@ -420,7 +427,6 @@ class Experiment:
             for i in range(len(self.parted_metrics)):
                 self.logger.info("  %2d: %s", i + 1, self.parted_metrics[i])
             self.logger.newline()
-
 
         # populate the data directories
         self.logger.info("Populating data directories")
