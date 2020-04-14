@@ -18,7 +18,7 @@ class Tool(AbstractTool):
     def build_env(self):
         return dict()
 
-    def setup_str(self) -> string:
+    def setup_str(self) -> str:
         return ""
 
     def wrap_command(self, exe_cmd, exe_opt):

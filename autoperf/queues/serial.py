@@ -2,6 +2,7 @@ import os
 import subprocess
 
 from .interface import AbstractQueue
+from ..experiment import Experiment
 
 
 class Queue(AbstractQueue):
@@ -26,7 +27,7 @@ echo -n "{exp_name} {insname} serial:$$ Running" >{datadir}/.job.stat
 echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
 """
 
-    def __init__(self, experiment):
+    def __init__(self, experiment: Experiment):
         # super().__init__(experiment) -- no! It's an abstract interface
         self.name = "serial"
         self.experiment = experiment

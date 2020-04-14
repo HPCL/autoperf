@@ -13,6 +13,7 @@ from . import logger as rootLogger
 from .utils import logger
 from .utils.MetricSet import MetricSet
 from .utils.config import Config
+from .platforms import generic
 
 
 class Experiment:
@@ -33,6 +34,10 @@ class Experiment:
           insname (string): The instance ID of this experiment
         """
 
+        # Defaults:
+        self.platform = generic.Platform
+
+        # Configuration options
         self.config = config
 
         experiments = self.config.get_list("Main.Experiments")
@@ -78,7 +83,7 @@ class Experiment:
         self.specdirs = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
 
         self.metric_set = MetricSet(self.specdirs)
-
+        self.parted_metrics = self.metric_set.nmetrics  # default value, not partitioned
 
         # init logger facility
         self.logger_init()
@@ -415,6 +420,7 @@ class Experiment:
             for i in range(len(self.parted_metrics)):
                 self.logger.info("  %2d: %s", i + 1, self.parted_metrics[i])
             self.logger.newline()
+
 
         # populate the data directories
         self.logger.info("Populating data directories")
