@@ -39,7 +39,7 @@ class Platform(AbstractPlatform):
                   any application which will run on this platform
         """
         prologue = "# Generic environment variables\n"
-        for name, value in config.get_section("Env.%s" % self.experiment.name):
+        for name, value in self.experiment.config.get_section("Env.%s" % self.experiment.name):
             prologue += "export %s='%s'\n" % (name, value)
 
         # print "NUMBER OF THREADS = %d" % self.experiment.threads

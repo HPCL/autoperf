@@ -12,6 +12,7 @@ from importlib import import_module
 from .utils import logger
 from .utils.MetricSet import MetricSet
 from .utils.config import Config
+from .utils.portability import fix_path
 from .platforms import generic
 
 
@@ -94,6 +95,7 @@ class Experiment:
 
         self.metric_set = MetricSet(self.specdirs)
         self.parted_metrics = self.metric_set.nmetrics  # default value, not partitioned
+        if not self.parted_metrics: self.parted_metrics=set("TIME")
 
         # init logger facility
         self.logger_init()
@@ -113,7 +115,7 @@ class Experiment:
             _module = import_module(".%s" % analysis_name, package="autoperf.analyses")
             self.analyses[analysis_name] = _module.Analysis(self)
 
-        self.logger.info("");
+        self.logger.info("")
 
     def logger_init(self):
         """
@@ -132,7 +134,7 @@ class Experiment:
 
         # log destination
         logfile = self.config.get("Logger.%s.logfile" % self.logger.name,
-                                  "%s/autoperf.log" % self.rootdir)
+                                  fix_path("%s/autoperf.log" % self.rootdir))
 
         # log formatter
         # formatter = logging.Formatter(fmt="%(asctime)s %(levelname)-7s %(message)s",
@@ -182,7 +184,7 @@ class Experiment:
         # now looking for the stat marker
         for item in os.listdir(dirname):
             # stat marker is not a directory
-            if os.path.isdir("%s/%s" % (dirname, item)):
+            if os.path.isdir(os.path.join("%s" % dirname, "%s" % item)):
                 continue
 
             # experiment name is also encoded in stat marker name for
@@ -200,7 +202,7 @@ class Experiment:
                 continue
 
             stat = {}
-            marker = os.path.realpath("%s/%s" % (dirname, item))
+            marker = os.path.realpath(os.path.join("%s"%dirname, "%s"%item))
 
             if os.path.isfile(marker):
                 with open(marker, 'r') as fp:
@@ -433,27 +435,33 @@ class Experiment:
 
         # populate the data directories
         self.logger.info("Populating data directories")
-        self.logger.cmd("mkdir -p %s/profiles", self.insname)
-        os.makedirs("%s/profiles" % self.insname)
+        profiles_path = fix_path("%s/profiles/" % self.insname)
+        self.logger.cmd("mkdir -p %s", profiles_path)
+        os.makedirs("%s" % profiles_path)
 
         self.datadirs = []
         for i in range(len(self.parted_metrics)):
-            datadir = "%s/.iter-%02d" % (self.insname, i)
+            datadir = fix_path("%s/.iter-%02d" % (self.insname, i))
             self.datadirs.append(datadir)
 
             self.logger.cmd("mkdir -p %s/profiles", datadir)
-            os.makedirs("%s/profiles" % datadir)
+            os.makedirs(fix_path("%s/profiles" % datadir))
 
             # pre-link job log and stat marker
-            target = os.path.relpath("%s/job.log" % datadir, self.insname)
-            link_name = "%s/job-%02d.log" % (self.insname, i)
+            target = os.path.relpath(fix_path("%s/job.log" % datadir), self.insname)
+            link_name = fix_path("%s/job-%02d.log" % (self.insname, i))
             self.logger.cmd("ln -s %s %s", target, link_name)
-            os.symlink(target, link_name)
-            target = os.path.relpath("%s/.job.stat" % datadir, self.insname)
-            link_name = "%s/.job-%s-%02d.stat" % (self.insname, self.name, i)
+            try:
+                os.symlink(target, link_name)
+            except:
+                pass
+            target = os.path.relpath(fix_path("%s/.job.stat" % datadir), self.insname)
+            link_name = fix_path("%s/.job-%s-%02d.stat" % (self.insname, self.name, i))
             self.logger.cmd("ln -s %s %s", target, link_name)
-            os.symlink(target, link_name)
-
+            try:
+                os.symlink(target, link_name)
+            except:
+                pass
         self.logger.newline()
 
         # run the experiment

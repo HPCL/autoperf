@@ -68,7 +68,7 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
             exp_run=cmd,
         )
 
-        script_name = "%s/job.sh" % datadir
+        script_name = os.path.join("%s"%datadir, "job.sh")
 
         self.logger.info("Populating the serial job script")
         with open(script_name, "w") as script:
@@ -77,7 +77,8 @@ echo -n "{exp_name} {insname} serial:$$ Finished" >{datadir}/.job.stat
         os.chmod(script_name, 0o755)
 
         print("--- Submitting serial job ...")
-
+        print(script_name)
         self.logger.info("Running the serial job script")
-        self.logger.cmd("./%s\n", script_name)
-        subprocess.call("./%s" % script_name)
+        script_path = os.path.join(".", "%s" % script_name)
+        self.logger.cmd(script_path)
+        subprocess.run(script_path)
