@@ -18,60 +18,55 @@ Directory Structure
 
   autoperf/      -- the autoperf python package
   bin/           -- directory which holds the driver script
-  example/       -- an usage example
+  example/       -- a few examples
   ext/           -- c/c++ extension for python
+  cmake/         -- CMake build files
   README.rst     -- this file
 
 
 Prerequisites
 ===================
 
-* Python, including the development headers (e.g., python-dev package
-  in various Linux distros)
-* `Jython <http://www.jython.org>`_
+* Python 3, including the development headers (e.g., python-dev package in various Linux distros)
 * One or more performance measurement tools, e.g., `PAPI
   <http://icl.cs.utk.edu/papi/>`_, `TAU <http://tau.uoregon.edu>`_,
-  `HPCToolkit <http://hpctoolkit.org>`_.
+  `HPCToolkit <http://hpctoolkit.org>`_. The minimum installation does not require anything beyond a recent GCC compiler (version 7 or newer).
 
-Install
+Getting Started
 ===================
 
-You can install this package following distutils convention. For
-example, in order to install in your home directory::
+You can install this package by using CMake version 3.10 or newer. First create a build directory and go to it to configure and build. For example::
 
-  $ python setup.py install --user
 
-Or, install to a specific directory::
+  git clone https://github.com/HPCL/autoperf
+  cd autoperf
+  mkdir build
+  cd build
+  cmake ..
+  make
+  make install
 
-  $ python setup.py install --prefix=<some_directory>
+This will use /usr/local as the prefix, to customize the installation location, specify a path using the -DCMAKE_INSTALL_PREFIX flag, e.g.::
 
-Read this if you want to know more about distutils:
+ cmake -DCMAKE_INSTALL_PREFIX=<some_directory> ..
 
-  https://docs.python.org/2/install/index.html
+For a list of available configuration options, run::
 
-The C extension in this package requires headers and libraries of
-PAPI/SQLITE3 to compile. You may need to point out where to find those
-using environment variables *PAPI* and *SQLITE3*.
+  cmake .. --help
 
-Autoperf also supports CUDA/CUPTI. To enable this feature, set
-environment variable *CUDA* to the CUDA installation directory on your
-system.
 
-If it is not clear how to set those variables, read **setup.py**.
+Optional packages
+==================
 
-If you don't want to re-install the package after each "git pull", you
-can simply do this::
+The C extension (partitioner) in this package requires headers and libraries of PAPI/SQLITE3 to compile. You may need to point out where to find those using environment variables *PAPI* or the **-DWITH_PAPI=<papi path>** option to cmake.
 
-  $ python setup.py build_ext -i
+Autoperf also supports CUDA/CUpti. To enable this feature, set th **CUDA** environment variable to the CUDA SDK installation directory on your system.
 
-Now you can use autoperf in-place without installation. However, if
-ext/ is updated in "git pull", you must rebuild it using the command
-above.
 
 Usage
 ===================
-Several examples are provided under *example/*.  A config file,
-*autoperf.cfg*, is provided for each example.
+Several examples are provided under **example/**.  A config file,
+**autoperf.cfg**, is provided for each example.
 
 The config file can be specified though command line option. If not
 specified, autoperf will search for the first valid file in the order
@@ -79,8 +74,7 @@ below::
 
   .autoperf.cfg : autoperf.cfg : ~/.autoperf.cfg
 
-A driver script named "autoperf" is included in *bin/*. Run the driver
-script to execute the experiments and collect the data::
+A driver script named "autoperf" is included in the *bin/* subdirectory of your installation path. Run the driver script to execute the experiments and collect the data::
 
   $ autoperf -h
   usage: autoperf [-h] [-f CFGFILE] [-D CONFIG.OPTION=VALUE] [-r | -c | -y | -q]
@@ -141,5 +135,4 @@ Or, you can do the job submission and data analyze in one step::
 In this case, the script will not return until the job is finished and
 the analysis is done. After the driver script returns, you can find
 collected data under *output/*. The data is also loaded into taudb if
-"Datastore=taudb" is specified in config file. In such case,You can
-run *paraperf* to check the data.
+"Datastore=taudb" is specified in config file. In such case,You can run **paraprof** (part of TAU) to check the data.

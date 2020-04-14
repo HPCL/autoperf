@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(autoperf LANGUAGES CXX C PYTHON)
+project(autoperf LANGUAGES CXX C)
 
 
 # Version information
 set(AUTOPERF_MAJOR_VERSION 1)
 set(AUTOPERF_MINOR_VERSION 0)
 set(AUTOPERF_PATCH_VERSION 0)
-set(AUTOPERF_VERSION "${AUTOPERF_MAJOR_VERSION}.${AUTOPERF_MINOR_VERSION}.${AUTOPERF_PATCH_VERSION}-dev")
+set(AUTOPERF_VERSION "${AUTOPERF_MAJOR_VERSION}.${AUTOPERF_MINOR_VERSION}.${AUTOPERF_PATCH_VERSION}")
 
 # Configuration options
 option(WITH_MPI       "Enable MPI" FALSE)
@@ -16,6 +16,14 @@ option(WITH_TAU       "Enable TAU service (TAU Performance System)" FALSE)
 
 # Add our module directory to the include path.
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+
+
+# cmake v. < 3.12
+find_package(PythonInterp 3 REQUIRED)
+find_package(CUDA QUIET)
+
+# Newer way requires cmake v. >= 3.12
+# find_package (Python3 COMPONENTS Interpreter Development)
 
 # Find MPI
 if (WITH_MPI)
@@ -53,6 +61,8 @@ if (WITH_PAPI)
 endif()
 
 
+
+
 # -----------------------------------------------------------------
 
 # Extra gprof helper to enable profiling of multithreaded codes
@@ -80,28 +90,23 @@ endif()
 # ---- The actual implementation setuputils build and installation: ----
 
 # Python configuration and setup
+set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
+set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
+set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/autoperf/__init__.py")
+set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/")
+set(PAPI        "${PAPI_PREFIX}")
+set(CUDA        "${CUDA_TOOLKIT_ROOT_DIR}")
 
-find_package (Python COMPONENTS Interpreter Development)
+configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
-if (PYTHON)
-    set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-    set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-    set(DEPS        "${CMAKE_CURRENT_SOURCE_DIR}/module/__init__.py")
-    set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
-    set(PAPI "CUDA_SDK_ROOT_DIR")
-    set(CUDA "${CUDA_SDK_ROOT_DIR}")
+add_custom_command(OUTPUT ${OUTPUT}
+                   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build
+                   COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
+                   DEPENDS ${DEPS})
 
-    configure_file(${SETUP_PY_IN} ${SETUP_PY})
+add_custom_target(target ALL DEPENDS ${OUTPUT})
 
-    add_custom_command(OUTPUT ${OUTPUT}
-                       COMMAND ${PYTHON} ${SETUP_PY} build
-                       COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-                       DEPENDS ${DEPS})
-
-    add_custom_target(target ALL DEPENDS ${OUTPUT})
-
-    install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install --prefix=${CMAKE_INSTALL_PREFIX})")
-endif()
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --prefix=${CMAKE_INSTALL_PREFIX})")
 
 
 #
@@ -112,7 +117,10 @@ message(STATUS "Autoperf configuration summary:")
 
 message(STATUS "Autoperf version          : ${AUTOPERF_VERSION}")
 message(STATUS "Build type                : ${CMAKE_BUILD_TYPE}")
+message(STATUS "Python interpreter        : ${PYTHON_EXECUTABLE}")
+message(STATUS "Python version            : ${PYTHON_VERSION_STRING}")
 message(STATUS "Compiler                  : ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} (${CMAKE_CXX_COMPILER})")
+message(STATUS "CUDA                      : ${CUDA_TOOLKIT_ROOT_DIR}")
 message(STATUS "System                    : ${CMAKE_SYSTEM} (${CMAKE_SYSTEM_PROCESSOR})")
 message(STATUS "Install dir               : ${CMAKE_INSTALL_PREFIX}")
 

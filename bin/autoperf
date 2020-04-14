@@ -7,11 +7,21 @@ import os
 import sys
 from importlib import import_module
 
+# include the Autoperf tool in the Python's search path
+abs_path = os.path.realpath(sys.argv[0])
+cur_dir = os.path.dirname(abs_path)
+if os.path.basename(cur_dir) == 'bin':
+    # installed location
+    base_dir = os.path.join(os.path.dirname(cur_dir), 'lib',
+                            'python' + distutils.sysconfig.get_python_version(),
+                            'site-packages')
+    sys.path.insert(0,base_dir)
+else:
+    # source tree (development) location
+    sys.path.insert(0,os.path.join(cur_dir, '..'))
+
 from autoperf.experiment import Experiment
 from autoperf.utils.config import Config
-
-
-# include autoperf in the Python's search path
 
 
 class Autoperf:
@@ -20,22 +30,6 @@ class Autoperf:
     """
 
     def __init__(self):
-
-        # include the Autoperf tool in the Python's search path
-        abs_path = os.path.realpath(sys.argv[0])
-        cur_dir = os.path.dirname(abs_path)
-        dirs = []
-        if os.path.basename(cur_dir) == 'bin':
-            # installed location
-            base_dir = os.path.join(os.path.dirname(cur_dir), 'lib',
-                                    'python' + distutils.sysconfig.get_python_version(),
-                                    'site-packages')
-            dirs = [base_dir, os.path.join(base_dir, 'autoperf')]
-        else:
-            # source tree (development) location
-            dirs = [os.path.join(cur_dir, 'autoperf')]
-        sys.path.extend(dirs)
-
         self.options = None
         self.optparser = self._init_command_line_opts()
         self.config = self._parse_config()

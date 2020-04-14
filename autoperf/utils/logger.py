@@ -1,7 +1,6 @@
-from logging import Logger
+import logging
 
-
-class MyLogger(Logger):
+class MyLogger(object):
     VERB = 15
     VERBOSE = 15
 
@@ -10,44 +9,61 @@ class MyLogger(Logger):
 
     indent = ""
 
-    def __init__(self, name):
-        Logger.__init__(self, name)
+    def __init__(self, name, level=logging.DEBUG):
+        self.name = name
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(level)
+        self.logHandler = None
 
     def shift(self):
-        if self.isEnabledFor(self.CMD):
-            MyLogger.indent = "    %s" % MyLogger.indent
+        if self.logger.isEnabledFor(self.CMD):
+            self.indent = "    %s" % self.indent
 
     def unshift(self):
-        if self.isEnabledFor(self.CMD):
-            MyLogger.indent = MyLogger.indent[:-4]
+        if self.logger.isEnabledFor(self.CMD):
+            self.indent = self.indent[:-4]
 
     def newline(self):
-        Logger.critical(self, "")
+        self.logger.critical("")
 
     def verb(self, msg, *args, **kwargs):
-        msg = "%s# %s" % (MyLogger.indent, msg)
-        Logger.log(self, self.VERB, msg, *args, **kwargs)
+        msg = "%s# %s" % (self.indent, msg)
+        self.logger.log(level=MyLogger.VERB, msg=msg)
 
     def cmd(self, msg, *args, **kwargs):
-        msg = "%s%s" % (MyLogger.indent, msg)
-        Logger.log(self, self.CMD, msg, *args, **kwargs)
+        print(self.getEffectiveLevel())
+        msg = "%s%s" % (self.indent, msg)
+        self.logger.log(level=MyLogger.CMD, msg=msg)
 
     def debug(self, msg, *args, **kwargs):
-        msg = "%s# %s" % (MyLogger.indent, msg)
-        Logger.debug(self, msg, *args, **kwargs)
+        msg = "%s# %s" % (self.indent, msg)
+        self.logger.debug(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        msg = "%s# %s" % (MyLogger.indent, msg)
-        Logger.info(self, msg, *args, **kwargs)
+        msg = "%s# %s" % (self.indent, msg)
+        self.logger.info(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        msg = "%s# %s" % (MyLogger.indent, msg)
-        Logger.warning(self, msg, *args, **kwargs)
+        msg = "%s# %s" % (self.indent, msg)
+        self.logger.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        msg = "%s# %s" % (MyLogger.indent, msg)
-        Logger.error(self, msg, *args, **kwargs)
+        msg = "%s# %s" % (self.indent, msg)
+        self.logger.error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        msg = "%s# %s" % (MyLogger.indent, msg)
-        Logger.critical(self, msg, *args, **kwargs)
+        msg = "%s# %s" % (self.indent, msg)
+        self.logger.critical(msg, *args, **kwargs)
+
+    def addHandler(self, handler):
+        self.logHandler = handler
+        self.logger.addHandler(handler)
+
+    def removeHandler(self, handler):
+        self.logger.removeHandler(handler)
+
+    def setLevel(self, level):
+        self.logger.setLevel(level)
+
+    def getEffectiveLevel(self):
+        return self.logger.getEffectiveLevel()

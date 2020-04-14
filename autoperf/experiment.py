@@ -9,10 +9,10 @@ import shutil
 import subprocess
 from importlib import import_module
 
-from . import logger as rootLogger
 from .utils import logger
 from .utils.MetricSet import MetricSet
 from .utils.config import Config
+from .platforms import generic
 
 
 class Experiment:
@@ -22,7 +22,7 @@ class Experiment:
     datastore.
     """
 
-    def __init__(self, config: Config, name, insname='None'):
+    def __init__(self, config: Config, name, insname=''):
         """
         Instantiating an experiment. Do the first step of the
         initialization. If `insname` is not given, it will take
@@ -34,11 +34,10 @@ class Experiment:
         """
 
         # Defaults:
-        self.platform = None
-        self.tool = "tau"
-        self.datastore = None
-        self.analyses = "TIME"
+        self.platform = generic.Platform
+        self.logHandler = None
 
+        # Configuration options
         self.config = config
 
         experiments = self.config.get_list("Main.Experiments")
@@ -52,15 +51,19 @@ class Experiment:
         self.datadirs = []
 
         # get some basic config values
-        self.platform_name = self.config.get("%s.Platform" % self.longname, "generic").split(';')[0].rstrip()
-        self.tool_name = self.config.get("%s.Tool" % self.longname, "tau").split(';')[0].rstrip()
-        self.datastore_name = self.config.get("%s.Datastore" % self.longname, "nop").split(';')[0].rstrip()
+        self.platform_name = self.config.get("%s.Platform" % self.longname, default="generic").split(';')[0].rstrip()
+        self.tool_name = self.config.get("%s.Tool" % self.longname, default="gprof").split(';')[0].rstrip()
+        self.datastore_name = self.config.get("%s.Datastore" % self.longname, default="nop").split(';')[0].rstrip()
         self.analyses_names = [x.rstrip() for x in self.config.get("%s.Analyses" % self.longname, default='').split()]
 
         self.cwd = os.getcwd()
         self.rootdir = self.config.get("%s.rootdir" % self.longname, self.cwd)
         self.rootdir = os.path.expanduser(self.rootdir)
         self.rootdir = os.path.join(self.cwd, self.rootdir)
+        try:
+            os.stat(self.rootdir)
+        except RuntimeError:
+            os.mkdir(self.rootdir)
 
         self.debug = self.config.getboolean("%s.debug" % self.longname, True)
         self.is_mpi = self.config.getboolean("%s.mpi" % self.longname, False)
@@ -84,11 +87,7 @@ class Experiment:
         self.specdirs = [os.path.join(self.cwd, specdir) for specdir in self.specdirs]
 
         self.metric_set = MetricSet(self.specdirs)
-
-        # now let's get into the rootdir
-        if not os.path.isdir(self.rootdir):
-            os.makedirs(self.rootdir)
-        os.chdir(self.rootdir)
+        self.parted_metrics = self.metric_set.nmetrics  # default value, not partitioned
 
         # init logger facility
         self.logger_init()
@@ -114,8 +113,16 @@ class Experiment:
         """
         Get logger configurations and set it up.
         """
+
+        # log level
+        loglvl = self.config.get("Logger.%s.loglvl" % self.name, "DEBUG")
+        loglvl = os.environ.get("LOGLEVEL", getattr(logging, loglvl.upper(), None)) # Override with env var
+        if not isinstance(loglvl, int):
+            loglvl = logging.DEBUG
+            self.logger.log(logging.WARN, "# Invalid log level. Using default value (DEBUG)")
+
         # self.logger = logging.getLogger(__name__)
-        self.logger = logger.MyLogger(__name__)
+        self.logger = logger.MyLogger(__name__, loglvl)
 
         # log destination
         logfile = self.config.get("Logger.%s.logfile" % self.logger.name,
@@ -129,16 +136,10 @@ class Experiment:
         # log handler
         self.logHandler = logging.FileHandler(logfile)
         self.logHandler.setFormatter(formatter)
-        rootLogger.addHandler(self.logHandler)
+        self.logger.addHandler(self.logHandler)
 
-        # log level
-        loglvl = self.config.get("Logger.%s.loglvl" % self.name, "DEBUG")
-        loglvl = getattr(logging, loglvl.upper(), None)
-        if not isinstance(loglvl, int):
-            loglvl = logging.DEBUG
-            self.logger.log(logging.WARN, "# Invalid log level. Using default value (DEBUG)")
 
-        rootLogger.setLevel(loglvl)
+        self.logger.setLevel(loglvl)
 
         self.logger.info("########## EXPERIMENT START ##########")
         self.logger.info("")
@@ -281,7 +282,7 @@ class Experiment:
 
     def build(self):
         """
-        Run the builder command if it exist
+        Run the builder command if it exists
         """
         try:
             builder = self.config.get("%s.builder" % self.longname)
@@ -391,7 +392,10 @@ class Experiment:
         """
         print("--- Preparing to run %s" % self.name)
 
-        self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+        if not self.insname:
+            self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+        if self.rootdir:
+            self.insname = os.path.join(self.rootdir,self.insname)
 
         # logger
         self.logger.info("Run the experiment")
@@ -510,4 +514,4 @@ class Experiment:
         self.logger.info("########## EXPERIMENT END   ##########")
         self.logger.newline()
 
-        rootLogger.removeHandler(self.logHandler)
+        self.logger.removeHandler(self.logHandler)
