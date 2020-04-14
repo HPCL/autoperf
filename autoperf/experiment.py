@@ -33,12 +33,6 @@ class Experiment:
           insname (string): The instance ID of this experiment
         """
 
-        # Defaults:
-        self.platform = None
-        self.tool = "tau"
-        self.datastore = None
-        self.analyses = "TIME"
-
         self.config = config
 
         experiments = self.config.get_list("Main.Experiments")
@@ -52,9 +46,9 @@ class Experiment:
         self.datadirs = []
 
         # get some basic config values
-        self.platform_name = self.config.get("%s.Platform" % self.longname, "generic").split(';')[0].rstrip()
-        self.tool_name = self.config.get("%s.Tool" % self.longname, "tau").split(';')[0].rstrip()
-        self.datastore_name = self.config.get("%s.Datastore" % self.longname, "nop").split(';')[0].rstrip()
+        self.platform_name = self.config.get("%s.Platform" % self.longname, default="generic").split(';')[0].rstrip()
+        self.tool_name = self.config.get("%s.Tool" % self.longname, default="gprof").split(';')[0].rstrip()
+        self.datastore_name = self.config.get("%s.Datastore" % self.longname, default="nop").split(';')[0].rstrip()
         self.analyses_names = [x.rstrip() for x in self.config.get("%s.Analyses" % self.longname, default='').split()]
 
         self.cwd = os.getcwd()
@@ -85,10 +79,6 @@ class Experiment:
 
         self.metric_set = MetricSet(self.specdirs)
 
-        # now let's get into the rootdir
-        if not os.path.isdir(self.rootdir):
-            os.makedirs(self.rootdir)
-        os.chdir(self.rootdir)
 
         # init logger facility
         self.logger_init()

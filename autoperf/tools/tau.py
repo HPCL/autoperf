@@ -81,7 +81,7 @@ class Tool(AbstractTool):
 
         return env
 
-    def setup_str(self) -> string:
+    def setup_str(self) -> str:
         """
         Returns:
           string: A string of commands to be executed before running

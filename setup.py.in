@@ -24,14 +24,16 @@ if CUDA is not None:
     DEFINE_MACROS.append(('WITH_CUPTI', None))
 
 # get the names of all python packages in Autoperf
-py_packages = []
-cur_dir = os.getcwd()
+py_packages = ['autoperf']
+cur_dir = '${CMAKE_CURRENT_SRC_DIR}'
 src_dir = os.path.join(cur_dir, 'autoperf')
 for root, dirs, files in os.walk(src_dir, topdown=True):
     if '__init__.py' in files:
         rel_dir = root[len(cur_dir) + 1:]
         dir_names = rel_dir.split(os.sep)
+        print(dir_names)
         py_packages.append('.'.join(dir_names))
+print(py_packages)
 
 # partitioner is a python extension written in C++
 if PAPI:
