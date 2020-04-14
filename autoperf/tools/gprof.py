@@ -24,8 +24,7 @@ class Tool(AbstractTool):
     def wrap_command(self, exe_cmd, exe_opt):
         datadir = self.experiment.datadirs[self.experiment.iteration]
 
-        _execmd = "gprof"
-        _execmd += " %s" % exe_cmd
+        _execmd = " %s && %s %s gmon.out" % (exe_cmd, 'gprof', exe_cmd)
 
         return [_execmd, exe_opt]
 

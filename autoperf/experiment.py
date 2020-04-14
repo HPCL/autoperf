@@ -47,7 +47,6 @@ class Experiment:
             self.name = name
             self.longname = "Experiments.%s" % name
 
-        self.insname = insname
         self.datadirs = []
 
         # get some basic config values
@@ -62,8 +61,15 @@ class Experiment:
         self.rootdir = os.path.join(self.cwd, self.rootdir)
         try:
             os.stat(self.rootdir)
-        except RuntimeError:
+        except:
             os.mkdir(self.rootdir)
+
+        if not insname:
+            self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
+        else:
+            self.insname = insname
+        if self.rootdir:
+            self.insname = os.path.join(self.rootdir, self.insname)
 
         self.debug = self.config.getboolean("%s.debug" % self.longname, True)
         self.is_mpi = self.config.getboolean("%s.mpi" % self.longname, False)
@@ -391,11 +397,6 @@ class Experiment:
           None
         """
         print("--- Preparing to run %s" % self.name)
-
-        if not self.insname:
-            self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
-        if self.rootdir:
-            self.insname = os.path.join(self.rootdir,self.insname)
 
         # logger
         self.logger.info("Run the experiment")
