@@ -27,7 +27,7 @@ class Tool(AbstractTool):
         _execmd = "gprof"
         _execmd += " %s" % exe_cmd
 
-        return [exe_cd, exe_opt]
+        return [_execmd, exe_opt]
 
     def aggregate(self):
         """

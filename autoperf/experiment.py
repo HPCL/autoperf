@@ -9,7 +9,6 @@ import shutil
 import subprocess
 from importlib import import_module
 
-from . import logger as rootLogger
 from .utils import logger
 from .utils.MetricSet import MetricSet
 from .utils.config import Config
@@ -36,6 +35,7 @@ class Experiment:
 
         # Defaults:
         self.platform = generic.Platform
+        self.logHandler = None
 
         # Configuration options
         self.config = config
@@ -113,8 +113,16 @@ class Experiment:
         """
         Get logger configurations and set it up.
         """
+
+        # log level
+        loglvl = self.config.get("Logger.%s.loglvl" % self.name, "DEBUG")
+        loglvl = os.environ.get("LOGLEVEL", getattr(logging, loglvl.upper(), None)) # Override with env var
+        if not isinstance(loglvl, int):
+            loglvl = logging.DEBUG
+            self.logger.log(logging.WARN, "# Invalid log level. Using default value (DEBUG)")
+
         # self.logger = logging.getLogger(__name__)
-        self.logger = logger.MyLogger(__name__)
+        self.logger = logger.MyLogger(__name__, loglvl)
 
         # log destination
         logfile = self.config.get("Logger.%s.logfile" % self.logger.name,
@@ -128,16 +136,10 @@ class Experiment:
         # log handler
         self.logHandler = logging.FileHandler(logfile)
         self.logHandler.setFormatter(formatter)
-        rootLogger.addHandler(self.logHandler)
+        self.logger.addHandler(self.logHandler)
 
-        # log level
-        loglvl = self.config.get("Logger.%s.loglvl" % self.name, "DEBUG")
-        loglvl = getattr(logging, loglvl.upper(), None)
-        if not isinstance(loglvl, int):
-            loglvl = logging.DEBUG
-            self.logger.log(logging.WARN, "# Invalid log level. Using default value (DEBUG)")
 
-        rootLogger.setLevel(loglvl)
+        self.logger.setLevel(loglvl)
 
         self.logger.info("########## EXPERIMENT START ##########")
         self.logger.info("")
@@ -512,4 +514,4 @@ class Experiment:
         self.logger.info("########## EXPERIMENT END   ##########")
         self.logger.newline()
 
-        rootLogger.removeHandler(self.logHandler)
+        self.logger.removeHandler(self.logHandler)
