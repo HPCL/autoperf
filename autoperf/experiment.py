@@ -69,8 +69,6 @@ class Experiment:
             self.insname = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
         else:
             self.insname = insname
-        if self.rootdir:
-            self.insname = os.path.join(self.rootdir, self.insname)
 
         self.debug = self.config.getboolean("%s.debug" % self.longname, True)
         self.is_mpi = self.config.getboolean("%s.mpi" % self.longname, False)
@@ -85,6 +83,8 @@ class Experiment:
         self.threads = self.config.getint("%s.threads" % self.longname, 1)
         self.execmd = self.config.get("%s.exe_cmd" % self.longname)
         self.execmd = os.path.expanduser(self.execmd)
+        if not os.path.isabs(self.execmd):
+            self.execmd = os.path.join(self.cwd,self.execmd) # relative path provided
         self.exeopt = self.config.get("%s.exe_opt" % self.longname, "")
 
         self.ppkname = self.config.get("%s.ppkname" % self.longname, "data")
