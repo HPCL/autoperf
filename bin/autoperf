@@ -15,10 +15,10 @@ if os.path.basename(cur_dir) == 'bin':
     base_dir = os.path.join(os.path.dirname(cur_dir), 'lib',
                             'python' + distutils.sysconfig.get_python_version(),
                             'site-packages')
-    sys.path.insert(0,base_dir)
 else:
     # source tree (development) location
-    sys.path.insert(0,os.path.join(cur_dir, '..'))
+    base_dir = os.path.join(cur_dir, '..')
+sys.path.insert(0,base_dir)
 
 from autoperf.experiment import Experiment
 from autoperf.utils.config import Config
@@ -33,7 +33,13 @@ class Autoperf:
         self.options = None
         self.optparser = self._init_command_line_opts()
         self.config = self._parse_config()
-
+        self.dir = base_dir
+        uname = os.uname()
+        if uname['system'] == 'Darwin': subdir = 'apple'
+        else: subdir = uname['machine']
+        self.tauroot = os.path.join(self.dir,'tau2')
+        self.tauroot_arch = os.path.join(self.tauroot, subdir)
+        self.taumakefile = os.path.join(self.tauroot_arch,'lib','Makefile.tau')
         pass
 
     def _init_command_line_opts(self):
@@ -56,6 +62,10 @@ class Autoperf:
 
         # operation mode
         group = parser.add_mutually_exclusive_group()
+        # bootstrap
+        group.add_argument("-t", "--install-tau",
+                            action="store_const", const="install_tau", dest="mode",
+                            help="Set up TAU locally")
         group.add_argument("-r", "--run",
                            action="store_const", const="run", dest="mode",
                            help="When used with '-e', run specified experiment(s). "
@@ -252,8 +262,25 @@ class Autoperf:
         for exp in exps:
             self.analyze_an_experiment(exp, insnames)
 
+    def install_tau(self):
+        os.chdir(self.basedir)
+        if not os.path.exists(self.tauroot):
+            os.system("git clone https://github.com/UO-OACISS/tau2.git")
+        os.chdir(self.tauroot)
+        if not os.path.exists(self.taumakefile):
+            # Build it
+            print("Building TAU")
+            os.system("./configure")
+            os.system("make -j install")
+
+        if not os.path.exists(self.taumakefile):
+            print("You asked Autoperf to build TAU, but it was not able to do so, please build TAU yourself "
+                  "and specify its installation path in your autotuning spec.")
+
     def run(self):
-        if self.options.mode == 'run':
+        if self.options.mode == 'install_tau':
+            self.install_tau()
+        elif self.options.mode == 'run':
             self.run_experiments()
         elif self.options.mode == 'check':
             self.check_experiments(self.options.insnames)
